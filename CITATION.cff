@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use ctdl-validate, please cite it as below."
+title: "ctdl-validate: deterministic structural validator for CTDL JSON-LD payloads"
+abstract: >-
+  A zero-runtime-dependency Python CLI that checks CTDL and CTDL-ASN JSON-LD
+  payloads before publication to the Credential Registry: CTID grammar,
+  identifier kinds, in-payload reference resolution, domain/range validation
+  with subclass closure, and inverse consistency. Every finding cites the
+  published rule it came from; output is deterministic byte for byte.
+type: software
+authors:
+  - given-names: Chelsea
+    family-names: Kelly-Reif
+license: Apache-2.0
+repository-code: "https://github.com/ChelseaKR/ctdl-validate"
+url: "https://github.com/ChelseaKR/ctdl-validate"
+keywords:
+  - ctdl
+  - credential-engine
+  - json-ld
+  - validation
+  - credentials

@@ -52,9 +52,7 @@ class TestBugClass252IsPartOfCarriesWrongFrameworkIdentifier:
     is not the framework's."""
 
     def test_ispartof_identifier_matching_no_framework_in_payload_is_caught(self) -> None:
-        findings = validate_document(
-            load_fixture("bug_class_252_wrong_framework_identifier.json")
-        )
+        findings = validate_document(load_fixture("bug_class_252_wrong_framework_identifier.json"))
         mismatches = [f for f in findings if f.code == "ISPARTOF_FRAMEWORK_MISMATCH"]
         assert len(mismatches) == 1
         assert mismatches[0].severity is Severity.WARNING
@@ -63,9 +61,7 @@ class TestBugClass252IsPartOfCarriesWrongFrameworkIdentifier:
         assert "REF_OUTSIDE_PAYLOAD" in _codes(findings)
 
     def test_ispartof_resolving_to_a_non_framework_is_caught_as_range_violation(self) -> None:
-        findings = validate_document(
-            load_fixture("bug_class_252_wrong_framework_identifier.json")
-        )
+        findings = validate_document(load_fixture("bug_class_252_wrong_framework_identifier.json"))
         violations = [f for f in findings if f.code == "RANGE_VIOLATION"]
         assert len(violations) == 1
         assert violations[0].severity is Severity.ERROR
@@ -74,8 +70,8 @@ class TestBugClass252IsPartOfCarriesWrongFrameworkIdentifier:
         assert "rangeIncludes" in violations[0].rule.citation
 
     def test_correct_member_competency_is_not_flagged(self) -> None:
-        findings = validate_document(
-            load_fixture("bug_class_252_wrong_framework_identifier.json")
+        findings = validate_document(load_fixture("bug_class_252_wrong_framework_identifier.json"))
+        good_entity = (
+            "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f"
         )
-        good_entity = "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f"
         assert not [f for f in findings if f.entity == good_entity]

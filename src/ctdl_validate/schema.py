@@ -88,7 +88,7 @@ class SchemaIndex:
             return iri
         for ns, prefix in self._namespaces:
             if iri.startswith(ns) and len(iri) > len(ns):
-                return f"{prefix}:{iri[len(ns):]}"
+                return f"{prefix}:{iri[len(ns) :]}"
         return iri
 
     def ancestors_of(self, term: str) -> frozenset[str]:
@@ -132,6 +132,33 @@ def _as_list(value: Any) -> list[Any]:
     return [value]
 
 
+def _index_schema_entry(
+    entry: dict[str, Any],
+    classes: dict[str, ClassDef],
+    raw_props: dict[str, dict[str, Any]],
+) -> None:
+    """Fold one @graph entry into the class and property indexes."""
+    term = entry.get("@id")
+    etype = entry.get("@type")
+    if not isinstance(term, str):
+        return
+    if etype == "rdfs:Class":
+        parents = tuple(
+            sorted(
+                set(_as_list(entry.get("rdfs:subClassOf")))
+                | set(classes[term].parents if term in classes else ())
+            )
+        )
+        classes[term] = ClassDef(term=term, parents=parents)
+    elif etype == "rdf:Property":
+        merged = raw_props.setdefault(term, {"domain": set(), "range": set()})
+        merged["domain"].update(_as_list(entry.get("schema:domainIncludes")))
+        merged["range"].update(_as_list(entry.get("schema:rangeIncludes")))
+        inverse = _as_list(entry.get("owl:inverseOf"))
+        if inverse:
+            merged["inverse"] = inverse[0]
+
+
 @lru_cache(maxsize=1)
 def load_schema() -> SchemaIndex:
     classes: dict[str, ClassDef] = {}
@@ -140,25 +167,7 @@ def load_schema() -> SchemaIndex:
     for relpath in ("ctdl/schema.json", "ctdlasn/schema.json"):
         graph = _read_vendor(relpath)["@graph"]
         for entry in graph:
-            term = entry.get("@id")
-            etype = entry.get("@type")
-            if not isinstance(term, str):
-                continue
-            if etype == "rdfs:Class":
-                parents = tuple(
-                    sorted(
-                        set(_as_list(entry.get("rdfs:subClassOf")))
-                        | set(classes[term].parents if term in classes else ())
-                    )
-                )
-                classes[term] = ClassDef(term=term, parents=parents)
-            elif etype == "rdf:Property":
-                merged = raw_props.setdefault(term, {"domain": set(), "range": set()})
-                merged["domain"].update(_as_list(entry.get("schema:domainIncludes")))
-                merged["range"].update(_as_list(entry.get("schema:rangeIncludes")))
-                inverse = _as_list(entry.get("owl:inverseOf"))
-                if inverse:
-                    merged["inverse"] = inverse[0]
+            _index_schema_entry(entry, classes, raw_props)
 
     coercions: dict[str, dict[str, Any]] = {}
     prefixes: dict[str, str] = {}

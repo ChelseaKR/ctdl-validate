@@ -45,8 +45,8 @@ CTID_URI_STRUCTURE = Rule(
     citation=(
         'About the CTID, section "CTID-Based URI Structure": Registry URIs are constructed '
         "from https://credentialengineregistry.org plus /resources/ or /graph/ plus the "
-        'CTID itself, and "the value of a resource\'s CTID property will exactly match the '
-        'CTID portion of that resource\'s URI".'
+        "CTID itself, and \"the value of a resource's CTID property will exactly match the "
+        "CTID portion of that resource's URI\"."
     ),
     url=ABOUT_CTID_URL,
     retrieved=RETRIEVED,

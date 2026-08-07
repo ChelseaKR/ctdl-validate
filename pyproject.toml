@@ -7,7 +7,7 @@ name = "ctdl-validate"
 version = "0.1.0"
 description = "Deterministic structural validator for CTDL JSON-LD payloads, run before publication to the Credential Registry."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Chelsea Kelly-Reif" }]
 keywords = ["ctdl", "credential-engine", "json-ld", "validation", "credentials"]
@@ -22,8 +22,14 @@ classifiers = [
 ]
 dependencies = []
 
-[project.optional-dependencies]
-dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+[dependency-groups]
+dev = [
+  "mypy>=1.18",
+  "pip-audit>=2.7",
+  "pytest>=8",
+  "pytest-cov>=5.0",
+  "ruff>=0.15",
+]
 
 [project.scripts]
 ctdl-validate = "ctdl_validate.cli:entrypoint"
@@ -38,9 +44,17 @@ ctdl_validate = ["py.typed", "vendor/SOURCES.md", "vendor/*/*.json"]
 testpaths = ["tests"]
 addopts = "-q"
 
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+
 [tool.mypy]
 strict = true
-python_version = "3.10"
+python_version = "3.12"
 files = ["src", "tests"]
 warn_unreachable = true
 
@@ -50,15 +64,18 @@ disallow_untyped_defs = true
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "UP", "B", "SIM", "RET", "C4", "PL"]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RET", "C4", "C90", "PL"]
 ignore = [
   "PLR0912", # too many branches: the check functions are long by nature
   "PLR0911", # too many returns
   "PLR2004", # magic values: character offsets in the CTID grammar are the spec
 ]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["PLR0915"]
