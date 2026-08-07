@@ -45,7 +45,7 @@ repository; nothing is copied from any upstream repository or issue tracker.
 
 ## Install and run
 
-Python 3.10+, no runtime dependencies.
+Python 3.12+, no runtime dependencies.
 
 ```
 pip install .
@@ -159,12 +159,16 @@ than picking a side silently:
 
 ## Development
 
+Uses [`uv`](https://docs.astral.sh/uv/) with a locked toolchain
+(Python 3.12, see `.python-version`):
+
 ```
-python -m venv .venv && .venv/bin/pip install -e ".[dev]"
-.venv/bin/python -m pytest   # 56 tests
-.venv/bin/mypy               # strict
-.venv/bin/ruff check .
+uv sync --frozen
+make verify   # lint + format + strict types + coverage-gated tests + pip-audit
 ```
+
+`make verify` is the exact gate CI runs; see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the individual targets.
 
 ## Disclosure
 
@@ -176,6 +180,27 @@ and the fixtures were built to reproduce two real bug classes without
 copying any upstream data. Read the findings' citations critically; if a
 cited source has changed since retrieval, the vendored snapshot, not this
 tool's opinion, is what to update.
+
+## Standards Conformance
+
+This repository is part of a portfolio with shared engineering standards.
+Status against each, with an explicit reason wherever a standard does not
+apply; the enforcement ledger with targets and owners is
+[docs/ROADMAP.md](docs/ROADMAP.md).
+
+| Standard | Status | Evidence |
+|---|---|---|
+| Responsible-Tech Framework | Applies | [docs/RESPONSIBLE-TECH-AUDITS.md](docs/RESPONSIBLE-TECH-AUDITS.md): the harm surface is false confidence, and the controls (severity contract, break-the-gate suite, cited rules) target it directly. |
+| Code Quality | Applies | Floors in `pyproject.toml`: Python >= 3.12, ruff >= 0.15, mypy >= 1.18 (strict), complexity <= 10, branch coverage >= 90%; locked with `uv.lock`; reproduced locally by `make verify`. |
+| Security & Supply-Chain | Applies | [SECURITY.md](SECURITY.md); SHA-pinned Actions; Semgrep and full-history TruffleHog in CI; pip-audit in `make verify`; Dependabot; gitleaks in pre-commit. |
+| CI/CD | Applies | `ci.yml` runs the same `make verify` gate as local development; trusted-main release workflow (signed tag, re-verified at the tagged commit) wired ahead of the first tag. |
+| Observability | N/A (offline single-shot CLI; no service, no telemetry; the deterministic report on stdout is the entire observable surface) | Exit-code contract and JSON output are tested in `tests/test_cli.py`. |
+| Accessibility | N/A (no graphical or web surface; plain-text terminal output plus `--format json` for tooling) | Revisit if any web or GUI surface is added. |
+| Internationalization | N/A (findings quote English-language spec prose verbatim; see [docs/I18N.md](docs/I18N.md) for the reason and the flip-to-applies trigger) | Multilingual payload *data* validates identically; the declaration covers operator-facing strings only. |
+| AI Evaluation | N/A (deterministic rule engine; no model, prompt, retrieval, or LLM call anywhere; AI-assisted authoring is disclosed under [Disclosure](#disclosure)) | Zero runtime dependencies makes the no-model claim mechanically checkable. |
+| Documentation | Applies | This README, [CHANGELOG.md](CHANGELOG.md), ADRs in [docs/adr/](docs/adr/), [CITATION.cff](CITATION.cff), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md). |
+| Quality & Metrics | Applies | [docs/ROADMAP.md](docs/ROADMAP.md) names every gate as AUTO, REVIEW, or a reasoned exception; nothing is silently skipped. |
+| Release & Versioning | Applies | SemVer; `CHANGELOG.md` kept current; trusted-main signed-tag release workflow. No release has been made yet. |
 
 ## License
 

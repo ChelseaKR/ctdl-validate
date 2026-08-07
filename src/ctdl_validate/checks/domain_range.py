@@ -59,9 +59,7 @@ def _range_findings(
         if schema.class_matches(target_types, prop_def.range):
             continue
         value_text = value if isinstance(value, str) else target.label
-        conflict = next(
-            (t for t in target_types if (prop, t) in DOCUMENTED_RANGE_CONFLICTS), None
-        )
+        conflict = next((t for t in target_types if (prop, t) in DOCUMENTED_RANGE_CONFLICTS), None)
         if conflict is not None:
             findings.append(
                 Finding(
@@ -157,9 +155,7 @@ def check(graph: Graph, schema: SchemaIndex) -> list[Finding]:
                             entity=node.label,
                             prop=prop,
                             value="-",
-                            message=(
-                                "Property is not declared in the vendored schema snapshot."
-                            ),
+                            message=("Property is not declared in the vendored schema snapshot."),
                             rule=rules.unknown_term_rule("property", vocab_prefix(prop)),
                         )
                     )
@@ -177,8 +173,7 @@ def check(graph: Graph, schema: SchemaIndex) -> list[Finding]:
                         prop=prop,
                         value=f"@type=[{', '.join(node_types)}]",
                         message=(
-                            f"{prop} is not declared for class(es) "
-                            f"[{', '.join(node_types)}]."
+                            f"{prop} is not declared for class(es) [{', '.join(node_types)}]."
                         ),
                         rule=rules.domain_rule(prop, prop_def.domain),
                     )

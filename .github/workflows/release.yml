@@ -1,0 +1,150 @@
+name: release
+
+# Trusted-main release (RELEASE-AND-VERSIONING-STANDARD): dispatch with an
+# existing signed vX.Y.Z tag; the reusable authorize workflow verifies the
+# tag signature and that the tagged commit is an ancestor of main before
+# anything builds. The publish target is the GitHub Release itself: build
+# sdist+wheel, attest SLSA build provenance, and attach the build to a
+# GitHub Release whose notes are the matching CHANGELOG section.
+#
+# No tag exists yet (pyproject version 0.1.0 is unreleased); the workflow is
+# wired ahead of the first tag so a release can never ship a commit that did
+# not pass its own gate. Tag like `v0.1.0`:
+# `git tag -s v0.1.0 -m v0.1.0 && git push origin v0.1.0`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing signed stable SemVer tag (vX.Y.Z)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# A release publishes artifacts to the GitHub Release: never race two tags,
+# but never silently drop a re-run either.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    uses: ChelseaKR/portfolio-standards/.github/workflows/release-authorize.yml@3692aa5270d673f91f8571b4fc0ce1c622bf67e5
+    permissions:
+      contents: read
+    with:
+      tag: ${{ inputs.tag }}
+
+  # Never publish untested code: re-run the full merge-blocking gate set
+  # (lint, format, typecheck, coverage-gated tests, pip-audit) at the tagged
+  # commit, the exact `make verify` CI runs on every push, not the PR's
+  # prior checkmark.
+  release-tests:
+    needs: authorize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      UV_PYTHON: "3.12"
+      UV_PYTHON_DOWNLOADS: never
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.authorize.outputs.release-commit }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+      # No cross-run cache on the release path: a poisoned cache entry could
+      # ride into a published artifact. ci.yml keeps its cache; mutable-branch
+      # runs carry materially lower risk.
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.1"
+          enable-cache: false
+      - name: Run the local verification gate at the tagged commit
+        run: make verify
+
+  build:
+    needs: [authorize, release-tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # SLSA build-provenance attestation (keyless/OIDC)
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.authorize.outputs.release-commit }}
+          persist-credentials: false
+      # No cache in the build/publish path either: a cache hit is an
+      # unverified input into the artifact about to be attested and shipped.
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.1"
+          enable-cache: false
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Require tag, package, and changelog versions to match
+        env:
+          TAG: ${{ needs.authorize.outputs.release-tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          PACKAGE_VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          test "${VERSION}" = "${PACKAGE_VERSION}"
+          awk -v ver="${VERSION}" '
+            index($0, "## [" ver "]") == 1 { found=1; print; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md
+      - name: Attest build provenance (SLSA, keyless/OIDC via Sigstore)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "dist/*.whl,dist/*.tar.gz"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-notes
+          path: release-notes.md
+          if-no-files-found: error
+
+  # Create the GitHub Release: attach the build and use the matching
+  # CHANGELOG section as release notes. Deliberately checkout-free; the only
+  # inputs are the verified artifacts and the live tag object, re-checked
+  # against what the authorize job verified.
+  github-release:
+    needs: [authorize, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist/
+      - name: Download release notes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-notes
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.authorize.outputs.release-tag }}
+          TAG_OBJECT_SHA: ${{ needs.authorize.outputs.tag-object-sha }}
+        run: |
+          set -euo pipefail
+          LIVE_TAG_OBJECT="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" --jq .object.sha)"
+          test "${LIVE_TAG_OBJECT}" = "${TAG_OBJECT_SHA}"
+          gh release create "${TAG}" dist/* \
+            --title "${TAG}" --notes-file release-notes.md --verify-tag

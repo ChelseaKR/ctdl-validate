@@ -127,8 +127,7 @@ def parse_document(data: Any, schema: SchemaIndex) -> Graph:
         prefix = "$"
     else:
         raise DocumentError(
-            "expected a JSON-LD object with @graph, a single entity object, "
-            "or an array of entities"
+            "expected a JSON-LD object with @graph, a single entity object, or an array of entities"
         )
 
     builder = _Builder(schema)
