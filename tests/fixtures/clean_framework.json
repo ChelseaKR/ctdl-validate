@@ -1,0 +1,33 @@
+{
+  "@context": "https://credreg.net/ctdlasn/schema/context/json",
+  "@graph": [
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+      "@type": "ceasn:CompetencyFramework",
+      "ceterms:ctid": "ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+      "ceasn:name": { "en-US": "Example Widgetry Competency Framework" },
+      "ceasn:hasTopChild": [
+        "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f"
+      ]
+    },
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+      "@type": "ceasn:Competency",
+      "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+      "ceasn:competencyText": { "en-US": "Assemble a widget from parts" },
+      "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+      "ceasn:isTopChildOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+      "ceasn:hasChild": [
+        "https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3"
+      ]
+    },
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+      "@type": "ceasn:Competency",
+      "ceterms:ctid": "ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+      "ceasn:competencyText": { "en-US": "Identify the parts of a widget" },
+      "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+      "ceasn:isChildOf": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f"
+    }
+  ]
+}

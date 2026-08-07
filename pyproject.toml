@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ctdl-validate"
+version = "0.1.0"
+description = "Deterministic structural validator for CTDL JSON-LD payloads, run before publication to the Credential Registry."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Chelsea Kelly-Reif" }]
+keywords = ["ctdl", "credential-engine", "json-ld", "validation", "credentials"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Education",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+
+[project.scripts]
+ctdl-validate = "ctdl_validate.cli:entrypoint"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ctdl_validate = ["py.typed", "vendor/SOURCES.md", "vendor/*/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src", "tests"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RET", "C4", "PL"]
+ignore = [
+  "PLR0912", # too many branches: the check functions are long by nature
+  "PLR0911", # too many returns
+  "PLR2004", # magic values: character offsets in the CTID grammar are the spec
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR0915"]

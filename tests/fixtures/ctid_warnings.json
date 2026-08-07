@@ -1,0 +1,15 @@
+{
+  "@context": "https://credreg.net/ctdl/schema/context/json",
+  "@graph": [
+    {
+      "@type": "ceterms:Certification",
+      "ceterms:ctid": "ce-B55F88E3-DFD4-430B-AB47-3E5F9986E1E4",
+      "ceterms:name": { "en-US": "Upper case hexadecimal in the CTID" }
+    },
+    {
+      "@type": "ceterms:Certification",
+      "ceterms:ctid": "ce-59e8d15f-7895-1346-a5a8-7a0739a3d344",
+      "ceterms:name": { "en-US": "Version 1 UUID where the grammar says version 4" }
+    }
+  ]
+}

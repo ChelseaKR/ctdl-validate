@@ -1,0 +1,10 @@
+{
+  "@context": "https://credreg.net/ctdl/schema/context/json",
+  "@id": "https://credentialengineregistry.org/resources/ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e",
+  "@type": "ceterms:Certification",
+  "ceterms:ctid": "ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e",
+  "ceterms:name": { "en-US": "Certification Owned Elsewhere" },
+  "ceterms:ownedBy": [
+    "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826"
+  ]
+}

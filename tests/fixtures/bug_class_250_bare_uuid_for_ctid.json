@@ -1,0 +1,11 @@
+{
+  "@context": "https://credreg.net/ctdl/schema/context/json",
+  "@graph": [
+    {
+      "@id": "https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+      "@type": "ceterms:Certification",
+      "ceterms:ctid": "b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+      "ceterms:name": { "en-US": "Certification With a Generated UUID Instead of a CTID" }
+    }
+  ]
+}

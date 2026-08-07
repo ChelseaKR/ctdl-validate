@@ -1,0 +1,8 @@
+{
+  "@context": "https://credreg.net/ctdl/schema/context/json",
+  "@id": "https://credentialengineregistry.org/resources/ce-82566cee-17f3-4a6e-8f59-b45273aac457",
+  "@type": "ceterms:Certification",
+  "ceterms:ctid": "ce-82566cee-17f3-4a6e-8f59-b45273aac457",
+  "ceterms:name": { "en-US": "Certification Owned by a Blank Node That Is Not in This Payload" },
+  "ceterms:ownedBy": ["_:org-that-is-never-defined"]
+}
