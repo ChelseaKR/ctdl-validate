@@ -9,6 +9,12 @@ class pairings.
 No network calls at validation time. No model calls, ever. Same input, same
 output, byte for byte. Every finding cites the published rule it came from.
 
+**Status:** Beta. Version `0.1.0`, first signed tag not yet cut. The
+rule set, the CLI, and its text and JSON reporters are complete and
+covered by tests. Nothing here has been published to the Credential
+Registry, and this project is not affiliated with or endorsed by
+Credential Engine.
+
 ```
 $ ctdl-validate my-framework.json
 ERROR        CTID_BARE_UUID  entity=$.@graph[0]
