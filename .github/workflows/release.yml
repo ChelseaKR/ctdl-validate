@@ -147,4 +147,4 @@ jobs:
           LIVE_TAG_OBJECT="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" --jq .object.sha)"
           test "${LIVE_TAG_OBJECT}" = "${TAG_OBJECT_SHA}"
           gh release create "${TAG}" dist/* \
-            --title "${TAG}" --notes-file release-notes.md --verify-tag
+            --title "${TAG}" --notes-file release-notes.md
