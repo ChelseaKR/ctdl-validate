@@ -15,6 +15,12 @@ covered by tests. Nothing here has been published to the Credential
 Registry, and this project is not affiliated with or endorsed by
 Credential Engine.
 
+**Try it without installing anything:**
+[chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
+runs the validator in your browser via WebAssembly. Nothing is uploaded, which
+matters here: payloads usually need checking while they are still unpublished.
+See [`web/README.md`](web/README.md) for how it is built.
+
 ```
 $ ctdl-validate my-framework.json
 ERROR        CTID_BARE_UUID  entity=$.@graph[0]
