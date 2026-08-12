@@ -9,11 +9,11 @@ class pairings.
 No network calls at validation time. No model calls, ever. Same input, same
 output, byte for byte. Every finding cites the published rule it came from.
 
-**Status:** Beta. Version `0.1.0`, first signed tag not yet cut. The
-rule set, the CLI, and its text and JSON reporters are complete and
-covered by tests. Nothing here has been published to the Credential
-Registry, and this project is not affiliated with or endorsed by
-Credential Engine.
+**Status:** Beta. Version `0.1.0`, released 2026-08-08 from a signed tag, with
+the sdist and wheel attached to the GitHub Release. The rule set, the CLI, and
+its text and JSON reporters are complete and covered by tests. Nothing here has
+been published to the Credential Registry, and this project is not affiliated
+with or endorsed by Credential Engine.
 
 **Try it without installing anything:**
 [chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
