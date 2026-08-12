@@ -37,4 +37,17 @@ jobs:
           path: ./
           # The action's baked-in command already passes --fail; repeating it
           # is a CLI error ("flag 'fail' cannot be repeated").
-          extra_args: --only-verified
+          #
+          # Lob is excluded because its detector matches this repo's pytest
+          # function names. Lob keys are `test_` or `live_` followed by
+          # alphanumerics, which is also the shape of every test in tests/:
+          # `test_subclasses_satisfy_domain_and_range` and
+          # `test_corrupting_a_registry_uri_is_caught` were both reported as
+          # VERIFIED on 2026-08-09, and Lob's verifier confirms them because a
+          # malformed key and an unauthorized key are indistinguishable in its
+          # response. There is no Lob integration here and no direct-mail
+          # dependency in pyproject.toml, so the detector can only ever produce
+          # noise in this repo. Scoped to the one detector on purpose: excluding
+          # tests/ by path would blind the scan to real secrets in fixtures,
+          # which is where they most often hide.
+          extra_args: --only-verified --exclude-detectors=Lob
