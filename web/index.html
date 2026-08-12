@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Content-Security-Policy: the playground needs exactly two network
+      origins. cdn.jsdelivr.net serves the Pyodide runtime and its wasm; 'self'
+      serves the ctdl-validate wheel built by this repo's own Pages workflow.
+      There is deliberately no pypi.org or files.pythonhosted.org here: unlike
+      the tods-validate playground, this one installs no published package, so
+      what runs in the browser is always the code at this commit.
+      'wasm-unsafe-eval' is required for Pyodide's WebAssembly execution;
+      'unsafe-inline' for the inline <script> and <style> below.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; worker-src blob:; child-src blob:;"
+    />
+    <title>ctdl-validate playground</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --background: #ffffff;
+        --foreground: #111827;
+        --muted: #4b5563;
+        --border: #9ca3af;
+        --surface: rgba(127, 127, 127, 0.08);
+        --error: #b42318;
+        --warning: #b54708;
+        --info: #175cd3;
+        --unverifiable: #5925dc;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #111827;
+          --foreground: #f9fafb;
+          --muted: #d1d5db;
+          --border: #6b7280;
+          --error: #fda29b;
+          --warning: #fec84b;
+          --info: #84caff;
+          --unverifiable: #d6bbfb;
+        }
+      }
+      body {
+        font: 16px/1.5 system-ui, sans-serif;
+        max-width: 60rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: var(--foreground);
+        background: var(--background);
+      }
+      h1 { margin-bottom: 0.25rem; }
+      .lede { color: var(--muted); margin-top: 0; }
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      textarea {
+        width: 100%;
+        min-height: 14rem;
+        font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--foreground);
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.75rem;
+        resize: vertical;
+      }
+      button {
+        font: inherit;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: 1px solid #888;
+        background: var(--surface);
+        color: inherit;
+        cursor: pointer;
+      }
+      button:disabled { opacity: 0.65; cursor: progress; }
+      .samples { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }
+      .samples button { font-size: 0.9rem; padding: 0.35rem 0.7rem; }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.75rem; }
+      :focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+      #status { color: var(--muted); margin: 0.75rem 0 0; }
+      .finding {
+        border: 1px solid var(--border);
+        border-left-width: 5px;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        margin: 0.75rem 0;
+      }
+      .finding.ERROR { border-left-color: var(--error); }
+      .finding.WARNING { border-left-color: var(--warning); }
+      .finding.INFO { border-left-color: var(--info); }
+      .finding.UNVERIFIABLE { border-left-color: var(--unverifiable); }
+      .sev { font-weight: 700; letter-spacing: 0.02em; }
+      .sev.ERROR { color: var(--error); }
+      .sev.WARNING { color: var(--warning); }
+      .sev.INFO { color: var(--info); }
+      .sev.UNVERIFIABLE { color: var(--unverifiable); }
+      .finding h3 { font-size: 1rem; margin: 0 0 0.4rem; }
+      .finding dl { margin: 0.4rem 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.75rem; }
+      .finding dt { color: var(--muted); }
+      .finding dd { margin: 0; word-break: break-word; }
+      .rule { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); font-size: 0.9rem; color: var(--muted); }
+      .rule a { color: inherit; }
+      code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface); padding: 0 0.25rem; border-radius: 3px; }
+      .clean { border: 1px solid var(--border); border-left: 5px solid var(--info); border-radius: 6px; padding: 1rem; }
+      footer { margin-top: 2rem; color: var(--muted); font-size: 0.9rem; }
+      footer a { color: inherit; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ctdl-validate playground</h1>
+      <p class="lede">
+        Structural validation for CTDL JSON-LD, run before you publish to the
+        Credential Registry. Nothing is uploaded: the validator runs entirely
+        in your browser via Pyodide (WebAssembly), so unpublished credential
+        and competency data never leaves your machine.
+      </p>
+
+      <div class="panel">
+        <h2 id="input-heading" style="margin-top: 0">Payload</h2>
+        <p style="margin-top: 0; color: var(--muted)">
+          Load a sample, paste your own JSON-LD, or choose a <code>.json</code> file.
+        </p>
+        <div class="samples">
+          <button type="button" data-sample="clean">Clean certification</button>
+          <button type="button" data-sample="bareUuid">Bare UUID as CTID</button>
+          <button type="button" data-sample="framework">Competency framework with broken links</button>
+        </div>
+        <label for="payload"><strong>CTDL JSON-LD</strong></label>
+        <textarea id="payload" spellcheck="false" aria-describedby="status"></textarea>
+        <div class="actions">
+          <input type="file" id="file" accept=".json,application/json,application/ld+json" aria-label="Choose a JSON file" />
+          <button id="run" disabled>Validate</button>
+        </div>
+        <p id="status" role="status">Loading Python (this takes a few seconds the first time)…</p>
+      </div>
+
+      <h2 id="report-heading" tabindex="-1">Findings</h2>
+      <div id="report">
+        <p style="color: var(--muted)">Results will appear here after you validate a payload.</p>
+      </div>
+    </main>
+
+    <footer>
+      <p id="footer-version"></p>
+      <p>
+        Every finding cites the rule it came from and the document that rule was
+        read out of, with the date that document was retrieved. Source and issue
+        tracker:
+        <a href="https://github.com/ChelseaKR/ctdl-validate">github.com/ChelseaKR/ctdl-validate</a>.
+      </p>
+    </footer>
+
+    <!-- Pyodide runtime. When bumping the version, regenerate the integrity
+         hash to match: `curl -sSL <url> | openssl dgst -sha384 -binary |
+         openssl base64 -A`, prefixed with `sha384-`. -->
+    <script
+      src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"
+      integrity="sha384-i3R37b3tF+HWudsUf1VSEOY2YxwSNMqY8DQa9Z0O3xh+NkJ9o+yjcGyIi5huj+nB"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      const PYODIDE_VERSION = "v0.26.4";
+
+      const statusEl = document.getElementById("status");
+      const runBtn = document.getElementById("run");
+      const payload = document.getElementById("payload");
+      const fileInput = document.getElementById("file");
+      const report = document.getElementById("report");
+      const reportHeading = document.getElementById("report-heading");
+      const footerVersion = document.getElementById("footer-version");
+
+      // Kept verbatim from tests/fixtures/ so the samples stay honest: these
+      // are the same documents the test suite asserts against, including the
+      // two bug classes found in real published data.
+      const SAMPLES = {
+        clean: {
+          "@context": "https://credreg.net/ctdl/schema/context/json",
+          "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+          "@type": "ceterms:Certification",
+          "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+          "ceterms:name": { "en-US": "Example Widget Safety Certification" },
+          "ceterms:subjectWebpage": "https://example.org/certifications/widget-safety",
+        },
+        bareUuid: {
+          "@context": "https://credreg.net/ctdl/schema/context/json",
+          "@graph": [
+            {
+              "@id": "https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+              "@type": "ceterms:Certification",
+              "ceterms:ctid": "b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+              "ceterms:name": { "en-US": "Certification With a Generated UUID Instead of a CTID" },
+            },
+          ],
+        },
+        framework: {
+          "@context": "https://credreg.net/ctdlasn/schema/context/json",
+          "@graph": [
+            {
+              "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+              "@type": "ceasn:CompetencyFramework",
+              "ceterms:ctid": "ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+              "ceasn:name": { "en-US": "The Framework These Competencies Belong To" },
+            },
+            {
+              "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+              "@type": "ceasn:Competency",
+              "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+              "ceasn:competencyText": { "en-US": "Member competency with the correct isPartOf" },
+              "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+            },
+            {
+              "@id": "https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+              "@type": "ceasn:Competency",
+              "ceterms:ctid": "ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+              "ceasn:competencyText": { "en-US": "Member competency whose isPartOf carries some other identifier" },
+              "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-82566cee-17f3-4a6e-8f59-b45273aac457",
+            },
+            {
+              "@id": "https://credentialengineregistry.org/resources/ce-b4da9602-bb7a-4ddc-9426-f119482e32a9",
+              "@type": "ceasn:Competency",
+              "ceterms:ctid": "ce-b4da9602-bb7a-4ddc-9426-f119482e32a9",
+              "ceasn:competencyText": { "en-US": "Member competency whose isPartOf points at another competency" },
+              "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+            },
+          ],
+        },
+      };
+
+      let pyodide;
+      let runValidation;
+
+      for (const btn of document.querySelectorAll("[data-sample]")) {
+        btn.addEventListener("click", () => {
+          payload.value = JSON.stringify(SAMPLES[btn.dataset.sample], null, 2);
+          statusEl.textContent = "Sample loaded. Click Validate.";
+        });
+      }
+
+      fileInput.addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        payload.value = await file.text();
+        statusEl.textContent = `Loaded ${file.name}. Click Validate.`;
+      });
+
+      async function boot() {
+        pyodide = await loadPyodide();
+        // The wheel is built from this commit by the Pages workflow and served
+        // from this origin. The manifest carries its filename so a version bump
+        // never needs an edit here.
+        const manifest = await (await fetch("wheel.json")).json();
+        const wheel = await (await fetch(manifest.wheel)).arrayBuffer();
+        // A wheel is a zip; unpacking it into the working directory (which is
+        // already on sys.path) imports it without micropip, and therefore
+        // without any call to PyPI.
+        await pyodide.unpackArchive(wheel, "zip");
+        runValidation = pyodide.runPython(`
+import json
+from ctdl_validate import validate_document, __version__
+from ctdl_validate.graph import DocumentError
+
+
+def _run(text):
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        return json.dumps({"error": f"That is not valid JSON: {exc}"})
+    try:
+        findings = validate_document(data)
+    except DocumentError as exc:
+        return json.dumps({"error": f"ctdl-validate cannot read this document shape: {exc}"})
+    return json.dumps(
+        {"version": __version__, "findings": [f.to_dict() for f in findings]}
+    )
+
+
+_run
+`);
+        const version = pyodide.runPython("__import__('ctdl_validate').__version__");
+        footerVersion.textContent = `ctdl-validate ${version} · Pyodide ${PYODIDE_VERSION} · running locally in your browser`;
+        statusEl.textContent = `Ready — validating with ctdl-validate ${version}. Load a sample or paste a payload.`;
+        runBtn.disabled = false;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(
+          /[&<>"']/g,
+          (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch],
+        );
+      }
+
+      function renderFinding(f) {
+        const sev = escapeHtml(f.severity);
+        return `
+          <div class="finding ${sev}">
+            <h3><span class="sev ${sev}">${sev}</span> · <span class="mono">${escapeHtml(f.code)}</span></h3>
+            <p style="margin:0">${escapeHtml(f.message)}</p>
+            <dl>
+              <dt>Entity</dt><dd class="mono">${escapeHtml(f.entity)}</dd>
+              <dt>Property</dt><dd class="mono">${escapeHtml(f.property)}</dd>
+              <dt>Value</dt><dd class="mono">${escapeHtml(f.value)}</dd>
+            </dl>
+            <p class="rule">
+              Rule: ${escapeHtml(f.rule.citation)}<br />
+              Source: <a href="${escapeHtml(f.rule.url)}" rel="noreferrer noopener">${escapeHtml(f.rule.url)}</a>
+              (retrieved ${escapeHtml(f.rule.retrieved)})
+            </p>
+          </div>`;
+      }
+
+      runBtn.addEventListener("click", () => {
+        const text = payload.value.trim();
+        if (!text) {
+          statusEl.textContent = "Paste a payload or load a sample first.";
+          return;
+        }
+        statusEl.textContent = "Validating…";
+        let parsed;
+        try {
+          parsed = JSON.parse(runValidation(text));
+        } catch (err) {
+          statusEl.textContent = "Validation error: " + err;
+          return;
+        }
+        if (parsed.error) {
+          report.innerHTML = `<div class="clean"><p style="margin:0">${escapeHtml(parsed.error)}</p></div>`;
+          statusEl.textContent = "Could not validate.";
+          reportHeading.focus();
+          return;
+        }
+        const findings = parsed.findings;
+        if (findings.length === 0) {
+          report.innerHTML =
+            '<div class="clean"><p style="margin:0"><strong>No findings.</strong> This payload passes every structural check.</p></div>';
+        } else {
+          const counts = {};
+          for (const f of findings) counts[f.severity] = (counts[f.severity] || 0) + 1;
+          const summary = Object.entries(counts)
+            .map(([sev, n]) => `${n} ${sev.toLowerCase()}`)
+            .join(", ");
+          report.innerHTML =
+            `<p>${findings.length} finding${findings.length === 1 ? "" : "s"}: ${escapeHtml(summary)}.</p>` +
+            findings.map(renderFinding).join("");
+        }
+        statusEl.textContent = "Done.";
+        // Move focus to the report heading so keyboard and screen-reader users
+        // land on the results they just asked for.
+        reportHeading.focus();
+      });
+
+      if (new URLSearchParams(window.location.search).has("a11y-static")) {
+        statusEl.textContent = "Static accessibility audit mode.";
+      } else {
+        boot().catch((err) => {
+          statusEl.textContent = "Failed to load the validator: " + err;
+        });
+      }
+    </script>
+  </body>
+</html>
