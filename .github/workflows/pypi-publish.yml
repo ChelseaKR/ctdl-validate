@@ -1,0 +1,172 @@
+name: Publish to PyPI
+
+# Publishes the sdist + wheel to PyPI using OIDC Trusted Publishing. No API
+# token is stored anywhere; PyPI verifies this workflow's identity.
+#
+# One-time setup on PyPI (pypi.org -> Your projects -> Publishing, or, before
+# the project exists, "Add a pending publisher"):
+#   PyPI Project Name:  ctdl-validate
+#   Owner:              ChelseaKR
+#   Repository name:    ctdl-validate
+#   Workflow name:      pypi-publish.yml
+#   Environment name:   (leave blank)
+#
+# Mirrors tods-validate's publish path, which is the one already working
+# against PyPI:
+#   - the full merge gate (`make verify`) re-runs at the tagged commit, and
+#     publish does not start unless it is green;
+#   - CycloneDX 1.7 SBOM for the built distribution, blocking on any schema
+#     violation;
+#   - SLSA build provenance attestation for dist/*;
+#   - `verify-published` re-downloads what actually landed on PyPI and checks
+#     its provenance, so a green run means the public artifact is the verified
+#     one, not merely that the upload did not error.
+#
+# No caching in the signing/publishing job, deliberately.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+# Least-privilege default; the publish job escalates only what it needs.
+permissions:
+  contents: read
+
+# Never run two publishes of the same ref at once.
+concurrency:
+  group: pypi-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: verify (the same gate CI runs)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      UV_PYTHON: "3.12"
+      UV_PYTHON_DOWNLOADS: never
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Check out the tag being released rather than whatever main points
+          # at now, so this gate tests the bits about to be published.
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          check-latest: false
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.1"
+          enable-cache: true
+      - name: Run the local verification gate
+        run: make verify
+
+      - name: The tag and the packaged version must agree
+        # A release tagged v0.1.1 that ships 0.1.0 is worse than a failed
+        # publish: PyPI would carry a version this repo never tagged.
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          packaged="$(python -c 'import tomllib;print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
+          if [ "${TAG#v}" != "$packaged" ]; then
+            echo "::error title=version mismatch::tag $TAG does not match pyproject version $packaged"
+            exit 1
+          fi
+          echo "tag $TAG matches packaged version $packaged"
+
+  publish:
+    needs: [verify]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # attach the SBOM to the GitHub release
+      id-token: write # OIDC for PyPI Trusted Publishing + provenance
+      attestations: write # SLSA build provenance attestation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade build
+      - run: python -m build
+
+      # CycloneDX 1.7 SBOM of the built wheel and its dependency closure.
+      # Blocking: --validate fails the job on any schema violation.
+      - name: Generate CycloneDX SBOM
+        run: |
+          python -m pip install --upgrade cyclonedx-bom
+          python -m venv sbom-env
+          ./sbom-env/bin/python -m pip install --upgrade pip
+          ./sbom-env/bin/python -m pip install dist/*.whl
+          cyclonedx-py environment ./sbom-env/bin/python \
+            --sv 1.7 \
+            --of JSON \
+            --output-reproducible \
+            --pyproject pyproject.toml \
+            --mc-type library \
+            --validate \
+            -o ctdl-validate-sbom.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-cyclonedx
+          path: ctdl-validate-sbom.cdx.json
+          if-no-files-found: error
+
+      # SLSA build provenance for the wheel + sdist.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "dist/*"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # release/v1
+
+      # Attach the SBOM to the GitHub release for consumer verification.
+      - name: Upload SBOM to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Routed through env: rather than interpolated into the run: shell.
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" ctdl-validate-sbom.cdx.json --clobber
+
+  verify-published:
+    # Re-fetch what actually landed on PyPI and check its attestation, rather
+    # than trusting that `publish` exiting 0 means the right bits are public.
+    needs: [publish]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Wait for the index to pick up the new release
+        run: sleep 30
+      - name: Download the published distribution from PyPI
+        run: |
+          set -eu
+          VERSION="${TAG#v}"
+          python -m pip download "ctdl-validate==$VERSION" --no-deps -d dist-published
+      - name: Verify SLSA build provenance attestation
+        run: |
+          set -eu
+          for f in dist-published/*; do
+            gh attestation verify "$f" --owner ChelseaKR
+          done
