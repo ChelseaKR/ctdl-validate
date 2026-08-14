@@ -1,0 +1,50 @@
+# Survey targets: category<TAB>url
+#
+# A purposive sample of pages describing a single credential, program, or
+# course, chosen to spread across the kinds of organization that publish
+# credentials: public two-year colleges, university continuing education,
+# certification bodies, learning platforms, private training providers, and
+# employers running their own registered apprenticeships.
+#
+# It is not a random sample and cannot support a population estimate. It was
+# assembled by searching for pages of each kind in August 2026 and taking the
+# provider's own page, never an aggregator's. Every URL is a public page, and
+# the survey fetches each one once, honoring robots.txt.
+
+community-college	https://www.durhamtech.edu/programs-pathways/welding-technology-certificate
+community-college	https://elgin.edu/areas-of-study/welding/
+community-college	https://www.carrollcc.edu/programs/professional-skills-job-training/welder-advanced-welder-certificate/
+community-college	https://www.ccm.edu/programs/aws-level-1-welding/
+community-college	https://www.yccc.edu/degree/welding-technology/
+community-college	https://www.gatewaycc.edu/degrees-certificates/welding
+community-college	https://www.northampton.edu/education-and-training/programs/welding.html
+community-college	https://wcc.yccd.edu/programs/welding/
+community-college	https://www.smccme.edu/academics/pathways/health-sciences/medical-assistant-apprenticeship-short-term-training/
+community-college	https://www.arapahoe.edu/workforce-community-programs/apprenticeships/medical-assistant-apprenticeship
+
+university	https://www.wgu.edu/online-it-degrees/computer-science.html
+university	https://www.snhu.edu/online-degrees/bachelors/bs-in-computer-science
+university	https://www.distancelearning.txst.edu/continuing-education/online-courses-programs/comptia-ans.html
+university	https://www.georgiacenter.uga.edu/node/3644
+
+certification-body	https://www.comptia.org/en-us/certifications/a/
+certification-body	https://www.isc2.org/certifications/cissp
+certification-body	https://aws.amazon.com/certification/certified-cloud-practitioner/
+certification-body	https://www.pmi.org/certifications/project-management-pmp
+certification-body	https://www.pearsonvue.com/us/en/comptia.html
+
+learning-platform	https://www.coursera.org/professional-certificates/google-data-analytics
+learning-platform	https://www.coursera.org/learn/foundations-data
+learning-platform	https://grow.google/certificates/data-analytics/
+learning-platform	https://www.edx.org/learn/computer-programming/harvard-university-cs50-s-introduction-to-computer-science
+
+training-provider	https://medcerts.com/programs/apprenticeship-programs/medical-assistant-apprenticeship-program
+training-provider	https://dhcareerinstitute.org/ma-apprenticeship-program/
+training-provider	https://www.springboard.com/courses/data-analytics-career-track/
+training-provider	https://generalassemb.ly/education/software-engineering-immersive
+
+employer-apprenticeship	https://www.healthpointchc.org/join-our-team/student-training-programs/medical-assistant-apprenticeship-program
+employer-apprenticeship	https://chas.org/about-chas/careers/educational-programs/medical-assistant-apprenticeship-program/
+employer-apprenticeship	https://www.fredhutch.org/en/education-training/health-care-professionals/medical-assistant-apprenticeship-program.html
+employer-apprenticeship	https://www.wacommunityhealth.org/inreach-ma-apprenticeship-da-program
+employer-apprenticeship	https://www.kaiserpermanentejobs.org/kaiser-washington-medical-assistant-apprenticeship-program

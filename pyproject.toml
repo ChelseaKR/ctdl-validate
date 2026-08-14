@@ -55,7 +55,7 @@ show_missing = true
 [tool.mypy]
 strict = true
 python_version = "3.12"
-files = ["src", "tests"]
+files = ["src", "tests", "tools"]
 warn_unreachable = true
 
 [[tool.mypy.overrides]]

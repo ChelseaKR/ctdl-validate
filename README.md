@@ -178,7 +178,10 @@ otherwise the value is dropped as ambiguous.
 
 - **Read a credential out of prose.** A page with no structured markup yields
   nothing, and says so. This is the price of the guarantee below, and on the
-  open web it is the common case.
+  open web it is the common case: of 29 provider pages surveyed on 2026-08-14,
+  11 published no structured data at all and 4 produced a CTDL entity for the
+  thing they were offering. See
+  [docs/findings/](docs/findings/2026-08-14-provider-markup-survey.md).
 - **Invent a CTID.** No entity in an extract carries `ceterms:ctid` unless the
   page published one. A minted identifier is indistinguishable from a real one
   downstream, and an extract is a draft for a human to finish.
@@ -209,6 +212,18 @@ sometimes, produce a well-formed credential that the page never claimed. A
 deterministic extractor limited to declared equivalences can only ever under-
 report. Under-reporting is visible in the notes; a fabricated credential in
 the Registry is not.
+
+### Pointed at reality
+
+[`docs/findings/2026-08-14-provider-markup-survey.md`](docs/findings/2026-08-14-provider-markup-survey.md)
+is what came back from running `extract` over 32 real provider pages: two-year
+colleges, universities, certification bodies, learning platforms, private
+training providers, and employers running their own apprenticeships. Of the 29
+that could be read, 62% published some structured data, 17% declared a type
+describing the credential itself, and 14% produced a CTDL entity for it. Two
+of the eleven extracts failed validation, both for the reason below. The
+survey harness and its target list are in [`tools/`](tools/), and the run is
+reproducible.
 
 ### An extract can be faithful and still invalid
 
