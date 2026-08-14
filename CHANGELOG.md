@@ -29,6 +29,11 @@ and this project adheres to
 - `tests/test_extract_break_the_gate.py`: the extractor's own gate suite,
   asking the opposite question from the validator's, namely that no fact was
   invented.
+- `docs/findings/2026-08-14-provider-markup-survey.md` and its evidence JSON:
+  `extract` run over 32 real credential provider pages, with the survey
+  harness (`tools/survey.py`) and target list committed so the run is
+  reproducible. Of 29 pages read, 38% published no structured data at all and
+  14% produced a CTDL entity for the credential they were offering.
 
 - Portfolio standards conformance kit: CI running the same `make verify` gate
   as local development, Semgrep and full-history TruffleHog scanning
@@ -37,6 +42,13 @@ and this project adheres to
   `CONTRIBUTING.md`, `CITATION.cff`, an ADR log under `docs/adr/`, an i18n
   declaration, responsible-tech audit notes, and a standards and metrics
   ledger (`docs/ROADMAP.md`).
+
+### Fixed
+
+- `RDFA_BEYOND_LITE` no longer fires on ordinary HTML `rel` attributes. It now
+  reports only elements that mix an RDFa 1.1 Core attribute with an RDFa Lite
+  one. Found by running the extractor over 30 real pages, none of which used
+  RDFa and all of which were flagged.
 
 ### Changed
 

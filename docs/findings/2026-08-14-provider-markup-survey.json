@@ -1,0 +1,1849 @@
+{
+  "records": [
+    {
+      "blocks": [],
+      "bytes": 63474,
+      "category": "community-college",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 63474,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.durhamtech.edu/programs-pathways/welding-technology-certificate",
+        "redirects": [],
+        "requested_url": "https://www.durhamtech.edu/programs-pathways/welding-technology-certificate",
+        "robots": "read from https://www.durhamtech.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.durhamtech.edu/programs-pathways/welding-technology-certificate",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "microdata",
+          "items": 1,
+          "types": [
+            "schema:WPFooter"
+          ]
+        }
+      ],
+      "bytes": 53010,
+      "category": "community-college",
+      "ctdl_classes": [],
+      "declared_types": [
+        "schema:WPFooter"
+      ],
+      "entities": 0,
+      "fetch": {
+        "bytes": 53010,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://elgin.edu/areas-of-study/welding/",
+        "redirects": [],
+        "requested_url": "https://elgin.edu/areas-of-study/welding/",
+        "robots": "read from https://elgin.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "microdata"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:WPFooter"
+      ],
+      "url": "https://elgin.edu/areas-of-study/welding/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 14,
+          "types": [
+            "schema:WebPage",
+            "schema:ReadAction",
+            "schema:ImageObject",
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:WebSite",
+            "schema:SearchAction",
+            "schema:EntryPoint",
+            "schema:PropertyValueSpecification",
+            "schema:Organization"
+          ]
+        }
+      ],
+      "bytes": 170498,
+      "category": "community-college",
+      "ctdl_classes": [
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:Organization",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite"
+      ],
+      "entities": 1,
+      "fetch": {
+        "bytes": 170498,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://www.carrollcc.edu/programs/professional-skills-job-training/welder-advanced-welder-certificate/",
+        "redirects": [],
+        "requested_url": "https://www.carrollcc.edu/programs/professional-skills-job-training/welder-advanced-welder-certificate/",
+        "robots": "read from https://www.carrollcc.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 13,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 1,
+        "PROPERTY_NOT_MAPPED": 7
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite",
+        "schema:logo",
+        "schema:sameAs",
+        "schema:url"
+      ],
+      "url": "https://www.carrollcc.edu/programs/professional-skills-job-training/welder-advanced-welder-certificate/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 11,
+          "types": [
+            "schema:WebPage",
+            "schema:ReadAction",
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:WebSite",
+            "schema:SearchAction",
+            "schema:EntryPoint",
+            "schema:PropertyValueSpecification",
+            "schema:Organization",
+            "schema:ImageObject"
+          ]
+        }
+      ],
+      "bytes": 291332,
+      "category": "community-college",
+      "ctdl_classes": [
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:Organization",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite"
+      ],
+      "entities": 1,
+      "fetch": {
+        "bytes": 291332,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://www.ccm.edu/programs/aws-level-1-welding/",
+        "redirects": [],
+        "requested_url": "https://www.ccm.edu/programs/aws-level-1-welding/",
+        "robots": "read from https://www.ccm.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 10,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 1,
+        "PROPERTY_NOT_MAPPED": 7
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite",
+        "schema:alternateName",
+        "schema:logo",
+        "schema:sameAs",
+        "schema:url"
+      ],
+      "url": "https://www.ccm.edu/programs/aws-level-1-welding/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 95578,
+      "category": "community-college",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 95578,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://www.yccc.edu/degree/welding-technology/",
+        "redirects": [],
+        "requested_url": "https://www.yccc.edu/degree/welding-technology/",
+        "robots": "read from https://www.yccc.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.yccc.edu/degree/welding-technology/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 136001,
+      "category": "community-college",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 136001,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://www.gatewaycc.edu/degrees-certificates/welding",
+        "redirects": [],
+        "requested_url": "https://www.gatewaycc.edu/degrees-certificates/welding",
+        "robots": "read from https://www.gatewaycc.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.gatewaycc.edu/degrees-certificates/welding",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 130465,
+      "category": "community-college",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 130465,
+        "content_type": "text/html",
+        "encoding": "UTF-8",
+        "final_url": "https://www.northampton.edu/education-and-training/programs/welding.html",
+        "redirects": [],
+        "requested_url": "https://www.northampton.edu/education-and-training/programs/welding.html",
+        "robots": "none published at https://www.northampton.edu/robots.txt (HTTP 406); RFC 9309 2.3.1.3 allows it",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.northampton.edu/education-and-training/programs/welding.html",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 13,
+          "types": [
+            "schema:WebPage",
+            "schema:ItemPage",
+            "schema:ReadAction",
+            "schema:ImageObject",
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:WebSite",
+            "schema:SearchAction",
+            "schema:EntryPoint",
+            "schema:PropertyValueSpecification",
+            "schema:Organization"
+          ]
+        },
+        {
+          "format": "microdata",
+          "items": 4,
+          "types": [
+            "schema:BreadcrumbList",
+            "schema:ListItem"
+          ]
+        }
+      ],
+      "bytes": 376970,
+      "category": "community-college",
+      "ctdl_classes": [
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ItemPage",
+        "schema:ListItem",
+        "schema:Organization",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite"
+      ],
+      "entities": 1,
+      "fetch": {
+        "bytes": 376970,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://wcc.yccd.edu/programs/welding/",
+        "redirects": [],
+        "requested_url": "https://wcc.yccd.edu/programs/welding/",
+        "robots": "read from https://wcc.yccd.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld",
+        "microdata"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 17,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 1,
+        "PROPERTY_NOT_MAPPED": 5
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ItemPage",
+        "schema:ListItem",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite",
+        "schema:logo",
+        "schema:sameAs",
+        "schema:url"
+      ],
+      "url": "https://wcc.yccd.edu/programs/welding/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 13,
+          "types": [
+            "schema:WebPage",
+            "schema:ReadAction",
+            "schema:ImageObject",
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:WebSite",
+            "schema:SearchAction",
+            "schema:EntryPoint",
+            "schema:PropertyValueSpecification"
+          ]
+        }
+      ],
+      "bytes": 272993,
+      "category": "community-college",
+      "ctdl_classes": [],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite"
+      ],
+      "entities": 0,
+      "fetch": {
+        "bytes": 272993,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://www.smccme.edu/academics/pathways/health-sciences/medical-assistant-apprenticeship-short-term-training/",
+        "redirects": [],
+        "requested_url": "https://www.smccme.edu/academics/pathways/health-sciences/medical-assistant-apprenticeship-short-term-training/",
+        "robots": "read from https://www.smccme.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 13
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:EntryPoint",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:PropertyValueSpecification",
+        "schema:ReadAction",
+        "schema:SearchAction",
+        "schema:WebPage",
+        "schema:WebSite"
+      ],
+      "url": "https://www.smccme.edu/academics/pathways/health-sciences/medical-assistant-apprenticeship-short-term-training/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "category": "community-college",
+      "outcome": "not read",
+      "reason": "FetchError: https://www.arapahoe.edu/workforce-community-programs/apprenticeships/medical-assistant-apprenticeship: HTTP 403",
+      "url": "https://www.arapahoe.edu/workforce-community-programs/apprenticeships/medical-assistant-apprenticeship"
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 83,
+          "types": [
+            "schema:CollegeOrUniversity",
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:EducationalOccupationalProgram",
+            "schema:EducationalOccupationalCredential",
+            "schema:Offer",
+            "schema:PriceSpecification",
+            "schema:Course"
+          ]
+        },
+        {
+          "format": "microdata",
+          "items": 31,
+          "types": [
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:ImageObject"
+          ]
+        }
+      ],
+      "bytes": 472594,
+      "category": "university",
+      "ctdl_classes": [
+        "ceterms:Course"
+      ],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:CollegeOrUniversity",
+        "schema:Course",
+        "schema:EducationalOccupationalCredential",
+        "schema:EducationalOccupationalProgram",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:Offer",
+        "schema:PriceSpecification"
+      ],
+      "entities": 37,
+      "fetch": {
+        "bytes": 472594,
+        "content_type": "text/html;charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.wgu.edu/online-it-degrees/computer-science.html",
+        "redirects": [],
+        "requested_url": "https://www.wgu.edu/online-it-degrees/computer-science.html",
+        "robots": "read from https://www.wgu.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld",
+        "microdata"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 77,
+        "CLASS_RELATED_NOT_EQUIVALENT": 1,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 74,
+        "NESTED_ITEM_DROPPED": 37
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:CollegeOrUniversity",
+        "schema:EducationalOccupationalCredential",
+        "schema:EducationalOccupationalProgram",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:Offer",
+        "schema:PriceSpecification"
+      ],
+      "url": "https://www.wgu.edu/online-it-degrees/computer-science.html",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 221790,
+      "category": "university",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 221790,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.snhu.edu/online-degrees/bachelors/bs-in-computer-science",
+        "redirects": [],
+        "requested_url": "https://www.snhu.edu/online-degrees/bachelors/bs-in-computer-science",
+        "robots": "read from https://www.snhu.edu/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.snhu.edu/online-degrees/bachelors/bs-in-computer-science",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 55646,
+      "category": "university",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 55646,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.distancelearning.txst.edu/continuing-education/online-courses-programs/comptia-ans.html",
+        "redirects": [],
+        "requested_url": "https://www.distancelearning.txst.edu/continuing-education/online-courses-programs/comptia-ans.html",
+        "robots": "none published at https://www.distancelearning.txst.edu/robots.txt (HTTP 404); RFC 9309 2.3.1.3 allows it",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.distancelearning.txst.edu/continuing-education/online-courses-programs/comptia-ans.html",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "category": "university",
+      "outcome": "not read",
+      "reason": "FetchError: https://www.georgiacenter.uga.edu/node/3644: HTTP 404",
+      "url": "https://www.georgiacenter.uga.edu/node/3644"
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 6,
+          "types": [
+            "schema:WebPage",
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:ImageObject"
+          ]
+        }
+      ],
+      "bytes": 519557,
+      "category": "certification-body",
+      "ctdl_classes": [],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:WebPage"
+      ],
+      "entities": 0,
+      "fetch": {
+        "bytes": 519557,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.comptia.org/en-us/certifications/a/",
+        "redirects": [],
+        "requested_url": "https://www.comptia.org/en-us/certifications/a/",
+        "robots": "read from https://www.comptia.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 6
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:WebPage"
+      ],
+      "url": "https://www.comptia.org/en-us/certifications/a/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 322495,
+      "category": "certification-body",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 322495,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.isc2.org/certifications/cissp",
+        "redirects": [],
+        "requested_url": "https://www.isc2.org/certifications/cissp",
+        "robots": "read from https://www.isc2.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.isc2.org/certifications/cissp",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 5,
+          "types": [
+            "schema:BreadcrumbList",
+            "schema:ListItem"
+          ]
+        },
+        {
+          "format": "json-ld",
+          "items": 5,
+          "types": [
+            "schema:HowTo",
+            "schema:HowToStep"
+          ]
+        },
+        {
+          "format": "json-ld",
+          "items": 11,
+          "types": [
+            "schema:FAQPage",
+            "schema:Question",
+            "schema:Answer"
+          ]
+        }
+      ],
+      "bytes": 405020,
+      "category": "certification-body",
+      "ctdl_classes": [],
+      "declared_types": [
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:FAQPage",
+        "schema:HowTo",
+        "schema:HowToStep",
+        "schema:ListItem",
+        "schema:Question"
+      ],
+      "entities": 0,
+      "fetch": {
+        "bytes": 405020,
+        "content_type": "text/html;charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://aws.amazon.com/certification/certified-cloud-practitioner/",
+        "redirects": [],
+        "requested_url": "https://aws.amazon.com/certification/certified-cloud-practitioner/",
+        "robots": "read from https://aws.amazon.com/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 19,
+        "ITEM_UNTYPED": 2
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:FAQPage",
+        "schema:HowTo",
+        "schema:HowToStep",
+        "schema:ListItem",
+        "schema:Question"
+      ],
+      "url": "https://aws.amazon.com/certification/certified-cloud-practitioner/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 954260,
+      "category": "certification-body",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 954260,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.pmi.org/certifications/project-management-pmp",
+        "redirects": [],
+        "requested_url": "https://www.pmi.org/certifications/project-management-pmp",
+        "robots": "read from https://www.pmi.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.pmi.org/certifications/project-management-pmp",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 1,
+          "types": [
+            "schema:EducationalOccupationalProgram"
+          ]
+        }
+      ],
+      "bytes": 155476,
+      "category": "certification-body",
+      "ctdl_classes": [],
+      "declared_types": [
+        "schema:EducationalOccupationalProgram"
+      ],
+      "entities": 0,
+      "fetch": {
+        "bytes": 155476,
+        "content_type": "text/html",
+        "encoding": "UTF-8",
+        "final_url": "https://www.pearsonvue.com/us/en/comptia.html",
+        "redirects": [],
+        "requested_url": "https://www.pearsonvue.com/us/en/comptia.html",
+        "robots": "read from https://www.pearsonvue.com/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 1,
+        "CLASS_RELATED_NOT_EQUIVALENT": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:EducationalOccupationalProgram"
+      ],
+      "url": "https://www.pearsonvue.com/us/en/comptia.html",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 33,
+          "types": [
+            "schema:FAQPage",
+            "schema:Question",
+            "schema:Answer"
+          ]
+        },
+        {
+          "format": "json-ld",
+          "items": 31,
+          "types": [
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:Course",
+            "schema:Thing",
+            "schema:CollegeOrUniversity",
+            "schema:Offer",
+            "schema:CourseInstance",
+            "schema:AggregateRating"
+          ]
+        }
+      ],
+      "bytes": 1043672,
+      "category": "learning-platform",
+      "ctdl_classes": [
+        "ceterms:Course"
+      ],
+      "declared_types": [
+        "schema:AggregateRating",
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:CollegeOrUniversity",
+        "schema:Course",
+        "schema:CourseInstance",
+        "schema:FAQPage",
+        "schema:ListItem",
+        "schema:Offer",
+        "schema:Question",
+        "schema:Thing"
+      ],
+      "entities": 10,
+      "fetch": {
+        "bytes": 1043672,
+        "content_type": "text/html",
+        "encoding": "utf-8",
+        "final_url": "https://www.coursera.org/professional-certificates/google-data-analytics",
+        "redirects": [],
+        "requested_url": "https://www.coursera.org/professional-certificates/google-data-analytics",
+        "robots": "read from https://www.coursera.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 51,
+        "CTID_ABSENT": 1,
+        "ITEM_UNTYPED": 3,
+        "LANGUAGE_UNDECLARED": 20,
+        "NESTED_ITEM_DROPPED": 10,
+        "PROPERTY_NOT_MAPPED": 9
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:About",
+        "schema:AggregateRating",
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:CollegeOrUniversity",
+        "schema:CourseInstance",
+        "schema:FAQPage",
+        "schema:ListItem",
+        "schema:Offer",
+        "schema:Question",
+        "schema:Thing",
+        "schema:aggregateRating",
+        "schema:educationalCredentialAwarded",
+        "schema:educationalLevel",
+        "schema:hasCourseInstance",
+        "schema:isAccessibleForFree",
+        "schema:offers",
+        "schema:timeRequired",
+        "schema:url"
+      ],
+      "url": "https://www.coursera.org/professional-certificates/google-data-analytics",
+      "validation": {
+        "codes": {
+          "DOMAIN_VIOLATION": 1,
+          "INVERSE_ONE_DIRECTION": 9
+        },
+        "summary": {
+          "ERROR": 1,
+          "INFO": 9,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 27,
+          "types": [
+            "schema:Course",
+            "schema:Organization",
+            "schema:EducationalOccupationalCredential",
+            "schema:Offer",
+            "schema:AggregateRating",
+            "schema:Syllabus",
+            "schema:Review",
+            "schema:Person",
+            "schema:Rating",
+            "schema:CourseInstance"
+          ]
+        },
+        {
+          "format": "json-ld",
+          "items": 23,
+          "types": [
+            "schema:FAQPage",
+            "schema:Question",
+            "schema:Answer"
+          ]
+        },
+        {
+          "format": "json-ld",
+          "items": 7,
+          "types": [
+            "schema:BreadcrumbList",
+            "schema:ListItem"
+          ]
+        }
+      ],
+      "bytes": 1016811,
+      "category": "learning-platform",
+      "ctdl_classes": [
+        "ceterms:Course",
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:AggregateRating",
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:Course",
+        "schema:CourseInstance",
+        "schema:EducationalOccupationalCredential",
+        "schema:FAQPage",
+        "schema:ListItem",
+        "schema:Offer",
+        "schema:Organization",
+        "schema:Person",
+        "schema:Question",
+        "schema:Rating",
+        "schema:Review",
+        "schema:Syllabus"
+      ],
+      "entities": 3,
+      "fetch": {
+        "bytes": 1016811,
+        "content_type": "text/html",
+        "encoding": "utf-8",
+        "final_url": "https://www.coursera.org/learn/foundations-data",
+        "redirects": [],
+        "requested_url": "https://www.coursera.org/learn/foundations-data",
+        "robots": "read from https://www.coursera.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 51,
+        "CLASS_RELATED_NOT_EQUIVALENT": 6,
+        "CTID_ABSENT": 1,
+        "ITEM_UNTYPED": 3,
+        "LANGUAGE_UNDECLARED": 4,
+        "PROPERTY_NOT_MAPPED": 48,
+        "PROPERTY_RELATED_NOT_EQUIVALENT": 26
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:AggregateRating",
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:CourseInstance",
+        "schema:EducationalOccupationalCredential",
+        "schema:FAQPage",
+        "schema:ListItem",
+        "schema:Offer",
+        "schema:Person",
+        "schema:Question",
+        "schema:Rating",
+        "schema:Review",
+        "schema:Syllabus",
+        "schema:about",
+        "schema:aggregateRating",
+        "schema:availableLanguage",
+        "schema:coursePrerequisites",
+        "schema:educationalCredentialAwarded",
+        "schema:educationalLevel",
+        "schema:financialAidEligible",
+        "schema:hasCourseInstance",
+        "schema:offers",
+        "schema:publisher",
+        "schema:review",
+        "schema:syllabusSections",
+        "schema:teaches",
+        "schema:totalHistoricalEnrollment",
+        "schema:url"
+      ],
+      "url": "https://www.coursera.org/learn/foundations-data",
+      "validation": {
+        "codes": {
+          "DOMAIN_VIOLATION": 1
+        },
+        "summary": {
+          "ERROR": 1,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 46,
+          "types": [
+            "schema:Webpage",
+            "schema:ImageObject",
+            "schema:Organization",
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:Website",
+            "schema:FAQPage",
+            "schema:Question",
+            "schema:Answer"
+          ]
+        }
+      ],
+      "bytes": 577655,
+      "category": "learning-platform",
+      "ctdl_classes": [
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:FAQPage",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:Organization",
+        "schema:Question",
+        "schema:Webpage",
+        "schema:Website"
+      ],
+      "entities": 2,
+      "fetch": {
+        "bytes": 577655,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://grow.google/certificates/data-analytics/",
+        "redirects": [],
+        "requested_url": "https://grow.google/certificates/data-analytics/",
+        "robots": "read from https://grow.google/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 44,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 1,
+        "PROPERTY_NOT_MAPPED": 20
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:Answer",
+        "schema:BreadcrumbList",
+        "schema:FAQPage",
+        "schema:ImageObject",
+        "schema:ListItem",
+        "schema:Question",
+        "schema:Webpage",
+        "schema:Website",
+        "schema:logo",
+        "schema:sameAs",
+        "schema:url"
+      ],
+      "url": "https://grow.google/certificates/data-analytics/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "category": "learning-platform",
+      "outcome": "not read",
+      "reason": "FetchError: https://www.edx.org/learn/computer-programming/harvard-university-cs50-s-introduction-to-computer-science: HTTP 404",
+      "url": "https://www.edx.org/learn/computer-programming/harvard-university-cs50-s-introduction-to-computer-science"
+    },
+    {
+      "blocks": [
+        {
+          "format": "microdata",
+          "items": 1,
+          "types": [
+            "schema:Blog"
+          ]
+        }
+      ],
+      "bytes": 342024,
+      "category": "training-provider",
+      "ctdl_classes": [],
+      "declared_types": [
+        "schema:Blog"
+      ],
+      "entities": 0,
+      "fetch": {
+        "bytes": 342024,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://medcerts.com/programs/apprenticeship-programs/medical-assistant-apprenticeship-program",
+        "redirects": [],
+        "requested_url": "https://medcerts.com/programs/apprenticeship-programs/medical-assistant-apprenticeship-program",
+        "robots": "read from https://medcerts.com/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "microdata"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:Blog"
+      ],
+      "url": "https://medcerts.com/programs/apprenticeship-programs/medical-assistant-apprenticeship-program",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 8,
+          "types": [
+            "schema:BreadcrumbList",
+            "schema:ListItem",
+            "schema:Organization",
+            "schema:WebPage",
+            "schema:WebSite"
+          ]
+        }
+      ],
+      "bytes": 1607960,
+      "category": "training-provider",
+      "ctdl_classes": [
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:ListItem",
+        "schema:Organization",
+        "schema:WebPage",
+        "schema:WebSite"
+      ],
+      "entities": 1,
+      "fetch": {
+        "bytes": 1607960,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://dhcareerinstitute.org/ma-apprenticeship-program/",
+        "redirects": [],
+        "requested_url": "https://dhcareerinstitute.org/ma-apprenticeship-program/",
+        "robots": "read from https://dhcareerinstitute.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 7,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 2,
+        "PROPERTY_NOT_MAPPED": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:ListItem",
+        "schema:WebPage",
+        "schema:WebSite",
+        "schema:url"
+      ],
+      "url": "https://dhcareerinstitute.org/ma-apprenticeship-program/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 8,
+          "types": [
+            "schema:Product",
+            "schema:aggregateRating",
+            "schema:Review",
+            "schema:Rating"
+          ]
+        },
+        {
+          "format": "json-ld",
+          "items": 37,
+          "types": [
+            "schema:FAQPage",
+            "schema:Question",
+            "schema:Answer"
+          ]
+        },
+        {
+          "format": "json-ld",
+          "items": 6,
+          "types": [
+            "schema:Course",
+            "schema:Organization",
+            "schema:Offer",
+            "schema:CourseInstance",
+            "schema:Person",
+            "schema:Schedule"
+          ]
+        }
+      ],
+      "bytes": 427149,
+      "category": "training-provider",
+      "ctdl_classes": [
+        "ceterms:Course",
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:Answer",
+        "schema:Course",
+        "schema:CourseInstance",
+        "schema:FAQPage",
+        "schema:Offer",
+        "schema:Organization",
+        "schema:Person",
+        "schema:Product",
+        "schema:Question",
+        "schema:Rating",
+        "schema:Review",
+        "schema:Schedule",
+        "schema:aggregateRating"
+      ],
+      "entities": 2,
+      "fetch": {
+        "bytes": 427149,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.springboard.com/courses/data-analytics-career-track/",
+        "redirects": [],
+        "requested_url": "https://www.springboard.com/courses/data-analytics-career-track/",
+        "robots": "read from https://www.springboard.com/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 49,
+        "CLASS_RELATED_NOT_EQUIVALENT": 1,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 3,
+        "PROPERTY_NOT_MAPPED": 7
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:Answer",
+        "schema:CourseInstance",
+        "schema:FAQPage",
+        "schema:Offer",
+        "schema:Person",
+        "schema:Product",
+        "schema:Question",
+        "schema:Rating",
+        "schema:Review",
+        "schema:Schedule",
+        "schema:aggregateRating",
+        "schema:educationalCredentialAwarded",
+        "schema:educationalLevel",
+        "schema:hasCourseInstance",
+        "schema:offers",
+        "schema:timeRequired",
+        "schema:url"
+      ],
+      "url": "https://www.springboard.com/courses/data-analytics-career-track/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 1,
+          "types": [
+            "schema:Organization"
+          ]
+        }
+      ],
+      "bytes": 520912,
+      "category": "training-provider",
+      "ctdl_classes": [
+        "ceterms:Organization"
+      ],
+      "declared_types": [
+        "schema:Organization"
+      ],
+      "entities": 1,
+      "fetch": {
+        "bytes": 520912,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.generalassemb.ly/students/courses/software-engineering-bootcamp",
+        "redirects": [
+          "https://www.generalassemb.ly/education/software-engineering-immersive",
+          "https://www.generalassemb.ly/students/courses/software-engineering-bootcamp"
+        ],
+        "requested_url": "https://generalassemb.ly/education/software-engineering-immersive",
+        "robots": "read from https://www.generalassemb.ly/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld"
+      ],
+      "notes": {
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 1,
+        "PROPERTY_NOT_MAPPED": 8
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:alternateName",
+        "schema:logo",
+        "schema:sameAs",
+        "schema:url"
+      ],
+      "url": "https://generalassemb.ly/education/software-engineering-immersive",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 133408,
+      "category": "employer-apprenticeship",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 133408,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://www.healthpointchc.org/join-our-team/student-training-programs/medical-assistant-apprenticeship-program",
+        "redirects": [],
+        "requested_url": "https://www.healthpointchc.org/join-our-team/student-training-programs/medical-assistant-apprenticeship-program",
+        "robots": "none published at https://www.healthpointchc.org/robots.txt (HTTP 404); RFC 9309 2.3.1.3 allows it",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.healthpointchc.org/join-our-team/student-training-programs/medical-assistant-apprenticeship-program",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "json-ld",
+          "items": 20,
+          "types": [
+            "schema:Article",
+            "schema:SpeakableSpecification",
+            "schema:Organization",
+            "schema:ImageObject",
+            "schema:QuantitativeValue",
+            "schema:Person",
+            "schema:VideoObject"
+          ]
+        },
+        {
+          "format": "microdata",
+          "items": 3,
+          "types": [
+            "schema:WPHeader",
+            "schema:CreativeWork",
+            "schema:WPFooter"
+          ]
+        }
+      ],
+      "bytes": 150530,
+      "category": "employer-apprenticeship",
+      "ctdl_classes": [
+        "ceterms:Organization",
+        "schema:QuantitativeValue"
+      ],
+      "declared_types": [
+        "schema:Article",
+        "schema:CreativeWork",
+        "schema:ImageObject",
+        "schema:Organization",
+        "schema:Person",
+        "schema:QuantitativeValue",
+        "schema:SpeakableSpecification",
+        "schema:VideoObject",
+        "schema:WPFooter",
+        "schema:WPHeader"
+      ],
+      "entities": 11,
+      "fetch": {
+        "bytes": 150530,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://chas.org/about-chas/careers/educational-programs/medical-assistant-apprenticeship-program/",
+        "redirects": [],
+        "requested_url": "https://chas.org/about-chas/careers/educational-programs/medical-assistant-apprenticeship-program/",
+        "robots": "read from https://chas.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "json-ld",
+        "microdata"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 12,
+        "CLASS_RELATED_NOT_EQUIVALENT": 14,
+        "CTID_ABSENT": 1,
+        "LANGUAGE_UNDECLARED": 4,
+        "PROPERTY_AMBIGUOUS": 9,
+        "PROPERTY_NOT_MAPPED": 23,
+        "VALUE_NOT_IDENTIFIER": 9
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:Article",
+        "schema:CreativeWork",
+        "schema:ImageObject",
+        "schema:Person",
+        "schema:SpeakableSpecification",
+        "schema:VideoObject",
+        "schema:WPFooter",
+        "schema:WPHeader",
+        "schema:logo",
+        "schema:name",
+        "schema:sameAs",
+        "schema:unitCode",
+        "schema:url"
+      ],
+      "url": "https://chas.org/about-chas/careers/educational-programs/medical-assistant-apprenticeship-program/",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [
+        {
+          "format": "microdata",
+          "items": 9,
+          "types": [
+            "schema:BreadcrumbList",
+            "schema:ListItem"
+          ]
+        }
+      ],
+      "bytes": 146449,
+      "category": "employer-apprenticeship",
+      "ctdl_classes": [],
+      "declared_types": [
+        "schema:BreadcrumbList",
+        "schema:ListItem"
+      ],
+      "entities": 0,
+      "fetch": {
+        "bytes": 146449,
+        "content_type": "text/html;charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.fredhutch.org/en/education-training/health-care-professionals/medical-assistant-apprenticeship-program.html",
+        "redirects": [],
+        "requested_url": "https://www.fredhutch.org/en/education-training/health-care-professionals/medical-assistant-apprenticeship-program.html",
+        "robots": "read from https://www.fredhutch.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [
+        "microdata"
+      ],
+      "notes": {
+        "CLASS_NOT_MAPPED": 9
+      },
+      "outcome": "fetched",
+      "terms_dropped": [
+        "schema:BreadcrumbList",
+        "schema:ListItem"
+      ],
+      "url": "https://www.fredhutch.org/en/education-training/health-care-professionals/medical-assistant-apprenticeship-program.html",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 896434,
+      "category": "employer-apprenticeship",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 896434,
+        "content_type": "text/html; charset=UTF-8",
+        "encoding": "UTF-8",
+        "final_url": "https://www.wacommunityhealth.org/inreach-ma-apprenticeship-da-program",
+        "redirects": [],
+        "requested_url": "https://www.wacommunityhealth.org/inreach-ma-apprenticeship-da-program",
+        "robots": "read from https://www.wacommunityhealth.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.wacommunityhealth.org/inreach-ma-apprenticeship-da-program",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    },
+    {
+      "blocks": [],
+      "bytes": 51877,
+      "category": "employer-apprenticeship",
+      "ctdl_classes": [],
+      "declared_types": [],
+      "entities": 0,
+      "fetch": {
+        "bytes": 51877,
+        "content_type": "text/html; charset=utf-8",
+        "encoding": "utf-8",
+        "final_url": "https://www.kaiserpermanentejobs.org/kaiser-washington-medical-assistant-apprenticeship-program",
+        "redirects": [],
+        "requested_url": "https://www.kaiserpermanentejobs.org/kaiser-washington-medical-assistant-apprenticeship-program",
+        "robots": "read from https://www.kaiserpermanentejobs.org/robots.txt (HTTP 200), fetch allowed",
+        "status": 200
+      },
+      "formats": [],
+      "notes": {
+        "NO_STRUCTURED_DATA": 1
+      },
+      "outcome": "fetched",
+      "terms_dropped": [],
+      "url": "https://www.kaiserpermanentejobs.org/kaiser-washington-medical-assistant-apprenticeship-program",
+      "validation": {
+        "codes": {},
+        "summary": {
+          "ERROR": 0,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      }
+    }
+  ],
+  "summary": {
+    "declared_types": {
+      "schema:AggregateRating": 2,
+      "schema:Answer": 5,
+      "schema:Article": 1,
+      "schema:Blog": 1,
+      "schema:BreadcrumbList": 12,
+      "schema:CollegeOrUniversity": 2,
+      "schema:Course": 4,
+      "schema:CourseInstance": 3,
+      "schema:CreativeWork": 1,
+      "schema:EducationalOccupationalCredential": 2,
+      "schema:EducationalOccupationalProgram": 2,
+      "schema:EntryPoint": 4,
+      "schema:FAQPage": 5,
+      "schema:HowTo": 1,
+      "schema:HowToStep": 1,
+      "schema:ImageObject": 8,
+      "schema:ItemPage": 1,
+      "schema:ListItem": 12,
+      "schema:Offer": 4,
+      "schema:Organization": 9,
+      "schema:Person": 3,
+      "schema:PriceSpecification": 1,
+      "schema:Product": 1,
+      "schema:PropertyValueSpecification": 4,
+      "schema:QuantitativeValue": 1,
+      "schema:Question": 5,
+      "schema:Rating": 2,
+      "schema:ReadAction": 4,
+      "schema:Review": 2,
+      "schema:Schedule": 1,
+      "schema:SearchAction": 4,
+      "schema:SpeakableSpecification": 1,
+      "schema:Syllabus": 1,
+      "schema:Thing": 1,
+      "schema:VideoObject": 1,
+      "schema:WPFooter": 2,
+      "schema:WPHeader": 1,
+      "schema:WebPage": 6,
+      "schema:WebSite": 5,
+      "schema:Webpage": 1,
+      "schema:Website": 1,
+      "schema:aggregateRating": 1
+    },
+    "extracts_with_no_validation_errors": 9,
+    "formats": {
+      "json-ld": 15,
+      "microdata": 6
+    },
+    "not_read": 3,
+    "note_codes": {
+      "CLASS_NOT_MAPPED": 381,
+      "CLASS_RELATED_NOT_EQUIVALENT": 23,
+      "CTID_ABSENT": 11,
+      "ITEM_UNTYPED": 8,
+      "LANGUAGE_UNDECLARED": 112,
+      "NESTED_ITEM_DROPPED": 47,
+      "NO_STRUCTURED_DATA": 11,
+      "PROPERTY_AMBIGUOUS": 9,
+      "PROPERTY_NOT_MAPPED": 135,
+      "PROPERTY_RELATED_NOT_EQUIVALENT": 26,
+      "VALUE_NOT_IDENTIFIER": 9
+    },
+    "produced_ctdl_entities": 11,
+    "published_structured_data": 18,
+    "read": 29,
+    "targets": 32,
+    "validation_codes": {
+      "DOMAIN_VIOLATION": 2,
+      "INVERSE_ONE_DIRECTION": 9
+    }
+  }
+}
