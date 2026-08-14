@@ -6,7 +6,12 @@ This reader implements exactly those five. Full RDFa 1.1 Core adds ``about``,
 ``rel``, ``rev``, ``datatype``, and ``inlist``, whose processing rules change
 which subject a statement attaches to; implementing half of them would
 silently produce a different graph than the page means, so none are
-implemented and a page that uses them is told which ones were ignored.
+implemented and an element that mixes them with RDFa Lite attributes is
+reported. Several of those names are also plain HTML, so an element carrying
+one with no RDFa Lite attribute (``rel`` on a stylesheet link, say) is not
+RDFa at all and is not reported. Pointing this reader at thirty real pages is
+what established that: without the qualification the note fired on every page
+in the sample, none of which used RDFa.
 
 Two further limits, stated rather than papered over: a prefix the page does
 not declare is passed through as written (RDFa's initial context is not
@@ -28,7 +33,14 @@ from .microdata import collapse
 from .report import Note
 from .terms import normalize_term
 
-#: RDFa 1.1 Core attributes outside the Lite profile, reported when present.
+#: The five attributes RDFa Lite 1.1 defines.
+LITE = ("vocab", "typeof", "property", "resource", "prefix")
+
+#: RDFa 1.1 Core attributes outside the Lite profile. Reported only where an
+#: element mixes one of these with a Lite attribute, which is the case where
+#: RDFa processing would produce a statement this reader does not. Several of
+#: them are also ordinary HTML: `rel` on a `<link>` or an `<a>` has nothing to
+#: do with RDFa, and reporting it would be noise on almost every page.
 BEYOND_LITE = ("about", "rel", "rev", "datatype", "inlist")
 
 
@@ -100,8 +112,10 @@ class _RdfaReader:
         return None
 
     def _report_beyond_lite(self, element: Element, path: str) -> None:
+        if self._beyond_lite_reported or not any(name in element.attrs for name in LITE):
+            return
         present = [name for name in BEYOND_LITE if name in element.attrs]
-        if not present or self._beyond_lite_reported:
+        if not present:
             return
         self._beyond_lite_reported = True
         self.notes.append(
@@ -111,9 +125,11 @@ class _RdfaReader:
                 subject=path,
                 term=", ".join(present),
                 detail=(
-                    "This page uses RDFa 1.1 Core attributes outside the RDFa Lite "
-                    "profile. They are not interpreted here, so statements that depend "
-                    "on them are missing from the extract."
+                    "This element carries RDFa 1.1 Core attributes alongside RDFa Lite "
+                    "ones. The Core attributes are not interpreted here, so statements "
+                    "that depend on them are missing from the extract. Core attributes "
+                    "on elements with no RDFa Lite attribute are ordinary HTML and are "
+                    "not counted."
                 ),
                 rule=rules.RDFA_LITE_SUBSET,
             )

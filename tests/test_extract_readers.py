@@ -189,6 +189,20 @@ def test_rdfa_lite_reads_vocab_prefix_resource_and_language() -> None:
     assert "RDFA_BEYOND_LITE" in codes(notes)
 
 
+def test_ordinary_html_rel_attributes_are_not_reported_as_rdfa() -> None:
+    # Every page has <link rel="stylesheet"> and <a rel="noopener">. Reporting
+    # those as unread RDFa fired the note on all 29 pages of the first survey
+    # run, none of which used RDFa at all.
+    page = """
+    <html><head><link rel="stylesheet" href="/a.css"></head>
+    <body><a rel="noopener" href="/x">x</a>
+    <div vocab="https://schema.org/" typeof="Organization">
+      <span property="name">Example</span></div></body></html>
+    """
+    items, notes = read_rdfa(parse_html(page), SOURCE, load_schema())
+    assert items and "RDFA_BEYOND_LITE" not in codes(notes)
+
+
 def test_rdfa_bare_term_without_vocab_is_left_unread() -> None:
     root = parse_html('<div typeof="Organization"><span property="name">X</span></div>')
     items, notes = read_rdfa(root, SOURCE, load_schema())
