@@ -39,8 +39,8 @@ CI:
 | Tests + coverage | `make test` | pytest with branch coverage >= 90% |
 | Dependency audit | `make audit` | pip-audit against the locked environment |
 
-Two invariants are called out separately because they protect the tool's
-core promise:
+Four invariants are called out separately because they protect the tool's
+core promises:
 
 - **Cited rules only.** Every check traces to a vendored schema declaration
   or a quoted prose rule in `src/ctdl_validate/rules.py` with its source URL
@@ -50,10 +50,28 @@ core promise:
 - **Determinism.** `tests/test_determinism.py` asserts byte-identical output
   across runs and across interpreter processes. No timestamps, no sampling,
   no network at validation time.
+- **Validation stays offline.** Nothing under `src/ctdl_validate/checks/` may
+  import from `src/ctdl_validate/extract/`, and
+  `tests/test_offline_guarantee.py` removes `socket` before running the
+  validator. A change that makes validation touch the network is a change to
+  what this tool claims to be, and needs an ADR before it needs a review.
+- **Extraction never invents.** A term becomes a CTDL term only where the
+  vendored schema encoding declares an equivalence for it. No mapping table,
+  no heuristic, no model, no generated CTID. Where the declarations do not
+  answer, the value is dropped with a cited note saying so.
 
 New checks should come with a break-the-gate case in
 `tests/test_break_the_gate.py`: corrupt a proven-clean fixture in exactly the
-way the check exists to catch, and assert it is caught.
+way the check exists to catch, and assert it is caught. New extraction
+behavior should come with a case in `tests/test_extract_break_the_gate.py`,
+which asks the opposite question: give it a page that tempts a guess, and
+assert no guess was made.
+
+Changes to `src/ctdl_validate/extract/fetch.py` deserve extra care: it is the
+only module in the project that opens a socket, its posture is documented in
+its own docstring and in the README, and `tests/test_extract_fetch.py` proves
+each promise against a server on localhost. Adding a way around the robots.txt
+check will not be merged.
 
 ## Commit style: Conventional Commits
 

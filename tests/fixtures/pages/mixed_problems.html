@@ -1,0 +1,29 @@
+<!doctype html>
+<!--
+  Everything that can go wrong in one page: a malformed JSON-LD block, a block
+  with a context this tool does not resolve, a literal where CTDL wants an
+  identifier, and an item that uses itemref.
+-->
+<html lang="en">
+<head>
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "Course", "name": }
+</script>
+<script type="application/ld+json">
+{"@context": "https://example.org/private-context.jsonld", "@type": "Course", "name": "Hidden"}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "Blueprint Reading",
+  "provider": "Example Community College",
+  "isPartOf": {"@type": "Course", "name": "Welding Fundamentals"}
+}
+</script>
+</head>
+<body>
+<p id="shared" itemprop="name">Shared property</p>
+<div itemscope itemtype="https://schema.org/Organization" itemref="shared"></div>
+</body>
+</html>

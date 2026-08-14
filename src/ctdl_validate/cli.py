@@ -1,7 +1,17 @@
 """Command line interface.
 
-Exit codes: 0 = no ERROR findings; 1 = at least one ERROR finding;
-2 = the input could not be read or parsed at all.
+Two commands with two different postures, and the grammar keeps them apart:
+
+- ``ctdl-validate <file.json>`` validates. Offline, no model calls, same input
+  and same output byte for byte. This is the default and only shape the tool
+  had before ``extract`` existed, and it is unchanged.
+- ``ctdl-validate extract <url>`` fetches one page and reads its structured
+  markup. It is the only command that opens a network connection, and it
+  documents that posture in :mod:`ctdl_validate.extract.fetch`.
+
+Validation exit codes: 0 = no ERROR findings; 1 = at least one ERROR finding;
+2 = the input could not be read or parsed at all. The ``extract`` subcommand
+documents its own, in :mod:`ctdl_validate.extract.command`.
 """
 
 from __future__ import annotations
@@ -13,44 +23,30 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from . import __version__
-from .findings import Finding, Severity
+from .extract.command import main as extract_main
+from .findings import Severity, render_findings_json, render_findings_text
 from .graph import DocumentError
 from .validator import validate_document
 
-_SEVERITY_ORDER = (Severity.ERROR, Severity.WARNING, Severity.INFO, Severity.UNVERIFIABLE)
-
-
-def _counts(findings: list[Finding]) -> dict[str, int]:
-    return {
-        severity.value: sum(1 for f in findings if f.severity is severity)
-        for severity in _SEVERITY_ORDER
-    }
-
-
-def _render_json(findings: list[Finding]) -> str:
-    payload = {
-        "tool": {"name": "ctdl-validate", "version": __version__},
-        "findings": [f.to_dict() for f in findings],
-        "summary": _counts(findings),
-    }
-    return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False)
-
-
-def _render_text(findings: list[Finding]) -> str:
-    lines = [f.render_text() + "\n" for f in findings]
-    counts = _counts(findings)
-    summary = ", ".join(f"{counts[s.value]} {s.value}" for s in _SEVERITY_ORDER)
-    lines.append(f"{len(findings)} finding(s): {summary}")
-    return "\n".join(lines)
+EXTRACT_COMMAND = "extract"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if args and args[0] == EXTRACT_COMMAND:
+        return extract_main(args[1:])
+    return validate_main(args)
+
+
+def validate_main(argv: Sequence[str]) -> int:
     parser = argparse.ArgumentParser(
         prog="ctdl-validate",
         description=(
             "Deterministic structural validation of CTDL JSON-LD payloads before "
             "publication. Reads an object with @graph, a single entity, or an array "
-            "of entities."
+            "of entities. No network calls, no model calls. Run "
+            "`ctdl-validate extract --help` for the extraction subcommand, which is "
+            "the only part of this tool that fetches anything."
         ),
     )
     parser.add_argument("file", help="path to a CTDL JSON-LD document")
@@ -79,7 +75,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"ctdl-validate: {args.file}: {exc}", file=sys.stderr)
         return 2
 
-    print(_render_json(findings) if args.format == "json" else _render_text(findings))
+    print(
+        render_findings_json(findings, __version__)
+        if args.format == "json"
+        else render_findings_text(findings)
+    )
     return 1 if any(f.severity is Severity.ERROR for f in findings) else 0
 
 

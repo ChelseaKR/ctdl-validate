@@ -124,6 +124,19 @@ def _read_vendor(relpath: str) -> Any:
         return json.load(handle)
 
 
+def vendor_graph(relpath: str) -> list[Any]:
+    """The ``@graph`` array of a vendored schema encoding, unmodified.
+
+    Exposed so the extraction crosswalk can read the same snapshot the
+    validator's rules come from, rather than carrying a hand-written copy of
+    Credential Engine's vocabulary alignments.
+    """
+    graph = _read_vendor(relpath)["@graph"]
+    if not isinstance(graph, list):  # pragma: no cover - vendored files are hash-checked
+        raise ValueError(f"vendored {relpath} has no @graph array")
+    return graph
+
+
 def _as_list(value: Any) -> list[Any]:
     if value is None:
         return []
@@ -165,8 +178,7 @@ def load_schema() -> SchemaIndex:
     raw_props: dict[str, dict[str, Any]] = {}
 
     for relpath in ("ctdl/schema.json", "ctdlasn/schema.json"):
-        graph = _read_vendor(relpath)["@graph"]
-        for entry in graph:
+        for entry in vendor_graph(relpath):
             _index_schema_entry(entry, classes, raw_props)
 
     coercions: dict[str, dict[str, Any]] = {}
@@ -211,5 +223,6 @@ __all__ = [
     "is_checked_term",
     "load_schema",
     "rules",
+    "vendor_graph",
     "vocab_prefix",
 ]

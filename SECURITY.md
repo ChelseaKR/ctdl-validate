@@ -6,6 +6,17 @@ network calls at validation time and has zero runtime dependencies. Security
 here is mostly integrity: the tool must not misreport what a payload
 contains, and crafted input must not escape the documented failure modes.
 
+The `extract` subcommand is the one part that opens a network connection. It
+fetches `robots.txt` and then at most the one page it was given, over http or
+https only, with an identifying User-Agent, a byte cap, a timeout, a per-host
+rate limit, and at most five redirects with robots.txt re-checked at every
+hop. It runs untrusted HTML through a parser that builds a tree and reads
+attributes; it executes nothing, evaluates nothing, and resolves no external
+entity, context, or schema over the network. The URL it fetches is the
+operator's own argument: treat it as you would any command that takes a URL,
+and note that a redirect chain can move the fetch to another host, which is
+why robots.txt is re-checked rather than assumed.
+
 ## Supported versions
 
 This is a pre-1.0 tool; there is no tagged release yet. Security fixes land
@@ -42,6 +53,17 @@ supply-chain compromise), the following are first-class security bugs here:
 - Any way to alter the vendored schema snapshots that
   `tests/test_vendor_integrity.py` and the recorded SHA-256 hashes in
   `src/ctdl_validate/vendor/SOURCES.md` would not catch.
+- Any path by which `extract` fetches something a `robots.txt` disallows,
+  fetches more than the one page it was asked for, or reaches a scheme other
+  than http and https. There is deliberately no flag to disable the robots
+  check; a way to bypass it is a vulnerability, not a feature request.
+- Any path by which `extract` emits a CTDL assertion the page did not make: a
+  generated CTID, a class chosen without a declared equivalence, an identifier
+  minted to hold a literal. A fabricated credential is the same class of bug
+  as a false clean report, for the same reason: the operator cannot see it by
+  looking at the output.
+- Crafted HTML that makes the extractor hang, recurse without bound, or
+  allocate without bound.
 
 ## Our commitments
 

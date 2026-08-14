@@ -172,3 +172,263 @@ def unknown_term_rule(kind: str, vocab_prefix: str) -> Rule:
         url=url,
         retrieved=RETRIEVED,
     )
+
+
+# --------------------------------------------------------------------------
+# Extraction rules
+#
+# The `extract` subcommand is the one place this tool touches the network, and
+# the one place it reads a vocabulary that is not CTDL's. Both need the same
+# citation discipline as validation: every note it emits names the published
+# rule it rests on. The sources below were retrieved on the date in
+# RETRIEVED_EXTRACTION; the CTDL-side rules reuse the vendored snapshot and its
+# earlier retrieval date, because the crosswalk is read out of that snapshot,
+# not written by hand.
+# --------------------------------------------------------------------------
+
+RETRIEVED_EXTRACTION = "2026-08-14"
+
+ROBOTS_RFC_URL = "https://www.rfc-editor.org/rfc/rfc9309"
+MICRODATA_URL = "https://html.spec.whatwg.org/multipage/microdata.html"
+RDFA_LITE_URL = "https://www.w3.org/TR/rdfa-lite/"
+SCHEMA_ORG_CONTEXT_URL = "https://schema.org/docs/jsonldcontext.json"
+
+EXTRACTION_POLICY = Rule(
+    citation=(
+        "ctdl-validate policy: extraction reads structured markup a page already "
+        "publishes and maps a term onto CTDL only where Credential Engine's own "
+        "schema encoding declares an equivalence for it. Nothing is inferred from "
+        "prose, from layout, or from a model. A term with no declared equivalence "
+        "is reported and dropped, never guessed at and never dropped silently."
+    ),
+    url="README.md (Extraction)",
+    retrieved="-",
+)
+
+EXTRACTION_NETWORK_POSTURE = Rule(
+    citation=(
+        "ctdl-validate policy: `extract` is the only command that opens a network "
+        "connection. It fetches robots.txt and then at most the one page it was "
+        "given, over http or https only, with an identifying User-Agent, a byte "
+        "cap, a timeout, and a minimum interval between requests to a host. "
+        "Validation remains offline: same input, same output, byte for byte."
+    ),
+    url="README.md (Extraction)",
+    retrieved="-",
+)
+
+ROBOTS_RULES_BINDING = Rule(
+    citation=(
+        "RFC 9309 (Robots Exclusion Protocol), section 2.3.1.1 Successful Access: "
+        '"If the crawler successfully downloads the robots.txt file, the crawler '
+        'MUST follow the parseable rules."'
+    ),
+    url=ROBOTS_RFC_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+ROBOTS_UNAVAILABLE = Rule(
+    citation=(
+        'RFC 9309 section 2.3.1.3 "Unavailable" Status: "If a server status code '
+        "indicates that the robots.txt file is unavailable to the crawler, then the "
+        'crawler MAY access any resources on the server." Status codes in the '
+        "400-499 range are given as the HTTP example."
+    ),
+    url=ROBOTS_RFC_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+ROBOTS_UNREACHABLE = Rule(
+    citation=(
+        'RFC 9309 section 2.3.1.4 "Unreachable" Status: "If the robots.txt file is '
+        "unreachable due to server or network errors, this means the robots.txt file "
+        'is undefined and the crawler MUST assume complete disallow." Server errors '
+        "are identified by status codes in the 500-599 range."
+    ),
+    url=ROBOTS_RFC_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+ROBOTS_REDIRECT_LIMIT = Rule(
+    citation=(
+        'RFC 9309 section 2.3.1.2 Redirects: crawlers "SHOULD follow at least five '
+        'consecutive redirects, even across authorities"; beyond five, a crawler MAY '
+        "assume the robots.txt file is unavailable. This tool applies the same limit "
+        "of five to the page fetch, and re-checks robots.txt at every hop that "
+        "changes authority."
+    ),
+    url=ROBOTS_RFC_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+ROBOTS_USER_AGENT = Rule(
+    citation=(
+        'RFC 9309 section 2.2.1 The User-Agent Line: the product token "SHOULD be a '
+        "substring of the identification string that the crawler sends to the "
+        'service", and "The identification string SHOULD describe the purpose of the '
+        'crawler." This tool sends the product token ctdl-validate inside a '
+        "User-Agent that links to its source repository."
+    ),
+    url=ROBOTS_RFC_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+ROBOTS_CRAWL_DELAY = Rule(
+    citation=(
+        "RFC 9309 does not define a Crawl-delay directive; it is a widely deployed "
+        "non-standard extension that Python's urllib.robotparser reads. Where a "
+        "robots.txt declares one, this tool takes the larger of that value and its "
+        "own default interval, so honoring the site's request can only slow it down."
+    ),
+    url=ROBOTS_RFC_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+MICRODATA_NAMES = Rule(
+    citation=(
+        "HTML Living Standard, section 5.2.3 Names: the itemprop attribute. For a "
+        'typed item each token is "a defined property name allowed in this situation '
+        "according to the specification that defines the relevant types for the "
+        'item", or an absolute URL. On an untyped item a bare name is "used as a '
+        'proprietary item property name ... not defined in a public specification", '
+        "so it has no vocabulary this tool could resolve it against."
+    ),
+    url=MICRODATA_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+MICRODATA_VALUES = Rule(
+    citation=(
+        "HTML Living Standard, section 5.2.4 Values: the value of an itemprop "
+        "element is the item it creates when it also carries itemscope; the content "
+        "attribute for meta; the src URL for audio, embed, iframe, img, source, "
+        "track, and video; the href URL for a, area, and link; the data URL for "
+        "object; the value attribute for data and meter; the datetime value for "
+        "time; and otherwise the element's descendant text content."
+    ),
+    url=MICRODATA_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+MICRODATA_ITEMREF = Rule(
+    citation=(
+        "HTML Living Standard, section 5.2.5 Associating names with items: itemref "
+        "lets an item claim properties from elements elsewhere in the document. This "
+        "tool does not follow itemref, so properties reached only that way are not "
+        "read. Reported rather than silently missing."
+    ),
+    url=MICRODATA_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+RDFA_LITE_SUBSET = Rule(
+    citation=(
+        "RDFa Lite 1.1 (Second Edition), W3C Recommendation 17 March 2015, defines "
+        'the five attributes vocab, typeof, property, resource, and prefix as "a '
+        'minimal subset of RDFa". This tool reads exactly that subset. Attributes '
+        "from RDFa 1.1 Core beyond it (about, rel, rev, datatype, inlist) are not "
+        "interpreted, and a page using them is told so."
+    ),
+    url=RDFA_LITE_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+SCHEMA_ORG_VOCAB = Rule(
+    citation=(
+        'The schema.org JSON-LD context declares {"@vocab": "http://schema.org/"}, so '
+        "a bare term under that context is the schema.org term of the same name. "
+        "schema.org serves its vocabulary under both http and https IRIs and the "
+        'CTDL context declares the schema prefix as "https://schema.org/"; this tool '
+        "normalizes both forms to that prefix so the two published files agree."
+    ),
+    url=SCHEMA_ORG_CONTEXT_URL,
+    retrieved=RETRIEVED_EXTRACTION,
+)
+
+JSONLD_UNRESOLVED_CONTEXT = Rule(
+    citation=(
+        "ctdl-validate policy: bare terms in a JSON-LD block mean whatever the "
+        "block's active context says they mean. Where the declared @context is not "
+        "one this tool can resolve (schema.org, CTDL, CTDL-ASN, or an inline @vocab "
+        "or prefix map), its bare terms are left unread; assuming a vocabulary would "
+        "be inventing the meaning of the data."
+    ),
+    url="README.md (Extraction)",
+    retrieved="-",
+)
+
+CTID_NOT_INVENTED = Rule(
+    citation=(
+        'About the CTID: a CTID is "a unique identifier for the resource" in the '
+        "Credential Registry, and a resource's CTID matches the CTID portion of its "
+        "Registry URI. An extract taken from a web page has no CTID unless the page "
+        "published one. This tool never generates one: a minted identifier would be "
+        "indistinguishable from a real one downstream."
+    ),
+    url=ABOUT_CTID_URL,
+    retrieved=RETRIEVED,
+)
+
+
+def equivalence_rule(ctdl_term: str, foreign_term: str, predicate: str) -> Rule:
+    return Rule(
+        citation=(
+            f"The schema encoding declares {ctdl_term} {predicate} {foreign_term} "
+            f"(retrieved {RETRIEVED}). The mapping is Credential Engine's, read out of "
+            "the vendored snapshot, not this tool's judgment."
+        ),
+        url=_vocab_schema_url(ctdl_term),
+        retrieved=RETRIEVED,
+    )
+
+
+def no_equivalence_rule(foreign_term: str, predicate: str) -> Rule:
+    return Rule(
+        citation=(
+            f"No CTDL or CTDL-ASN term declares {predicate} {foreign_term} in the "
+            f"vendored schema encodings (retrieved {RETRIEVED}). Choosing a CTDL term "
+            "for it would be this tool's judgment rather than a published "
+            "equivalence, so nothing is asserted."
+        ),
+        url=CTDL_SCHEMA_URL,
+        retrieved=RETRIEVED,
+    )
+
+
+def ambiguous_equivalence_rule(foreign_term: str, candidates: tuple[str, ...]) -> Rule:
+    listed = ", ".join(candidates)
+    return Rule(
+        citation=(
+            f"More than one CTDL term declares an equivalence to {foreign_term} "
+            f"({listed}), and the subject's class does not appear in exactly one of "
+            "their schema:domainIncludes declarations. Picking one would be a guess."
+        ),
+        url=CTDL_SCHEMA_URL,
+        retrieved=RETRIEVED,
+    )
+
+
+def subclass_only_rule(ctdl_term: str, foreign_term: str, predicate: str) -> Rule:
+    return Rule(
+        citation=(
+            f"The schema encoding declares {ctdl_term} {predicate} {foreign_term}. That "
+            f"relation runs from CTDL to the other vocabulary: every {ctdl_term} is a "
+            f"{foreign_term}, but not every {foreign_term} is a {ctdl_term}. It does not "
+            "license the reverse mapping, so the item is reported, not converted."
+        ),
+        url=_vocab_schema_url(ctdl_term),
+        retrieved=RETRIEVED,
+    )
+
+
+def language_map_rule(prop: str) -> Rule:
+    return Rule(
+        citation=(
+            f'The CTDL JSON-LD context declares {prop} with {{"@container": "@language"}}: '
+            "its values are language maps keyed by language tag. The page declared no "
+            "language for this value, and a language tag cannot be inferred from the "
+            "text itself, so the literal is emitted untagged for a human to complete."
+        ),
+        url=_vocab_context_url(prop),
+        retrieved=RETRIEVED,
+    )

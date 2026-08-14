@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Synthetic RDFa page: Lite attributes plus one Core attribute to report. -->
+<html lang="en">
+<body prefix="sdo: https://schema.org/">
+<div vocab="https://schema.org/" typeof="Organization" resource="#college">
+  <h1 property="name">Example Community College</h1>
+  <p property="description" lang="fr">Un college communautaire.</p>
+  <a property="subjectWebpage" href="/about">About</a>
+</div>
+<div typeof="sdo:Organization" resource="#second">
+  <span property="sdo:name">Example Extension Campus</span>
+</div>
+<div vocab="https://schema.org/" typeof="EducationalOccupationalProgram" resource="#program">
+  <span property="name">Welding Technology Certificate</span>
+  <span property="timeToComplete">P6M</span>
+</div>
+<div vocab="https://schema.org/" about="#legacy" typeof="Organization">
+  <span property="name">Uses an RDFa Core attribute</span>
+</div>
+</body>
+</html>
