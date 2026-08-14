@@ -9,9 +9,16 @@ class pairings.
 No network calls at validation time. No model calls, ever. Same input, same
 output, byte for byte. Every finding cites the published rule it came from.
 
+There is a second command, `ctdl-validate extract <url>`, which reads the
+structured markup a page already publishes and emits CTDL-shaped JSON-LD to
+validate. It is the only part of this tool that opens a network connection,
+and it still makes no model calls: see [Extraction](#extraction) for the
+boundary, stated precisely.
+
 **Status:** Beta. Version `0.1.0`, released 2026-08-08 from a signed tag, with
 the sdist and wheel attached to the GitHub Release. The rule set, the CLI, and
-its text and JSON reporters are complete and covered by tests. Nothing here has
+its text and JSON reporters are complete and covered by tests. The `extract`
+subcommand is newer than the release and is on `main` only. Nothing here has
 been published to the Credential Registry, and this project is not affiliated
 with or endorsed by Credential Engine.
 
@@ -68,6 +75,152 @@ ctdl-validate <file.json> --format json
 Input can be a JSON-LD object with `@graph`, a single entity object, or an
 array of entities.
 
+## Extraction
+
+`ctdl-validate extract <url>` reads the structured markup a page already
+publishes and emits CTDL-shaped JSON-LD. It exists because the thing that
+gets published to the Registry usually starts life on a provider's website,
+and "check what you are about to publish" is only half a workflow if the
+other half is undocumented.
+
+```
+$ ctdl-validate extract https://example.edu/courses/weld-101 --format jsonld > extract.json
+$ ctdl-validate extract.json
+```
+
+or in one run:
+
+```
+$ ctdl-validate extract https://example.edu/courses/weld-101 --validate
+```
+
+`--format text` (the default) prints the extraction report; `--format json`
+puts the report and the document in one envelope; `--format jsonld` prints
+the document alone on stdout and the report on stderr, so piping the document
+somewhere never silently discards what was dropped on the way. `--from-file
+PATH` reads a saved copy of the page instead of fetching it, which makes a run
+reproducible offline.
+
+Exit codes: 0 when at least one CTDL entity came out, 1 when the page was read
+and produced none, 2 when nothing could be read at all. With `--validate` the
+exit code is the worse of the extraction's and the validation's.
+
+### The boundary, precisely
+
+The promise at the top of this README is about the validator, and it is
+unchanged. Restating it against the new command:
+
+| | `ctdl-validate <file.json>` | `ctdl-validate extract <url>` |
+|---|---|---|
+| Network | None. `tests/test_offline_guarantee.py` removes `socket` and runs it anyway. | Fetches `robots.txt`, then at most one page. Nothing else. |
+| Model calls | None. | None. There is no model anywhere in this repository. |
+| Determinism | Same input, same output, byte for byte. | Same *page bytes*, same output, byte for byte. The network is the only nondeterminism and it lives in one module, `extract/fetch.py`. |
+| Inference | Applies published rules; reports what it cannot see as UNVERIFIABLE. | Maps a term only where Credential Engine's schema encoding declares an equivalence. Never reads a credential out of prose. |
+
+### The network posture
+
+Set out in full in `src/ctdl_validate/extract/fetch.py`, and enforced by
+`tests/test_extract_fetch.py` against a server on localhost:
+
+- **robots.txt is fetched first and obeyed.** A `Disallow` matching this
+  tool's product token `ctdl-validate` is a hard stop with exit code 2. There
+  is no flag to override it, because a flag to ignore robots.txt is the whole
+  of the harm. ([RFC 9309](https://www.rfc-editor.org/rfc/rfc9309) 2.3.1.1)
+- **An unreachable robots.txt stops the fetch too** (2.3.1.4: a crawler MUST
+  assume complete disallow). A 4xx means no robots.txt exists and the fetch
+  may proceed (2.3.1.3).
+- **The User-Agent identifies the tool** and links to this repository, with
+  the product token as a substring (2.2.1). `--contact` appends a contact
+  detail; nothing replaces it with a browser's.
+- **Redirects are followed manually, at most five, and robots.txt is checked
+  again at every hop**, so a redirect cannot carry the fetch onto a host that
+  disallows it.
+- **One page per invocation**, http or https only, with a byte cap
+  (`--max-bytes`), a timeout (`--timeout`), and a minimum interval between
+  requests to a host (`--min-interval`) that a site's `Crawl-delay` can
+  lengthen but never shorten.
+- **Failures are loud.** Every stop is an error and a nonzero exit, never a
+  partial page or an empty extract standing in for one.
+
+### Where the mapping comes from
+
+There is no mapping table in this repository. Credential Engine's schema
+encodings already declare, in machine-readable form, which CTDL terms are
+equivalent to terms in other vocabularies, and extraction reads those
+declarations out of the same vendored, hash-checked snapshot the validator's
+rules come from. In the snapshot retrieved 2026-08-06 that is 24
+`owl:equivalentClass` and 118 `owl:equivalentProperty` declarations, spanning
+schema.org, ASN, Dublin Core, Open Badges, SKOS, LRMI, CASE and Wikidata; of
+those, 6 classes and 56 properties are schema.org's.
+
+Direction is enforced. `ceterms:LearningProgram rdfs:subClassOf
+schema:EducationalOccupationalProgram` says every LearningProgram is an
+EducationalOccupationalProgram, not the reverse, so a page publishing
+`EducationalOccupationalProgram` gets an INFO note naming the relation and no
+CTDL entity. Where two CTDL terms claim one foreign term, the subject's class
+must appear in exactly one of their `schema:domainIncludes` declarations;
+otherwise the value is dropped as ambiguous.
+
+### What it can and cannot extract
+
+**Can:**
+
+- JSON-LD in `<script type="application/ld+json">`, including `@graph`,
+  nested objects, `@value`/`@language` objects, and CTDL language maps.
+- Microdata, following the value rules in the [HTML Living
+  Standard](https://html.spec.whatwg.org/multipage/microdata.html) section
+  5.2.4 case for case.
+- [RDFa Lite 1.1](https://www.w3.org/TR/rdfa-lite/): `vocab`, `typeof`,
+  `property`, `resource`, `prefix`.
+- Pages that already publish CTDL, which pass through unchanged.
+
+**Cannot, by construction:**
+
+- **Read a credential out of prose.** A page with no structured markup yields
+  nothing, and says so. This is the price of the guarantee below, and on the
+  open web it is the common case.
+- **Invent a CTID.** No entity in an extract carries `ceterms:ctid` unless the
+  page published one. A minted identifier is indistinguishable from a real one
+  downstream, and an extract is a draft for a human to finish.
+- **Map a class schema.org declares a subclass of a mapped class.** CTDL
+  declares an equivalence for `schema:Organization`, not for
+  `schema:CollegeOrUniversity`. Resolving that would need schema.org's own
+  class hierarchy, which this tool does not load; it is the single largest
+  coverage limit, and it is reported per item rather than guessed.
+- **Mint an identifier for a literal.** Where a CTDL property takes an IRI and
+  the page published a name, the value is dropped with a note.
+- **Infer a language tag.** CTDL declares 80 properties as language maps; a
+  value is emitted as a map only where the markup declared a language (a
+  JSON-LD `@language`, or the nearest HTML `lang`).
+- **Follow `itemref`,** or interpret RDFa 1.1 Core attributes (`about`,
+  `rel`, `rev`, `datatype`, `inlist`). Both are reported when present.
+- **Resolve bare terms under a `@context` it does not recognize.** Recognized:
+  schema.org, the CTDL and CTDL-ASN contexts, or an inline `@vocab`/prefix
+  map. Anything else leaves the block's bare keys unread rather than assuming
+  a vocabulary.
+- **Parse HTML the way a browser does.** The tree builder handles the common
+  implied end tags and no more; a page that leans on the full HTML5 tree
+  construction algorithm may nest items differently here. Nesting deeper than
+  200 elements is refused outright rather than read partially.
+
+The reason for every one of these is the same, and it is the reason there is
+no model in this tool: a language model would raise coverage and would also,
+sometimes, produce a well-formed credential that the page never claimed. A
+deterministic extractor limited to declared equivalences can only ever under-
+report. Under-reporting is visible in the notes; a fabricated credential in
+the Registry is not.
+
+### An extract can be faithful and still invalid
+
+Which is the whole argument for running the validator on it. A page publishing
+`schema:Organization` with a `schema:address` pointing at a
+`schema:PostalAddress` maps cleanly, term by term, through declared
+equivalences, and the result fails validation: `ceterms:address` declares its
+range as `ceterms:Place`, not `ceterms:PostalAddress`. Nothing went wrong in
+the extraction; the two vocabularies simply do not compose the way a
+term-by-term crosswalk implies. That gap is exactly what a publisher needs to
+see before publishing, and it is what `extract --validate` shows.
+
 ## What it checks (v0)
 
 | # | Check | Codes | Rule source |
@@ -110,11 +263,23 @@ identifier, breaks an inverse pair, retypes the framework, corrupts a
 Registry URI), and asserts each corruption is caught. A gate that has not
 been deliberately broken is a gate you are trusting on faith.
 
+The extractor's failure mode is the opposite one, so its suite asks the
+opposite question. `tests/test_extract_break_the_gate.py` feeds it pages that
+tempt a tool into a guess (a type with only a subclass relation to CTDL, a
+name where an identifier belongs, untagged text under a language-map property,
+prose with no markup at all) and asserts that no guess was made. One case
+removes an equivalence from the crosswalk and asserts the mapping disappears
+rather than falling back on something.
+
 ### Determinism
 
 `tests/test_determinism.py` asserts byte-identical output for repeated runs,
 including across separate interpreter processes. There is nothing to seed:
 no sampling, no timestamps, no network.
+
+The same test covers extraction from a saved page, which is the honest form of
+the claim once a command fetches: the extract report carries no timestamp and
+no duration, so the same page bytes always produce the same bytes out.
 
 ## Where the rules come from
 
@@ -143,8 +308,13 @@ Not covered in v0, deliberately:
 - Literal datatype validation beyond the CTID (dates, durations, language
   map shapes).
 - Vocabularies beyond CTDL and CTDL-ASN (QData and other profiles).
-- Fetching anything. References outside the payload are UNVERIFIABLE by
-  design, not a network call away from being verified.
+- Fetching anything *during validation*. References outside the payload are
+  UNVERIFIABLE by design, not a network call away from being verified. The
+  `extract` subcommand fetches a page; it never resolves a reference for the
+  validator, and the validator never calls it.
+
+Not covered by `extract`, deliberately: everything in [What it can and cannot
+extract](#what-it-can-and-cannot-extract).
 
 Terms in `ceterms:`/`ceasn:` namespaces that the vendored snapshot does not
 declare produce WARNINGs, not ERRORs, because the snapshot can lag a schema
@@ -206,10 +376,10 @@ apply; the enforcement ledger with targets and owners is
 | Code Quality | Applies | Floors in `pyproject.toml`: Python >= 3.12, ruff >= 0.15, mypy >= 1.18 (strict), complexity <= 10, branch coverage >= 90%; locked with `uv.lock`; reproduced locally by `make verify`. |
 | Security & Supply-Chain | Applies | [SECURITY.md](SECURITY.md); SHA-pinned Actions; Semgrep and full-history TruffleHog in CI; pip-audit in `make verify`; Dependabot; gitleaks in pre-commit. |
 | CI/CD | Applies | `ci.yml` runs the same `make verify` gate as local development; trusted-main release workflow (signed tag, re-verified at the tagged commit) wired ahead of the first tag. |
-| Observability | N/A (offline single-shot CLI; no service, no telemetry; the deterministic report on stdout is the entire observable surface) | Exit-code contract and JSON output are tested in `tests/test_cli.py`. |
+| Observability | N/A (single-shot CLI; no service, no telemetry, nothing reported anywhere; the report on stdout is the entire observable surface, and `extract` puts its whole transport story in that report) | Exit-code contract and JSON output are tested in `tests/test_cli.py` and `tests/test_extract_cli.py`. |
 | Accessibility | N/A (no graphical or web surface; plain-text terminal output plus `--format json` for tooling) | Revisit if any web or GUI surface is added. |
 | Internationalization | N/A (findings quote English-language spec prose verbatim; see [docs/I18N.md](docs/I18N.md) for the reason and the flip-to-applies trigger) | Multilingual payload *data* validates identically; the declaration covers operator-facing strings only. |
-| AI Evaluation | N/A (deterministic rule engine; no model, prompt, retrieval, or LLM call anywhere; AI-assisted authoring is disclosed under [Disclosure](#disclosure)) | Zero runtime dependencies makes the no-model claim mechanically checkable. |
+| AI Evaluation | N/A (deterministic rule engine and a deterministic extractor; no model, prompt, retrieval, embedding, or LLM call anywhere, including in `extract`; AI-assisted authoring is disclosed under [Disclosure](#disclosure)) | Zero runtime dependencies makes the no-model claim mechanically checkable; the extractor's refusals are tested in `tests/test_extract_break_the_gate.py`. |
 | Documentation | Applies | This README, [CHANGELOG.md](CHANGELOG.md), ADRs in [docs/adr/](docs/adr/), [CITATION.cff](CITATION.cff), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md). |
 | Quality & Metrics | Applies | [docs/ROADMAP.md](docs/ROADMAP.md) names every gate as AUTO, REVIEW, or a reasoned exception; nothing is silently skipped. |
 | Release & Versioning | Applies | SemVer; `CHANGELOG.md` kept current; trusted-main signed-tag release workflow. No release has been made yet. |

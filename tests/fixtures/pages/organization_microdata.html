@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- Synthetic microdata page exercising the value rules in HTML 5.2.4. -->
+<html lang="en">
+<body>
+<div itemscope itemtype="https://schema.org/Organization">
+  <span itemprop="name">Example Community College</span>
+  <meta itemprop="foundingDate" content="1965-09-01">
+  <a itemprop="subjectWebpage" href="/about">About us</a>
+  <span itemprop="email">   admissions@example.edu   </span>
+  <span itemprop="legalName"></span>
+  <div itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">
+    <span itemprop="streetAddress">1 College Way</span>
+    <span itemprop="addressLocality" lang="es">Villa Ejemplo</span>
+  </div>
+</div>
+<div itemscope>
+  <span itemprop="nickname">no itemtype, so no vocabulary</span>
+</div>
+</body>
+</html>

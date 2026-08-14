@@ -14,6 +14,7 @@ Only ERROR findings make the CLI exit nonzero.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -79,3 +80,30 @@ class Finding:
 def finalize(findings: list[Finding]) -> list[Finding]:
     """Deduplicate and order findings deterministically."""
     return sorted(set(findings), key=Finding.sort_key)
+
+
+#: The order severities are counted and printed in, everywhere.
+SEVERITY_ORDER = (Severity.ERROR, Severity.WARNING, Severity.INFO, Severity.UNVERIFIABLE)
+
+
+def counts(findings: list[Finding]) -> dict[str, int]:
+    return {
+        severity.value: sum(1 for f in findings if f.severity is severity)
+        for severity in SEVERITY_ORDER
+    }
+
+
+def render_findings_json(findings: list[Finding], version: str) -> str:
+    payload = {
+        "tool": {"name": "ctdl-validate", "version": version},
+        "findings": [f.to_dict() for f in findings],
+        "summary": counts(findings),
+    }
+    return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False)
+
+
+def render_findings_text(findings: list[Finding]) -> str:
+    lines = [f.render_text() + "\n" for f in findings]
+    summary = ", ".join(f"{counts(findings)[s.value]} {s.value}" for s in SEVERITY_ORDER)
+    lines.append(f"{len(findings)} finding(s): {summary}")
+    return "\n".join(lines)

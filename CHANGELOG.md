@@ -10,6 +10,26 @@ and this project adheres to
 
 ### Added
 
+- `ctdl-validate extract <url>`: deterministic extraction of CTDL-shaped
+  JSON-LD from the structured markup a page already publishes (JSON-LD,
+  microdata, RDFa Lite), with `--validate` running the full extract-then-check
+  pipeline in one command and `--from-file` reproducing a run offline. No
+  model calls anywhere; a term is mapped onto CTDL only where Credential
+  Engine's vendored schema encoding declares an equivalence for it, and every
+  note cites the declaration it rests on. See
+  `docs/adr/0003-extraction-as-a-separate-command.md`.
+- Network posture for the new subcommand, in one module and enforced by tests
+  against a server on localhost: robots.txt fetched first and obeyed with no
+  override flag, an unreachable robots.txt treated as a complete disallow per
+  RFC 9309 2.3.1.4, an identifying User-Agent, at most five redirects with
+  robots re-checked at every hop, byte cap, timeout, and per-host rate limit.
+- `tests/test_offline_guarantee.py`: the validator's no-network promise is now
+  proven by removing `socket` and running it anyway, rather than asserted in
+  prose.
+- `tests/test_extract_break_the_gate.py`: the extractor's own gate suite,
+  asking the opposite question from the validator's, namely that no fact was
+  invented.
+
 - Portfolio standards conformance kit: CI running the same `make verify` gate
   as local development, Semgrep and full-history TruffleHog scanning
   workflows, Dependabot updates, a trusted-main release workflow wired ahead
@@ -30,6 +50,9 @@ and this project adheres to
   this.
 - `load_schema` internals split into a helper to satisfy the complexity gate;
   no behavior change.
+- Finding rendering moved from `cli.py` to `findings.py` as
+  `render_findings_text` and `render_findings_json`, so both commands share
+  one reporter. Output bytes are unchanged; the determinism suite guards this.
 
 ## [0.1.0] - 2026-08-06
 

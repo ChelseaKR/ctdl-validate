@@ -9,6 +9,12 @@ sandbox, which is the point: CTDL payloads are usually unpublished when they
 most need checking, and a hosted validator would mean sending unreleased
 credential and competency data to someone else's server.
 
+The playground is the validator only. `ctdl-validate extract` fetches a page,
+which needs a robots.txt check and a rate limit against the site's real
+origin, and neither is something a browser tab can honestly promise. It stays
+a command line tool; see the README's [Extraction](../README.md#extraction)
+section for its network posture.
+
 ## How it gets published
 
 `.github/workflows/pages.yml` builds the wheel with `uv build --wheel`, copies

@@ -1,6 +1,6 @@
 # Standards and metrics ledger
 
-Last measured: 2026-08-07. Owner: Chelsea Kelly-Reif. Review cadence: per
+Last measured: 2026-08-14. Owner: Chelsea Kelly-Reif. Review cadence: per
 release and quarterly.
 
 This file is the enforcement ledger required by the portfolio Quality &
@@ -25,7 +25,12 @@ README's "Scope, honestly" section.
 | SHA-pinned workflow actions | 100% | portfolio conformance checker; review on workflow diffs | AUTO | Maintainer |
 | Spec snapshot freshness | Re-vendor and re-hash when upstream CTDL encodings change | Manual check against credreg.net before a release | REVIEW | Maintainer |
 | Severity contract accuracy | UNVERIFIABLE never gates the exit code; ERROR always does | `tests/test_cli.py` plus release review of any severity change | AUTO + REVIEW | Maintainer |
-| AI evaluation / GenAI telemetry | N/A: deterministic rule engine only; no model, prompt, retrieval, embedding, or AI ranking path | Dependency and import scan (zero runtime deps) | N/A | Maintainer |
+| Validation stays offline | 0 sockets opened during validation | `tests/test_offline_guarantee.py` removes `socket` and runs the validator anyway | AUTO | Maintainer |
+| robots.txt enforcement | A Disallow stops the fetch before the page is requested; an unreachable robots.txt stops it too; no override flag exists | `tests/test_extract_fetch.py` against a server on localhost | AUTO | Maintainer |
+| Extractor invents nothing | 0 CTDL assertions without a declared equivalence; 0 generated CTIDs | `tests/test_extract_break_the_gate.py`, `tests/test_extract_crosswalk.py` (index checked against the vendored files, not a copy) | AUTO | Maintainer |
+| Extraction determinism | Same page bytes, byte-identical document and notes, across interpreter processes | `tests/test_determinism.py` | AUTO | Maintainer |
+| Crosswalk freshness | The crosswalk is re-read from the vendored snapshot; a re-vendoring changes it with no code edit | `tests/test_extract_crosswalk.py`; reviewed with the snapshot | AUTO + REVIEW | Maintainer |
+| AI evaluation / GenAI telemetry | N/A: deterministic rule engine and deterministic extractor; no model, prompt, retrieval, embedding, or AI ranking path in either command | Dependency and import scan (zero runtime deps) | N/A | Maintainer |
 
 ## Delivery health
 
@@ -47,5 +52,12 @@ must remain N/A rather than be filled with invented zeroes.
 - First tagged release via the trusted-main release workflow; decide on PyPI
   publication (Trusted Publishing) at that point. Nothing is published
   anywhere today.
+- Decide whether to vendor schema.org's class hierarchy. Today a
+  `schema:CollegeOrUniversity` maps to nothing because CTDL declares an
+  equivalence for `schema:Organization` only, and resolving the subclass chain
+  would need schema.org's own vocabulary file (several megabytes) vendored
+  unmodified under the existing hashing policy. It is the largest single
+  coverage limit in `extract`, and taking it on is a scope and packaging
+  decision, not a code one. REVIEW, owner: maintainer.
 - Re-check the three documented spec conflicts (README "Conflicts found in
   the published spec") against upstream before each re-vendoring.
