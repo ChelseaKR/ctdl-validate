@@ -31,6 +31,38 @@ README's "Scope, honestly" section.
 | Extraction determinism | Same page bytes, byte-identical document and notes, across interpreter processes | `tests/test_determinism.py` | AUTO | Maintainer |
 | Crosswalk freshness | The crosswalk is re-read from the vendored snapshot; a re-vendoring changes it with no code edit | `tests/test_extract_crosswalk.py`; reviewed with the snapshot | AUTO + REVIEW | Maintainer |
 | AI evaluation / GenAI telemetry | N/A: deterministic rule engine and deterministic extractor; no model, prompt, retrieval, embedding, or AI ranking path in either command | Dependency and import scan (zero runtime deps) | N/A | Maintainer |
+| Accessibility of the playground | 0 axe-core violations of critical/serious/moderate at `wcag2a,wcag2aa,wcag22aa`, in both colour schemes; no horizontal scroll at 320 CSS px; Lighthouse accessibility 1.00 | `.github/workflows/accessibility.yml` (axe-core 4.13 via `web/a11y/audit.mjs`, plus Lighthouse) against `web/index.html?a11y-static` | AUTO | Maintainer |
+| Keyboard and screen-reader walkthrough of the playground | Every primary task completable by keyboard; the Pyodide startup state is announced | Human walkthrough, recorded in `docs/RESPONSIBLE-TECH-AUDITS.md` section H | REVIEW | Maintainer |
+| Playground performance | **Not met and declared.** Lighthouse performance 0.42 against a >= 0.90 budget and 248,147 B of script against a < 204,800 B budget, measured on the published page 2026-08-15 | Lighthouse against `https://chelseakr.github.io/ctdl-validate/`; re-measure per release | REVIEW | Maintainer |
+
+### Why the performance budget is not met
+
+The playground runs the validator in the visitor's browser through Pyodide,
+which is a 5.6 MB WebAssembly Python runtime fetched from a CDN. That is the
+whole point of the page: CTDL payloads most need checking while they are still
+unpublished, and the alternative to running locally is asking people to upload
+unreleased credential and competency data to somebody's server. No amount of
+tuning brings a 5.6 MB runtime inside a 204,800 B script budget.
+
+What has been done instead:
+
+- The runtime is injected by `boot()` rather than written as a `<script src>`
+  in the markup, so a visitor who reads the page without validating anything,
+  and the accessibility gate, make no CDN request at all.
+- The numbers are measured and published rather than waived quietly, and they
+  are re-measured per release. Layout stability (CLS 0) and accessibility
+  (1.00) are both clean; what fails is exactly the byte cost, and it is a
+  fixed cost of the Pyodide version.
+- No advisory-mode gate is wired. `PERFORMANCE-STANDARD` section 3 is explicit
+  that a gate that cannot pass is declared N/A-with-reason, not run with
+  `continue-on-error`.
+
+The option not taken: deferring the runtime download to the first Validate
+click would move 5.6 MB off the critical path and would very likely clear the
+score, at the cost of making the first validation take tens of seconds with no
+warning. Starting the download on load is a deliberate choice in the user's
+favour, and `loadPyodideRuntime()` is a single call site if that judgement
+changes.
 
 ## Delivery health
 
@@ -44,6 +76,17 @@ must remain N/A rather than be filled with invented zeroes.
 - Enable a branch protection ruleset on `main` (block force-push and
   deletion). This is a GitHub settings change; it cannot be made from inside
   the repository.
+- Correct this repository's entry in the portfolio `STANDARDS/applicability.yml`.
+  As of 2026-08-15 the entry on that repository's `main` still reads
+  `flags: { html: false, ..., hosted: false }` with `A11Y: { na: "offline
+  CLI/library with no human-facing HTML" }` and `PERF: { na: "pure
+  library/CLI, no hosted route or shipped HTML" }`, which is false: a Pages
+  playground has been live at chelseakr.github.io/ctdl-validate/ since
+  2026-08-08 and is linked from the top of this repository's README. The
+  accessibility gate wired here does not depend on that entry -- scope comes
+  from `ACCESSIBILITY-STANDARD` section 0, which puts a published HTML surface
+  in scope on its own -- but the manifest is the portfolio's scoping registry
+  and it is currently wrong about this repo.
 - Register this repo in the portfolio `applicability.yml` (archetype, tier,
   flags, per-standard applies/na, `publication: cleared`); the repo is
   already public, so the manifest must say so.

@@ -1,0 +1,117 @@
+name: Accessibility
+
+# The playground at chelseakr.github.io/ctdl-validate/ is a human-facing web
+# page, and until this workflow existed nothing checked it. The repository's
+# own declarations said the opposite: the README's Standards Conformance table
+# recorded Accessibility as "N/A (no graphical or web surface)" while a page
+# with a heading, a labelled textarea, four buttons, a file input and a live
+# status region was published from this repository and linked at the top of
+# that same README.
+#
+# What runs here:
+#
+# - `web/a11y/audit.mjs` runs axe-core against the page in both colour schemes
+#   and checks reflow at 320 CSS px. That is A11Y-01 (0 violations of
+#   critical/serious/moderate at wcag2a,wcag2aa,wcag22aa), A11Y-05 (contrast,
+#   an axe rule) and A11Y-09 (reflow) from the portfolio accessibility
+#   standard.
+# - Lighthouse scores the same page, and the bar is 1.00. That is A11Y-02,
+#   whose floor is 0.90; the page measured 1.00 on 2026-08-15 and the standard
+#   says a repository that clears a higher bar enforces the higher one.
+#
+# Both audit `?a11y-static`, which renders the page in its post-run state
+# without booting Pyodide: see the comment on that branch in web/index.html
+# for why the rendered report is the half worth auditing and why gating on the
+# live boot would make a merge depend on a CDN.
+#
+# What is NOT gated here, said plainly rather than left to look covered:
+# A11Y-03 (pa11y-ci) is not wired, because pa11y 8 bundles axe-core 4.8, which
+# reports a colour-contrast violation on this page's textarea that axe-core
+# 4.13 does not and that the computed styles disprove (#111827 on #ffffff,
+# about 16:1). Running the current axe directly is the same rule engine
+# without the stale rule set. A11Y-04 is React lint and there is no React
+# here. A11Y-06 target-size and A11Y-08 reduced motion are covered by axe and
+# by the page having no animation at all; A11Y-07's keyboard walkthrough is a
+# human gate, recorded in docs/RESPONSIBLE-TECH-AUDITS.md.
+
+on:
+  pull_request:
+    paths:
+      - "web/**"
+      - ".github/workflows/accessibility.yml"
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/accessibility.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: audit the playground
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      # Exact versions rather than a committed package.json, for the same
+      # reason this project has no runtime dependencies: the audit tooling is
+      # CI-only and pinning it here keeps it out of the package's own
+      # dependency surface. Bump both deliberately, and re-record the numbers
+      # in docs/RESPONSIBLE-TECH-AUDITS.md when axe's rule set moves.
+      - name: Install the audit tooling
+        run: npm install --no-save --no-package-lock puppeteer-core@23.11.1 axe-core@4.13.0
+
+      # ?a11y-static fetches nothing, so the page alone is the whole site
+      # under test. No wheel build, and no request leaves the runner.
+      - name: Serve the page
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8931 --directory web &
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8931/index.html >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8931/index.html >/dev/null || {
+            echo "::error title=Server never came up::nothing was audited"
+            exit 1
+          }
+
+      - name: axe-core and reflow, light and dark
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node web/a11y/audit.mjs "http://127.0.0.1:8931/index.html?a11y-static"
+
+      - name: Lighthouse accessibility
+        run: |
+          npx --yes lighthouse@12 "http://127.0.0.1:8931/index.html?a11y-static" \
+            --output=json --output-path=/tmp/lh.json --quiet \
+            --chrome-flags="--headless" --only-categories=accessibility
+
+      - name: Require 1.00 on accessibility
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          report = json.load(open("/tmp/lh.json"))
+          category = report["categories"].get("accessibility")
+          # A missing category is a failed audit, not a pass. Defaulting it to
+          # 1.0 would turn a broken run into a green check.
+          score = None if category is None else category.get("score")
+          print(f"lighthouse accessibility: {score}")
+          if score != 1:
+              print("::error title=Accessibility score::expected 1.00, got %s" % score)
+              sys.exit(1)
+          PY

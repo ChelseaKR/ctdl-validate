@@ -18,6 +18,15 @@
       content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; worker-src blob:; child-src blob:;"
     />
     <title>ctdl-validate playground</title>
+    <!-- Inline, because without it every visitor's browser requests
+         /favicon.ico, gets a 404, and logs a console error. A tool whose
+         argument is that it tells the truth about itself can afford not to
+         ship a broken request on every page load. data: is already allowed by
+         img-src in the policy above. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%9C%93%3C/text%3E%3C/svg%3E"
+    />
     <style>
       :root {
         color-scheme: light dark;
@@ -104,9 +113,21 @@
       .finding h3 { font-size: 1rem; margin: 0 0 0.4rem; }
       .finding dl { margin: 0.4rem 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.75rem; }
       .finding dt { color: var(--muted); }
-      .finding dd { margin: 0; word-break: break-word; }
+      .finding dd { margin: 0; }
       .rule { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); font-size: 0.9rem; color: var(--muted); }
       .rule a { color: inherit; }
+      /* Every finding carries a Registry URI and a rule source URL, and both
+         are long unbroken strings. Without this the report pushed the page to
+         366 CSS px at a 320 px viewport, which is SC 1.4.10 (reflow): a
+         horizontal scrollbar on the whole document, and content off the right
+         edge. Measured at 320x256 in headless Chrome; the empty page passed,
+         so only the state a visitor actually reaches was ever broken.
+         `anywhere` rather than `break-word` because a 39-character CTID has no
+         break opportunity in it at all. */
+      .finding dd,
+      .finding h3,
+      .rule,
+      .rule a { overflow-wrap: anywhere; }
       code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface); padding: 0 0.25rem; border-radius: 3px; }
       .clean { border: 1px solid var(--border); border-left: 5px solid var(--info); border-radius: 6px; padding: 1rem; }
       footer { margin-top: 2rem; color: var(--muted); font-size: 0.9rem; }
@@ -158,16 +179,33 @@
       </p>
     </footer>
 
-    <!-- Pyodide runtime. When bumping the version, regenerate the integrity
-         hash to match: `curl -sSL <url> | openssl dgst -sha384 -binary |
-         openssl base64 -A`, prefixed with `sha384-`. -->
-    <script
-      src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"
-      integrity="sha384-i3R37b3tF+HWudsUf1VSEOY2YxwSNMqY8DQa9Z0O3xh+NkJ9o+yjcGyIi5huj+nB"
-      crossorigin="anonymous"
-    ></script>
     <script>
+      // Pyodide runtime. When bumping the version, regenerate the integrity
+      // hash to match: `curl -sSL <url> | openssl dgst -sha384 -binary |
+      // openssl base64 -A`, prefixed with `sha384-`.
+      //
+      // Injected by boot() rather than written as a <script src> in the
+      // markup, so that the page makes no network request until someone
+      // actually wants the validator. That matters twice: ?a11y-static fetches
+      // nothing at all, which is what lets the accessibility gate run offline
+      // and deterministically, and a visitor who lands here and reads the page
+      // without validating anything never touches a CDN either.
       const PYODIDE_VERSION = "v0.26.4";
+      const PYODIDE_SRI =
+        "sha384-i3R37b3tF+HWudsUf1VSEOY2YxwSNMqY8DQa9Z0O3xh+NkJ9o+yjcGyIi5huj+nB";
+
+      function loadPyodideRuntime() {
+        return new Promise((resolve, reject) => {
+          const tag = document.createElement("script");
+          tag.src = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/pyodide.js`;
+          tag.integrity = PYODIDE_SRI;
+          tag.crossOrigin = "anonymous";
+          tag.onload = resolve;
+          tag.onerror = () =>
+            reject(new Error("the Pyodide runtime could not be loaded from cdn.jsdelivr.net"));
+          document.head.appendChild(tag);
+        });
+      }
 
       const statusEl = document.getElementById("status");
       const runBtn = document.getElementById("run");
@@ -252,6 +290,7 @@
       });
 
       async function boot() {
+        await loadPyodideRuntime();
         pyodide = await loadPyodide();
         // The wheel is built from this commit by the Pages workflow and served
         // from this origin. The manifest carries its filename so a version bump
@@ -316,6 +355,22 @@ _run
           </div>`;
       }
 
+      function renderReport(findings) {
+        if (findings.length === 0) {
+          report.innerHTML =
+            '<div class="clean"><p style="margin:0"><strong>No findings.</strong> This payload passes every structural check.</p></div>';
+          return;
+        }
+        const counts = {};
+        for (const f of findings) counts[f.severity] = (counts[f.severity] || 0) + 1;
+        const summary = Object.entries(counts)
+          .map(([sev, n]) => `${n} ${sev.toLowerCase()}`)
+          .join(", ");
+        report.innerHTML =
+          `<p>${findings.length} finding${findings.length === 1 ? "" : "s"}: ${escapeHtml(summary)}.</p>` +
+          findings.map(renderFinding).join("");
+      }
+
       runBtn.addEventListener("click", () => {
         const text = payload.value.trim();
         if (!text) {
@@ -336,28 +391,93 @@ _run
           reportHeading.focus();
           return;
         }
-        const findings = parsed.findings;
-        if (findings.length === 0) {
-          report.innerHTML =
-            '<div class="clean"><p style="margin:0"><strong>No findings.</strong> This payload passes every structural check.</p></div>';
-        } else {
-          const counts = {};
-          for (const f of findings) counts[f.severity] = (counts[f.severity] || 0) + 1;
-          const summary = Object.entries(counts)
-            .map(([sev, n]) => `${n} ${sev.toLowerCase()}`)
-            .join(", ");
-          report.innerHTML =
-            `<p>${findings.length} finding${findings.length === 1 ? "" : "s"}: ${escapeHtml(summary)}.</p>` +
-            findings.map(renderFinding).join("");
-        }
+        renderReport(parsed.findings);
         statusEl.textContent = "Done.";
         // Move focus to the report heading so keyboard and screen-reader users
         // land on the results they just asked for.
         reportHeading.focus();
       });
 
+      // ?a11y-static renders the page in its post-run state without booting
+      // Pyodide, and it is what CI audits. Two reasons it exists.
+      //
+      // The findings list is where nearly all of this page's markup lives and
+      // it is the only place the four severity colours appear, so a scanner
+      // that only ever sees the empty page has audited the least interesting
+      // half. One finding of each severity is rendered here, through the same
+      // renderFinding() the real run uses, so the colours and the dl/dt/dd
+      // structure are the ones a visitor gets.
+      //
+      // It also makes the audit deterministic and offline. Booting Pyodide
+      // means a 5.6 MB download from a CDN, so gating on the live page would
+      // make a merge depend on jsDelivr being up. The startup path is
+      // therefore checked by a human, not by this gate: see
+      // docs/RESPONSIBLE-TECH-AUDITS.md.
+      const A11Y_SAMPLE = [
+        {
+          severity: "ERROR",
+          code: "CTID_BARE_UUID",
+          message:
+            "Bare UUID where a CTID belongs: the ce- prefix is missing. Expected grammar: ce- followed by a UUID v4 in 8-4-4-4-12 form.",
+          entity: "$.@graph[0]",
+          property: "ceterms:ctid",
+          value: "b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+          rule: {
+            citation: 'About the CTID, section "CTID Structure"',
+            url: "https://credreg.net/ctdl/ctid",
+            retrieved: "2026-08-06",
+          },
+        },
+        {
+          severity: "WARNING",
+          code: "ISPARTOF_FRAMEWORK_MISMATCH",
+          message:
+            "This competency's isPartOf identifier matches no CompetencyFramework in this payload, although this run can see one.",
+          entity: "$.@graph[2]",
+          property: "ceasn:isPartOf",
+          value: "https://credentialengineregistry.org/resources/ce-82566cee-17f3-4a6e-8f59-b45273aac457",
+          rule: {
+            citation: 'CTDL Handbook, "Competency Frameworks"',
+            url: "https://credreg.net/ctdl/handbook",
+            retrieved: "2026-08-06",
+          },
+        },
+        {
+          severity: "INFO",
+          code: "INVERSE_ONE_DIRECTION",
+          message: "One direction of a declared inverse pair is present without the other.",
+          entity: "$.@graph[1]",
+          property: "ceasn:isChildOf",
+          value: "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+          rule: {
+            citation: "CTDL-ASN schema encoding, owl:inverseOf declarations",
+            url: "https://credreg.net/ctdlasn/schema/encoding/json",
+            retrieved: "2026-08-06",
+          },
+        },
+        {
+          severity: "UNVERIFIABLE",
+          code: "REF_OUTSIDE_PAYLOAD",
+          message:
+            "Reference does not resolve inside this payload. It may exist in the Registry or elsewhere; without fetching it, its existence and class cannot be confirmed or denied.",
+          entity: "$.@graph[0]",
+          property: "ceterms:ownedBy",
+          value: "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826",
+          rule: {
+            citation: "ctdl-validate policy: no network access at validation time",
+            url: "https://github.com/ChelseaKR/ctdl-validate#methodology",
+            retrieved: "-",
+          },
+        },
+      ];
+
       if (new URLSearchParams(window.location.search).has("a11y-static")) {
-        statusEl.textContent = "Static accessibility audit mode.";
+        payload.value = JSON.stringify(SAMPLES.framework, null, 2);
+        renderReport(A11Y_SAMPLE);
+        statusEl.textContent =
+          "Static accessibility audit mode: the validator is not loaded and these findings are examples.";
+        footerVersion.textContent =
+          "Static accessibility audit mode · the validator is not loaded on this page.";
       } else {
         boot().catch((err) => {
           statusEl.textContent = "Failed to load the validator: " + err;

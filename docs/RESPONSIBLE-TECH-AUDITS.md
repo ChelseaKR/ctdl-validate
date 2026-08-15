@@ -2,8 +2,8 @@
 
 Project-specific findings under the portfolio Responsible-Tech Framework.
 This artifact is reviewed on release; generic thresholds remain in the
-portfolio standards. Last reviewed: 2026-08-14 (extraction subcommand added;
-sections A, C, F revised and section G added).
+portfolio standards. Last reviewed: 2026-08-15 (the playground was measured
+for the first time; section E rewritten from N/A and section H added).
 
 ## Applicability
 
@@ -24,8 +24,12 @@ sections A, C, F revised and section G added).
 - **D Transparency:** applies and is the design center: every finding and
   every extraction note carries the rule citation, source URL, and retrieval
   date it enforces.
-- **E Accessibility:** N/A today; no graphical or web surface. Output is
-  plain text (screen-reader-friendly terminal output) and `--format json`.
+- **E Accessibility:** applies. This entry read "N/A today; no graphical or
+  web surface" from 2026-08-07 until 2026-08-15, while a browser playground
+  was published at chelseakr.github.io/ctdl-validate/ and linked from the top
+  of the README. The CLI's own surface is still plain text and `--format
+  json`; the page is a human-facing HTML surface and is now gated. See
+  section H.
 - **F Security:** applies; see `SECURITY.md`. Input is untrusted JSON and now
   untrusted HTML; the supply-chain controls (locked toolchain, pinned
   actions, SAST, secret scanning) are in CI.
@@ -147,3 +151,59 @@ requested at all because robots.txt said not to.
 **Residual risk.** The operator chooses the URL, and a tool cannot know
 whether they had a reason to. What it can do is behave the same way whoever is
 driving it, and leave a log entry that says who it was.
+
+## H. Accessibility of the playground
+
+**What could go wrong?** Two things, and only one of them is about markup.
+
+The first is the ordinary one: a page that a screen-reader or keyboard user
+cannot operate, or that a low-vision user cannot read. The second is specific
+to this page. The validator does not exist until a 5.6 MB WebAssembly runtime
+finishes downloading, which takes tens of seconds on a cold cache, and during
+that time the Validate button is disabled and nothing visibly happens. A
+person using a screen reader meets that wait before they meet the tool.
+
+**What was measured, on 2026-08-15.** axe-core 4.13 against
+`web/index.html?a11y-static` at `wcag2a,wcag2aa,wcag22aa`, in both
+`prefers-color-scheme` settings: **0 violations, 0 incomplete, 25 rules
+passed** in each. Lighthouse: **accessibility 1.00**, both locally and against
+the published page. Reflow at 320x256: clean, **after a fix**.
+
+**The one real defect, and how it was missed until now.** With the findings
+list rendered, the page was 366 CSS px wide at a 320 px viewport: a horizontal
+scrollbar on the whole document, which is SC 1.4.10. The cause was the
+unbreakable strings every finding carries, Registry URIs and rule source URLs,
+in the `.rule` block. It was fixed with `overflow-wrap: anywhere` and the gate
+was then broken on purpose to confirm it catches the regression (it reports
+601 px and fails).
+
+The empty page passed the same check. That is the lesson worth keeping: an
+accessibility audit of this page that loads it and scans it audits an input
+box and three buttons, and misses the part where all the content is. The gate
+therefore renders one finding of each severity before scanning, through the
+same code path a real run uses, which is also the only way the four severity
+colours get their contrast checked at all.
+
+**Controls now in place.** `.github/workflows/accessibility.yml`, merge-blocking,
+no advisory mode: axe-core in both colour schemes, the 320 px reflow check, and
+a Lighthouse accessibility score that must be 1.00 rather than the standard's
+0.90 floor, because the page measured 1.00 and the standard says a repository
+clearing a higher bar enforces the higher one. The audit runs against
+`?a11y-static`, which fetches nothing, so the gate is deterministic and does
+not make a merge depend on a CDN being up.
+
+**REVIEW gate, open.** A keyboard and screen-reader walkthrough by a human,
+covering the Pyodide startup state specifically. Nothing automated can judge
+whether `role="status"` on a paragraph that says "Loading Python (this takes a
+few seconds the first time)" is an adequate account of a thirty-second wait,
+and the honest answer is that it probably is not: it announces once, and never
+again until the runtime is ready. This is recorded as open rather than
+declared passed.
+
+**Residual risk.** Two things the automated gate does not see. The live boot
+path is not scanned, by design, because gating it would put jsDelivr in the
+merge path; the static mode renders the same markup from the same functions,
+so what is unscanned is the loading state and any error state, not the report.
+And automated tooling catches something like a third to a half of WCAG
+failures; 0 violations means 0 machine-detectable violations, which is not the
+same as conformance and is not claimed as one.

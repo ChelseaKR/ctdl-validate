@@ -40,6 +40,12 @@ and this project adheres to
   "only UNVERIFIABLE findings" when 9 of them produced a warning or a note,
   and "46 of the 77 properties" for two range families that overlap on three
   properties and so cover 74 distinct ones.
+- `.github/workflows/accessibility.yml` and `web/a11y/audit.mjs`: a
+  merge-blocking accessibility gate for the browser playground, which is a
+  published human-facing page that nothing had ever checked. axe-core 4.13 at
+  `wcag2a,wcag2aa,wcag22aa` in both colour schemes, a 320 CSS px reflow check,
+  and a Lighthouse accessibility score that must be 1.00. Measured 2026-08-15:
+  0 violations, 25 rules passed, Lighthouse 1.00.
 - `ctdl-validate extract <url>`: deterministic extraction of CTDL-shaped
   JSON-LD from the structured markup a page already publishes (JSON-LD,
   microdata, RDFa Lite), with `--validate` running the full extract-then-check
@@ -74,6 +80,19 @@ and this project adheres to
   ledger (`docs/ROADMAP.md`).
 
 ### Fixed
+
+- **Playground, SC 1.4.10 (reflow):** with findings rendered, the page was 366
+  CSS px wide at a 320 px viewport, because the Registry URIs and rule source
+  URLs every finding carries are unbreakable strings. Fixed with
+  `overflow-wrap: anywhere`; the new gate was broken on purpose to confirm it
+  catches the regression. The empty page passed the same check, which is why
+  the accessibility audit now renders findings before scanning.
+- Playground: the Pyodide runtime is injected by `boot()` rather than declared
+  as a `<script src>` in the markup, with the same version pin and Subresource
+  Integrity hash. A visitor who reads the page without validating anything now
+  makes no CDN request, and the accessibility gate runs entirely offline.
+- Playground: an inline `data:` favicon, so the page stops answering every
+  visit with a 404 for `/favicon.ico` and a console error.
 
 - `RDFA_BEYOND_LITE` no longer fires on ordinary HTML `rel` attributes. It now
   reports only elements that mix an RDFa 1.1 Core attribute with an RDFa Lite

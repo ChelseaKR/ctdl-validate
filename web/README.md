@@ -15,6 +15,32 @@ origin, and neither is something a browser tab can honestly promise. It stays
 a command line tool; see the README's [Extraction](../README.md#extraction)
 section for its network posture.
 
+## How it is gated
+
+`.github/workflows/accessibility.yml` audits `index.html?a11y-static` on every
+pull request that touches `web/`. That query parameter renders the page in its
+post-run state, with one finding of each severity laid out through the same
+`renderFinding()` a real run uses, and without booting Pyodide.
+
+Both halves of that matter. Scanning the page as it first loads audits a
+textarea and four buttons and never sees the report, which is where nearly all
+of the markup is and the only place the severity colours appear; that is how a
+reflow failure at 320 CSS px survived until 2026-08-15. And not booting means
+the audit fetches nothing, so a merge never depends on a CDN.
+
+Run it locally the way CI does:
+
+```sh
+npm install --no-save puppeteer-core@23.11.1 axe-core@4.13.0
+python3 -m http.server 8931 --directory web &
+CHROME_PATH="$(which google-chrome || echo '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')" \
+  node web/a11y/audit.mjs "http://127.0.0.1:8931/index.html?a11y-static"
+```
+
+The performance side is measured and declared rather than gated: the page
+cannot meet the portfolio's script-size budget while shipping a 5.6 MB Python
+runtime, and [docs/ROADMAP.md](../docs/ROADMAP.md) says so with the numbers.
+
 ## How it gets published
 
 `.github/workflows/pages.yml` builds the wheel with `uv build --wheel`, copies
