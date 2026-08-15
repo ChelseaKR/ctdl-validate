@@ -269,6 +269,25 @@ the extraction; the two vocabularies simply do not compose the way a
 term-by-term crosswalk implies. That gap is exactly what a publisher needs to
 see before publishing, and it is what `extract --validate` shows.
 
+## Pointed at the Registry
+
+[`docs/findings/2026-08-15-published-registry-survey.md`](docs/findings/2026-08-15-published-registry-survey.md)
+is what came back from validating 120 documents drawn uniformly at random from
+the 395,878 published in the Credential Registry's `ce-registry` community.
+The read surface is public and needs no key; the harness
+([`tools/registry_survey.py`](tools/registry_survey.py)) re-checks robots.txt
+every run, spends one request every two seconds, and records structure and
+counts rather than anybody's data.
+
+Two results. Forty ERROR findings, **every one of which traces to an
+inconsistency inside CTDL's own published schema encoding rather than to a
+publisher's mistake** — including a false-positive class in this tool that
+the write-up documents in full and does not paper over. And, validated one
+document at a time, 87% of everything the tool said was "I cannot see the
+document this points at"; supplying the 177 referenced documents through
+`--resolve` turned 294 of those 299 non-answers into verdicts and surfaced two
+errors that were unreachable without it.
+
 ## What it checks (v0)
 
 | # | Check | Codes | Rule source |
@@ -389,6 +408,25 @@ than picking a side silently:
 3. Some Handbook example URIs omit the ce- prefix inside Registry resource
    URIs, which the About the CTID page (updated 2024) contradicts. The tool
    follows About the CTID and flags such URIs.
+
+Validating the published corpus on 2026-08-15 surfaced two more, and unlike
+the three above **the tool does not yet handle either one**; both are reported
+as `RANGE_VIOLATION` / ERROR today, and at least the first of them should not
+be. Both are set out with their declarations in
+[the Registry survey](docs/findings/2026-08-15-published-registry-survey.md):
+
+4. CTDL declares two different ranges for the same kind of concept reference.
+   46 properties declare `schema:rangeIncludes: ceterms:CredentialAlignmentObject`
+   and 31 declare `skos:Concept`, including a pair that names the same concept
+   scheme (`ceterms:audienceLevelType` and `ceterms:creditLevelType`, both
+   `meta:targetScheme: ceterms:AudienceLevel`). Published documents encode both
+   families as a `CredentialAlignmentObject`. 38 of 40 errors in the survey are
+   this, so a `RANGE_VIOLATION` on a concept-valued property currently means
+   "the encoding and the practice disagree", not "your document is wrong."
+5. `ceterms:latestVersion`, `ceterms:nextVersion` and `ceterms:previousVersion`
+   each declare `ceterms:TransferValueProfile` in `schema:domainIncludes` and
+   omit it from `schema:rangeIncludes`, so a TransferValueProfile may carry a
+   version relation but may not point it at another TransferValueProfile.
 
 ## Development
 

@@ -23,6 +23,15 @@ and this project adheres to
   nowhere stays UNVERIFIABLE and the message names what was supplied. See
   `docs/adr/0004-resolution-is-additive.md`, including why this stops short of
   the ERROR `oscal-validate` raises in the same situation.
+- `docs/findings/2026-08-15-published-registry-survey.md` and its evidence
+  JSON: the validator run over 120 documents drawn uniformly at random from
+  the 395,878 published in the Credential Registry, with the harness
+  (`tools/registry_survey.py`) committed and the sample seeded so the run is
+  reproducible. Forty ERROR findings, all of which trace to inconsistencies in
+  CTDL's own published schema encoding rather than to a publisher's mistake,
+  including a false-positive class in this tool that the write-up documents
+  rather than hides. `--resolve` turned 294 of 299 UNVERIFIABLE findings into
+  verdicts and surfaced two errors that were unreachable without it.
 - `ctdl-validate extract <url>`: deterministic extraction of CTDL-shaped
   JSON-LD from the structured markup a page already publishes (JSON-LD,
   microdata, RDFa Lite), with `--validate` running the full extract-then-check

@@ -8,3 +8,8 @@ __pycache__/
 coverage.xml
 dist/
 build/
+
+# Documents fetched by tools/registry_survey.py. Third parties' published
+# records, including contact details; the findings file carries structure and
+# counts, never anybody's data. Never commit this.
+.registry-cache/

@@ -148,7 +148,21 @@ def _decode(body: bytes, content_type: str) -> tuple[str, str]:
 
 
 class Fetcher:
-    """A polite, single-page HTTP client. One per run; it holds the rate limit."""
+    """A polite, single-page HTTP client. One per run; it holds the rate limit.
+
+    The posture -- robots.txt first and obeyed, an identifying User-Agent,
+    manual redirects re-checked at every hop, a byte cap, a timeout, and a
+    per-host interval -- is the class's whole reason to exist and is not
+    configurable. What media type a caller is willing to read is not part of
+    that posture, so it is the one knob: ``accepted_content_types``. The
+    ``extract`` command reads HTML. ``tools/registry_survey.py`` subclasses
+    this to read the Registry API's JSON through the identical posture rather
+    than writing a second, less careful HTTP client.
+    """
+
+    #: Response media types this fetcher will read. Anything else is an error,
+    #: never a silent empty result.
+    accepted_content_types: tuple[str, ...] = HTML_CONTENT_TYPES
 
     def __init__(
         self,
@@ -176,7 +190,10 @@ class Fetcher:
         # which fetch() re-checks against robots.txt before following.
         request = urllib.request.Request(
             url,
-            headers={"User-Agent": self.user_agent, "Accept": ", ".join(HTML_CONTENT_TYPES)},
+            headers={
+                "User-Agent": self.user_agent,
+                "Accept": ", ".join(self.accepted_content_types),
+            },
             method="GET",
         )
         try:
@@ -298,11 +315,11 @@ class Fetcher:
                 "that large."
             )
         content_type = headers.get("content-type", "")
-        if content_type.split(";")[0].strip().lower() not in HTML_CONTENT_TYPES:
+        if content_type.split(";")[0].strip().lower() not in self.accepted_content_types:
             raise FetchError(
-                f"{url}: Content-Type is {content_type or 'absent'}; this command reads "
-                f"{' and '.join(HTML_CONTENT_TYPES)} only. A JSON-LD file that is "
-                "already CTDL should be validated directly, not extracted."
+                f"{url}: Content-Type is {content_type or 'absent'}; this reads "
+                f"{' and '.join(self.accepted_content_types)} only. A JSON-LD file "
+                "that is already CTDL should be validated directly, not extracted."
             )
         text, encoding = _decode(body, content_type)
         return content_type, text, encoding
