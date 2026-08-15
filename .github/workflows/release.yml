@@ -7,10 +7,10 @@ name: release
 # sdist+wheel, attest SLSA build provenance, and attach the build to a
 # GitHub Release whose notes are the matching CHANGELOG section.
 #
-# No tag exists yet (pyproject version 0.1.0 is unreleased); the workflow is
-# wired ahead of the first tag so a release can never ship a commit that did
-# not pass its own gate. Tag like `v0.1.0`:
-# `git tag -s v0.1.0 -m v0.1.0 && git push origin v0.1.0`.
+# It has run once: `v0.1.0`, a signed tag dated 2026-08-08, released the same
+# day with the wheel and sdist attached and published to PyPI on 2026-08-13.
+# Tag the next one the same way:
+# `git tag -s v0.2.0 -m v0.2.0 && git push origin v0.2.0`.
 
 on:
   workflow_dispatch:

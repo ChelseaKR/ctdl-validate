@@ -3,12 +3,15 @@ name: Deploy playground
 # Publishes web/ (the in-browser Pyodide validator) to GitHub Pages, together
 # with a wheel built from the same commit.
 #
-# The wheel is built here rather than installed from PyPI on purpose: this
-# package has no PyPI release yet (see release.yml), and serving the wheel from
-# the same origin means the playground can never run a different version of the
-# validator than the source it is published beside. It also keeps the page's
-# Content-Security-Policy down to two origins, with no connection to PyPI at
-# all.
+# The wheel is built here rather than installed from PyPI on purpose, and the
+# purpose is not that there is nothing on PyPI: ctdl-validate 0.1.0 has been
+# there since 2026-08-13. It is that serving a wheel built from this commit,
+# from this origin, means the playground can never run a different version of
+# the validator than the source it is published beside. `main` is routinely
+# ahead of the last tag, so installing the released package here would put a
+# page and its own source out of step with each other silently. It also keeps
+# the page's Content-Security-Policy down to two origins, with no connection to
+# PyPI at all.
 #
 # One-time setup: Settings -> Pages -> Source: "GitHub Actions".
 

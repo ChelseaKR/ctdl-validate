@@ -71,13 +71,6 @@ and this project adheres to
   reproducible. Of 29 pages read, 38% published no structured data at all and
   14% produced a CTDL entity for the credential they were offering.
 
-- Portfolio standards conformance kit: CI running the same `make verify` gate
-  as local development, Semgrep and full-history TruffleHog scanning
-  workflows, Dependabot updates, a trusted-main release workflow wired ahead
-  of the first tag, pre-commit hooks, CODEOWNERS, `SECURITY.md`,
-  `CONTRIBUTING.md`, `CITATION.cff`, an ADR log under `docs/adr/`, an i18n
-  declaration, responsible-tech audit notes, and a standards and metrics
-  ledger (`docs/ROADMAP.md`).
 
 ### Fixed
 
@@ -108,24 +101,32 @@ and this project adheres to
   than a `(Graph, SchemaIndex)` pair, so the one input that can change a
   finding's severity is explicit at every use. `validate_document(data)` is
   unchanged for callers; it gained an optional second argument.
-- Python floor raised from 3.10 to 3.12 (portfolio Code Quality floor; the
-  package is unreleased, so no installed users are affected). Tooling floors
-  raised to ruff >= 0.15 and mypy >= 1.18; cyclomatic complexity capped at
-  10; branch coverage gated at >= 90%. See
-  `docs/adr/0002-python-312-floor.md`.
-- `Severity` now derives from `enum.StrEnum` (Python 3.12 idiom). CLI text
-  and JSON output are byte-identical to before; the determinism suite guards
-  this.
-- `load_schema` internals split into a helper to satisfy the complexity gate;
-  no behavior change.
 - Finding rendering moved from `cli.py` to `findings.py` as
   `render_findings_text` and `render_findings_json`, so both commands share
   one reporter. Output bytes are unchanged; the determinism suite guards this.
 
-## [0.1.0] - 2026-08-06
+## [0.1.0] - 2026-08-08
+
+Released from the signed tag `v0.1.0` on 2026-08-08, with the wheel and sdist
+attached to the GitHub Release; published to PyPI on 2026-08-13.
+
+Everything from "Portfolio standards conformance kit" down was filed under
+`[Unreleased]` when the tag was cut and stayed there afterwards, so the
+release notes generated from this section did not mention that 0.1.0 raises
+the Python floor. It does: `ctdl-validate` 0.1.0 on PyPI declares
+`Requires-Python: >=3.12`, and installing it on 3.10 or 3.11 fails. Moved here
+on 2026-08-15 against the tag's own tree. The published GitHub Release notes
+still show the shorter list.
 
 ### Added
 
+- Portfolio standards conformance kit: CI running the same `make verify` gate
+  as local development, Semgrep and full-history TruffleHog scanning
+  workflows, Dependabot updates, a trusted-main release workflow wired ahead
+  of the first tag, pre-commit hooks, CODEOWNERS, `SECURITY.md`,
+  `CONTRIBUTING.md`, `CITATION.cff`, an ADR log under `docs/adr/`, an i18n
+  declaration, responsible-tech audit notes, and a standards and metrics
+  ledger (`docs/ROADMAP.md`).
 - Initial version of the deterministic CTDL structural validator: CTID
   grammar checks, identifier-kind checks, in-payload reference resolution,
   domain/range validation with `rdfs:subClassOf` closure, inverse-consistency
@@ -137,3 +138,15 @@ and this project adheres to
   `tests/test_vendor_integrity.py`.
 - Break-the-gate suite (`tests/test_break_the_gate.py`) and byte-level
   determinism suite (`tests/test_determinism.py`).
+
+### Changed
+
+- Python floor raised from 3.10 to 3.12 (portfolio Code Quality floor; there
+  were no installed users at the time). Tooling floors raised to ruff >= 0.15
+  and mypy >= 1.18; cyclomatic complexity capped at 10; branch coverage gated
+  at >= 90%. See `docs/adr/0002-python-312-floor.md`.
+- `Severity` now derives from `enum.StrEnum` (Python 3.12 idiom). CLI text
+  and JSON output are byte-identical to before; the determinism suite guards
+  this.
+- `load_schema` internals split into a helper to satisfy the complexity gate;
+  no behavior change.

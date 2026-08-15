@@ -66,10 +66,20 @@ changes.
 
 ## Delivery health
 
-For this unreleased library, deployment frequency and change lead time are
-the applicable DORA signals once releases begin. Change-fail rate and
-recovery time become meaningful only after a tagged release exists; they
-must remain N/A rather than be filled with invented zeroes.
+One release exists: `v0.1.0`, a signed tag dated 2026-08-08, published as a
+GitHub Release the same day with the wheel and sdist attached, and to PyPI on
+2026-08-13.
+
+| DORA signal | Value | Basis |
+|---|---|---|
+| Deployment frequency | 1 release in the 8 days since the first tag | `v0.1.0`, 2026-08-08 |
+| Change lead time | Not yet measurable | The first release carried the whole repository; there is no merge-to-release interval to measure until a second tag exists |
+| Change-fail rate | 0 of 1 | No release has been yanked, patched, or rolled back. One data point is a fact, not a rate; it becomes a rate at n=3 or so |
+| Time to restore | N/A | Nothing has needed restoring |
+
+These stay honest by being small. A single release does not support a
+frequency trend or a lead-time distribution, and filling those rows with
+invented zeroes would be worse than the empty ones they replaced.
 
 ## Open review and owner actions
 
@@ -87,14 +97,16 @@ must remain N/A rather than be filled with invented zeroes.
   from `ACCESSIBILITY-STANDARD` section 0, which puts a published HTML surface
   in scope on its own -- but the manifest is the portfolio's scoping registry
   and it is currently wrong about this repo.
-- Register this repo in the portfolio `applicability.yml` (archetype, tier,
-  flags, per-standard applies/na, `publication: cleared`); the repo is
-  already public, so the manifest must say so.
+- (Done 2026-08-07.) The repo is registered in the portfolio
+  `applicability.yml` with `publication: cleared`. What that entry says about
+  the HTML surface is still wrong; see the correction item above.
 - Enable GitHub private vulnerability reporting in repository settings so
   the channel `SECURITY.md` prefers is actually on.
-- First tagged release via the trusted-main release workflow; decide on PyPI
-  publication (Trusted Publishing) at that point. Nothing is published
-  anywhere today.
+- Second release. The `extract` subcommand, `--resolve`, and the two findings
+  runs are all on `main` and in none of the published artifacts, so the
+  version a `pip install ctdl-validate` gets is materially smaller than what
+  this README describes. The README's Status paragraph says so; a tag would
+  say it better.
 - Decide whether to vendor schema.org's class hierarchy. Today a
   `schema:CollegeOrUniversity` maps to nothing because CTDL declares an
   equivalence for `schema:Organization` only, and resolving the subclass chain

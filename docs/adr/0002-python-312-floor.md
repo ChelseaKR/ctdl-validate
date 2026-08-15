@@ -12,6 +12,12 @@ accepted exception. The package is unreleased: it is not on PyPI, the
 repository has no tags and no GitHub releases, so there are no installed
 users whose environment a floor raise could break.
 
+*(Context as of the decision. `v0.1.0` shipped on 2026-08-08 and reached PyPI
+on 2026-08-13, carrying `Requires-Python: >=3.12`, so the floor is now a
+published constraint and lowering it later is the SemVer question the
+Consequences section anticipated. Noted 2026-08-15; the paragraph above is
+left as written, because an ADR records the context a decision was taken in.)*
+
 ## Decision
 
 Set `requires-python = ">=3.12"`, pin `.python-version` to 3.12, and target
