@@ -10,11 +10,12 @@ from __future__ import annotations
 
 from .. import rules
 from ..findings import Finding, Severity
-from ..graph import Graph, NestedRef
-from ..schema import SchemaIndex
+from ..graph import NestedRef
+from ..session import Session
 
 
-def check(graph: Graph, schema: SchemaIndex) -> list[Finding]:
+def check(session: Session) -> list[Finding]:
+    graph, schema = session.graph, session.schema
     findings: list[Finding] = []
     for node in graph.nodes:
         if node.node_id is None:

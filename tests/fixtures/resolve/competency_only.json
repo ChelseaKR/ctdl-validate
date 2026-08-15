@@ -1,0 +1,13 @@
+{
+  "@context": "https://credreg.net/ctdlasn/schema/context/json",
+  "@id": "https://credentialengineregistry.org/graph/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+  "@graph": [
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+      "@type": "ceasn:Competency",
+      "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+      "ceasn:competencyText": { "en-US": "A competency published apart from its framework" },
+      "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+    }
+  ]
+}

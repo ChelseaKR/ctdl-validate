@@ -13,8 +13,8 @@ from __future__ import annotations
 from .. import rules
 from ..ctid import BARE_UUID_ANY_CASE_RE, CTID_ANY_CASE_RE, REGISTRY_RESOURCE_PREFIX
 from ..findings import Finding, Severity
-from ..graph import Graph, NestedRef
-from ..schema import SchemaIndex
+from ..graph import NestedRef
+from ..session import Session
 
 
 def _looks_like_iri(value: str) -> bool:
@@ -24,7 +24,8 @@ def _looks_like_iri(value: str) -> bool:
     return value.startswith("_:") or ":" in value
 
 
-def check(graph: Graph, schema: SchemaIndex) -> list[Finding]:
+def check(session: Session) -> list[Finding]:
+    graph, schema = session.graph, session.schema
     findings: list[Finding] = []
     for node in graph.nodes:
         entity = node.label

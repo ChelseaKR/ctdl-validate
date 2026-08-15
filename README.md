@@ -75,6 +75,39 @@ ctdl-validate <file.json> --format json
 Input can be a JSON-LD object with `@graph`, a single entity object, or an
 array of entities.
 
+## Resolving references against documents you already have
+
+CTDL payloads reference other payloads by URI as a matter of routine: a
+credential names the organization that owns it, a competency names its
+framework. On its own the validator reports each of those
+`REF_OUTSIDE_PAYLOAD` / UNVERIFIABLE, which is honest and, run against a real
+published Registry document, is often the entire report.
+
+`--resolve` hands the run the neighbouring documents so those references can
+be settled. It is repeatable and takes files or directories:
+
+```
+ctdl-validate credential.json --resolve owner.json --resolve neighbours/
+```
+
+- A reference that resolves in a supplied document becomes
+  `REF_RESOLVED_SUPPLIED` (INFO), naming the file and the class found there,
+  and check 4 then judges it against the property's declared range exactly as
+  it judges an in-payload reference. A wrong-class target is an ERROR and
+  gates the exit code.
+- A reference that resolves nowhere stays UNVERIFIABLE, and the message names
+  what was supplied, so "you did not give me the document" reads differently
+  from "the documents you gave me do not contain it."
+- Supplied documents are indexed, never validated. Their own defects are not
+  your report's findings.
+- **Nothing is fetched.** `--resolve` reads local files;
+  `tests/test_offline_guarantee.py` runs a resolved validation with `socket`
+  taken away.
+
+Why this stops short of the ERROR that `oscal-validate` raises in the same
+situation, and every other constraint on it:
+[ADR-0004](docs/adr/0004-resolution-is-additive.md).
+
 ## Extraction
 
 `ctdl-validate extract <url>` reads the structured markup a page already
@@ -112,7 +145,7 @@ unchanged. Restating it against the new command:
 
 | | `ctdl-validate <file.json>` | `ctdl-validate extract <url>` |
 |---|---|---|
-| Network | None. `tests/test_offline_guarantee.py` removes `socket` and runs it anyway. | Fetches `robots.txt`, then at most one page. Nothing else. |
+| Network | None, with or without `--resolve`. `tests/test_offline_guarantee.py` removes `socket` and runs both anyway. | Fetches `robots.txt`, then at most one page. Nothing else. |
 | Model calls | None. | None. There is no model anywhere in this repository. |
 | Determinism | Same input, same output, byte for byte. | Same *page bytes*, same output, byte for byte. The network is the only nondeterminism and it lives in one module, `extract/fetch.py`. |
 | Inference | Applies published rules; reports what it cannot see as UNVERIFIABLE. | Maps a term only where Credential Engine's schema encoding declares an equivalence. Never reads a credential out of prose. |
@@ -242,7 +275,7 @@ see before publishing, and it is what `extract --validate` shows.
 |---|---|---|---|
 | 1 | CTID grammar on `ceterms:ctid`, on `@id`, and on the tail of every Registry resource/graph URI; `ctid` must match the `@id` tail | `CTID_BARE_UUID`, `CTID_MALFORMED`, `CTID_UPPERCASE`, `CTID_NOT_UUIDV4`, `REGISTRY_URI_MALFORMED`, `CTID_URI_MISMATCH` | [About the CTID](https://credreg.net/ctdl/ctid), sections "CTID Structure" and "CTID-Based URI Structure" |
 | 2 | Identifier kind: properties the CTDL context declares as `{"@type": "@id"}` with entity ranges must carry IRIs or blank node ids, not bare UUIDs or bare CTIDs | `REF_BARE_UUID`, `REF_BARE_CTID`, `REF_NOT_IRI` | [CTDL context](https://credreg.net/ctdl/schema/context/json), [CTDL-ASN context](https://credreg.net/ctdlasn/schema/context/json) |
-| 3 | Reference resolution inside the payload; undefined blank nodes are errors, external IRIs are UNVERIFIABLE | `REF_UNRESOLVED_BNODE`, `REF_OUTSIDE_PAYLOAD` | Handbook, "Blank Node Identifier"; tool policy (below) |
+| 3 | Reference resolution across what the run can see; undefined blank nodes are errors, IRIs resolved from a `--resolve` document are INFO, IRIs resolved nowhere are UNVERIFIABLE | `REF_UNRESOLVED_BNODE`, `REF_RESOLVED_SUPPLIED`, `REF_OUTSIDE_PAYLOAD` | Handbook, "Blank Node Identifier"; tool policy (below), [ADR-0004](docs/adr/0004-resolution-is-additive.md) |
 | 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
 | 5 | Inverse consistency for pairs the schema declares with `owl:inverseOf`; both directions present must agree, one direction alone is INFO | `INVERSE_MISMATCH`, `INVERSE_ONE_DIRECTION` | schema encodings, `owl:inverseOf` declarations |
 
@@ -262,10 +295,12 @@ the output itself, in both text and JSON formats.
   not claim it will be rejected.
 - **INFO**: worth a human look, not a defect. Example: one direction of a
   declared inverse pair without the other.
-- **UNVERIFIABLE**: the answer cannot be determined from the payload alone.
-  A reference to an entity outside the payload may be perfectly valid; the
-  tool does not fetch anything, so it says so instead of guessing. Never
-  rendered as a pass or a fail, and never gates the exit code.
+- **UNVERIFIABLE**: the answer cannot be determined from what the run was
+  given. A reference to an entity outside the payload may be perfectly valid;
+  the tool does not fetch anything, so it says so instead of guessing. Never
+  rendered as a pass or a fail, and never gates the exit code. `--resolve`
+  can turn one of these into an answer; nothing turns one into a failure
+  ([ADR-0004](docs/adr/0004-resolution-is-additive.md)).
 
 The rule behind UNVERIFIABLE is the rule behind the whole tool: never punish
 what you cannot see, and never bless it either.
@@ -324,9 +359,10 @@ Not covered in v0, deliberately:
   map shapes).
 - Vocabularies beyond CTDL and CTDL-ASN (QData and other profiles).
 - Fetching anything *during validation*. References outside the payload are
-  UNVERIFIABLE by design, not a network call away from being verified. The
-  `extract` subcommand fetches a page; it never resolves a reference for the
-  validator, and the validator never calls it.
+  UNVERIFIABLE by design, not a network call away from being verified.
+  `--resolve` settles them from files the operator already has and opens no
+  socket to do it. The `extract` subcommand fetches a page; it never resolves
+  a reference for the validator, and the validator never calls it.
 
 Not covered by `extract`, deliberately: everything in [What it can and cannot
 extract](#what-it-can-and-cannot-extract).

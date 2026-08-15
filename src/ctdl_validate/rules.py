@@ -89,9 +89,22 @@ NO_NETWORK_POLICY = Rule(
     citation=(
         "ctdl-validate policy: no network access at validation time. A reference that "
         "points outside the submitted payload cannot be confirmed or denied, so it is "
-        "reported UNVERIFIABLE, never as a pass or a fail."
+        "reported UNVERIFIABLE, never as a pass or a fail. --resolve widens what the "
+        "run can see, using documents the operator already has; it fetches nothing."
     ),
     url="README.md (Methodology)",
+    retrieved="-",
+)
+
+RESOLUTION_POLICY = Rule(
+    citation=(
+        "ctdl-validate policy: --resolve is additive and is reported. A reference that "
+        "resolves in a document supplied on the command line is checked against the "
+        "property's declared range exactly as an in-payload reference is, and the "
+        "document it resolved in is named, because every judgement that follows rests "
+        "on that document having been supplied."
+    ),
+    url="docs/adr/0004-resolution-is-additive.md",
     retrieved="-",
 )
 

@@ -10,6 +10,19 @@ and this project adheres to
 
 ### Added
 
+- `--resolve PATH`: hand the validator further CTDL documents, or directories
+  of them, so a reference the payload does not define can be settled instead
+  of reported as unknowable. A reference resolving in a supplied document
+  becomes `REF_RESOLVED_SUPPLIED` (INFO) naming the file and the class it
+  found there, and check 4 then judges it against the property's declared
+  range exactly as it judges an in-payload reference, up to and including a
+  `RANGE_VIOLATION` that gates the exit code. Nothing is fetched: supplied
+  documents are read from the local filesystem, and the offline guarantee
+  suite proves it by running a resolved validation with `socket` removed.
+  Supplied documents are indexed, never validated. A reference that resolves
+  nowhere stays UNVERIFIABLE and the message names what was supplied. See
+  `docs/adr/0004-resolution-is-additive.md`, including why this stops short of
+  the ERROR `oscal-validate` raises in the same situation.
 - `ctdl-validate extract <url>`: deterministic extraction of CTDL-shaped
   JSON-LD from the structured markup a page already publishes (JSON-LD,
   microdata, RDFa Lite), with `--validate` running the full extract-then-check
@@ -52,6 +65,13 @@ and this project adheres to
 
 ### Changed
 
+- With no `--resolve`, a `REF_OUTSIDE_PAYLOAD` message now ends "Pass it with
+  --resolve to settle this." The code, severity and exit-code behaviour are
+  unchanged; only the message text is longer.
+- Checks now take a `Session` (payload, schema, supplied documents) rather
+  than a `(Graph, SchemaIndex)` pair, so the one input that can change a
+  finding's severity is explicit at every use. `validate_document(data)` is
+  unchanged for callers; it gained an optional second argument.
 - Python floor raised from 3.10 to 3.12 (portfolio Code Quality floor; the
   package is unreleased, so no installed users are affected). Tooling floors
   raised to ruff >= 0.15 and mypy >= 1.18; cyclomatic complexity capped at

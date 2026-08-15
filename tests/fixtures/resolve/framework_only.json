@@ -1,0 +1,12 @@
+{
+  "@context": "https://credreg.net/ctdlasn/schema/context/json",
+  "@id": "https://credentialengineregistry.org/graph/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+  "@graph": [
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+      "@type": "ceasn:CompetencyFramework",
+      "ceterms:ctid": "ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+      "ceasn:name": { "en-US": "The Framework, Published On Its Own" }
+    }
+  ]
+}

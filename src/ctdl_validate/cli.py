@@ -4,7 +4,10 @@ Two commands with two different postures, and the grammar keeps them apart:
 
 - ``ctdl-validate <file.json>`` validates. Offline, no model calls, same input
   and same output byte for byte. This is the default and only shape the tool
-  had before ``extract`` existed, and it is unchanged.
+  had before ``extract`` existed, and it is unchanged. ``--resolve`` adds more
+  local documents to what the run can see; it is the difference between "this
+  reference points at something I cannot check" and "this reference points at
+  an entity of the wrong class". It reads files. It fetches nothing.
 - ``ctdl-validate extract <url>`` fetches one page and reads its structured
   markup. It is the only command that opens a network connection, and it
   documents that posture in :mod:`ctdl_validate.extract.fetch`.
@@ -51,6 +54,17 @@ def validate_main(argv: Sequence[str]) -> int:
     )
     parser.add_argument("file", help="path to a CTDL JSON-LD document")
     parser.add_argument(
+        "--resolve",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help=(
+            "a further CTDL document, or a directory of them, whose entities this run "
+            "can resolve references against. Repeatable. Nothing is fetched, and the "
+            "supplied documents are never themselves validated."
+        ),
+    )
+    parser.add_argument(
         "--format",
         choices=("text", "json"),
         default="text",
@@ -70,7 +84,7 @@ def validate_main(argv: Sequence[str]) -> int:
         print(f"ctdl-validate: {args.file} is not valid JSON: {exc}", file=sys.stderr)
         return 2
     try:
-        findings = validate_document(data)
+        findings = validate_document(data, [Path(p) for p in args.resolve])
     except DocumentError as exc:
         print(f"ctdl-validate: {args.file}: {exc}", file=sys.stderr)
         return 2

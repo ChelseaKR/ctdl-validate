@@ -1,0 +1,13 @@
+{
+  "@context": "https://credreg.net/ctdl/schema/context/json",
+  "@id": "https://credentialengineregistry.org/graph/ce-79298677-d0e4-4799-853a-a633d9071826",
+  "@graph": [
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826",
+      "@type": "ceterms:CredentialOrganization",
+      "ceterms:ctid": "79298677-d0e4-4799-853a-a633d9071826",
+      "ceterms:name": { "en-US": "A Supplied Document With A Defect Of Its Own" },
+      "ceterms:subjectWebpage": "https://example.org/about"
+    }
+  ]
+}

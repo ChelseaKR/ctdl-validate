@@ -10,8 +10,7 @@ from __future__ import annotations
 from .. import rules
 from ..ctid import EXPECTED_GRAMMAR, classify_ctid, registry_uri_tail
 from ..findings import Finding, Severity
-from ..graph import Graph
-from ..schema import SchemaIndex
+from ..session import Session
 
 CTID_PROP = "ceterms:ctid"
 
@@ -125,7 +124,8 @@ def _registry_uri_findings(entity: str, prop: str, value: str) -> list[Finding]:
     ]
 
 
-def check(graph: Graph, schema: SchemaIndex) -> list[Finding]:
+def check(session: Session) -> list[Finding]:
+    graph = session.graph
     findings: list[Finding] = []
     for node in graph.nodes:
         entity = node.label

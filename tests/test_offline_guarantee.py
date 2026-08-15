@@ -48,6 +48,19 @@ def test_extracting_from_a_saved_page_opens_no_socket() -> None:
 
 
 @pytest.mark.usefixtures("no_network")
+def test_resolving_a_reference_opens_no_socket(capsys: pytest.CaptureFixture[str]) -> None:
+    # --resolve widens what a run can see using files the operator already has.
+    # It is emphatically not "fetch the thing the reference points at".
+    args = [
+        str(fixture_path("external_reference.json")),
+        "--resolve",
+        str(fixture_path("resolve/owner_organization.json")),
+    ]
+    assert main(args) == 0
+    assert "REF_RESOLVED_SUPPLIED" in capsys.readouterr().out
+
+
+@pytest.mark.usefixtures("no_network")
 def test_the_unverifiable_severity_is_still_never_a_fetch(
     capsys: pytest.CaptureFixture[str],
 ) -> None:

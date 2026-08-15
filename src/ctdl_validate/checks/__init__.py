@@ -5,11 +5,10 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from ..findings import Finding
-from ..graph import Graph
-from ..schema import SchemaIndex
+from ..session import Session
 from . import ctid_format, domain_range, identifier_kind, inverses, references
 
-Check = Callable[[Graph, SchemaIndex], list[Finding]]
+Check = Callable[[Session], list[Finding]]
 
 ALL_CHECKS: tuple[Check, ...] = (
     ctid_format.check,
