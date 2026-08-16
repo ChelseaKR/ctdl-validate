@@ -23,8 +23,9 @@ not. Both inconsistencies are set out in full, with the declarations they come
 from, in [What the errors actually are](#what-the-errors-actually-are).
 
 The second result is about `--resolve`. Validated document by document, the
-report is 299 UNVERIFIABLE findings and almost nothing else: 87% of everything
-the tool said was "I cannot see the document this points at." With the 177
+report is 299 UNVERIFIABLE findings and almost nothing else: 86% of the 348
+findings the tool produced were "I cannot see the document this points at."
+With the 177
 referenced documents fetched and supplied, 294 of those 299 became real
 verdicts, and **two ERROR findings appeared that no amount of looking at the
 documents individually could have produced.**
@@ -92,8 +93,10 @@ Validated one document at a time, as a publisher would:
 | UNVERIFIABLE | 299 | `REF_OUTSIDE_PAYLOAD` 299 |
 
 3 of 120 documents produced no findings at all. 36 produced at least one
-ERROR. The other 81 produced only UNVERIFIABLE findings, which is to say the
-tool had nothing to tell them.
+ERROR. Of the other 81, **72 produced only UNVERIFIABLE findings** — which is
+to say the tool had nothing to tell them — and 9 produced something short of an
+error: 5 a `CTID_NOT_UUIDV4` warning and 4 an `INVERSE_ONE_DIRECTION` note,
+each alongside UNVERIFIABLE findings.
 
 Re-validated with the 177 referenced Registry resources fetched and supplied
 through `--resolve`:
@@ -155,8 +158,11 @@ demonstration is a pair that points at the *same* concept scheme:
 
 Both name a term from the CTDL Audience Level vocabulary. Publishers encode
 both the same way, as a `CredentialAlignmentObject` carrying `ceterms:framework`
-and `ceterms:targetNode`, and for 46 of the 77 properties that is exactly what
-the schema asks for.
+and `ceterms:targetNode`, and for 46 of the 74 distinct properties that is
+exactly what the schema asks for. The two families overlap on three
+properties — `ceterms:instructionalProgramType`, `ceterms:specialistSubject`
+and `schema:unitText` — which declare both ranges, and 46 plus 31 counts those
+three twice.
 
 So the honest reading is that the `skos:Concept` range on those 31 properties
 does not describe how CTDL is actually encoded, and a validator that turns

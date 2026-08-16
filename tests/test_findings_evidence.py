@@ -126,3 +126,96 @@ def test_the_claim_that_four_pages_described_their_own_offering_holds() -> None:
     assert "Produced a CTDL entity for the thing being offered | 4" in WRITEUP.read_text(
         encoding="utf-8"
     )
+
+
+# -- the Registry survey, whose numbers are severity counts rather than pages --
+
+REGISTRY = ROOT / "docs" / "findings" / "2026-08-15-published-registry-survey.json"
+REGISTRY_WRITEUP = ROOT / "docs" / "findings" / "2026-08-15-published-registry-survey.md"
+
+#: Everything a Registry survey document is allowed to carry. Registry records
+#: hold individual names, phone numbers and email addresses; a survey about
+#: structural validity has no business republishing any of them, so the
+#: evidence is restricted to identifiers, class names, codes and counts.
+REGISTRY_DOCUMENT_KEYS = {
+    "alone",
+    "classes",
+    "ctid",
+    "entities",
+    "registry_references",
+    "resolved",
+}
+
+
+def _registry() -> dict[str, Any]:
+    payload: dict[str, Any] = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    return payload
+
+
+def _registry_rollup(run: str) -> dict[str, Any]:
+    """Recompute a rollup from the per-document records, not from the header."""
+    codes: dict[str, int] = {}
+    severities = {"ERROR": 0, "INFO": 0, "UNVERIFIABLE": 0, "WARNING": 0}
+    with_error = 0
+    with_nothing = 0
+    for document in _registry()["documents"]:
+        record = document[run]
+        for code, count in record["codes"].items():
+            codes[code] = codes.get(code, 0) + count
+        for severity, count in record["severities"].items():
+            severities[severity] += count
+        if record["severities"]["ERROR"]:
+            with_error += 1
+        if not sum(record["severities"].values()):
+            with_nothing += 1
+    return {
+        "codes": codes,
+        "severities": severities,
+        "documents_with_at_least_one_error": with_error,
+        "documents_with_no_findings": with_nothing,
+    }
+
+
+def test_the_registry_evidence_carries_no_record_content() -> None:
+    for document in _registry()["documents"]:
+        unexpected = set(document) - REGISTRY_DOCUMENT_KEYS
+        assert not unexpected, f"{document['ctid']}: unexpected keys {sorted(unexpected)}"
+
+
+def test_the_registry_rollups_are_what_the_documents_say() -> None:
+    payload = _registry()
+    assert len(payload["documents"]) == payload["sampled"]
+    for run in ("alone", "resolved"):
+        assert _registry_rollup(run) == payload[f"rollup_{run}"], run
+
+
+def test_the_registry_writeup_matches_the_evidence() -> None:
+    """The prose numbers, recomputed rather than trusted.
+
+    The share of findings that were non-answers, and the split of documents by
+    what the tool was able to tell them, were both typed in and both wrong: 87%
+    for a share that is 86%, and 81 documents said to have produced "only
+    UNVERIFIABLE findings" when 9 of the 81 also produced a warning or a note.
+    """
+    payload = _registry()
+    text = " ".join(REGISTRY_WRITEUP.read_text(encoding="utf-8").split())
+    alone = payload["rollup_alone"]
+    total = sum(alone["severities"].values())
+
+    share = round(100 * alone["severities"]["UNVERIFIABLE"] / total)
+    assert f"{share}% of the {total} findings" in text
+
+    only_unverifiable = 0
+    lesser = {"WARNING": 0, "INFO": 0}
+    for document in payload["documents"]:
+        severities = document["alone"]["severities"]
+        if severities["ERROR"] or not sum(severities.values()):
+            continue
+        if severities["WARNING"] or severities["INFO"]:
+            for name in lesser:
+                lesser[name] += 1 if severities[name] else 0
+        else:
+            only_unverifiable += 1
+    assert f"**{only_unverifiable} produced only UNVERIFIABLE findings**" in text
+    assert f"{lesser['WARNING']} a `CTID_NOT_UUIDV4` warning" in text
+    assert f"{lesser['INFO']} an `INVERSE_ONE_DIRECTION` note" in text

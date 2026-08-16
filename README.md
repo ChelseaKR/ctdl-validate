@@ -283,8 +283,8 @@ Two results. Forty ERROR findings, **every one of which traces to an
 inconsistency inside CTDL's own published schema encoding rather than to a
 publisher's mistake** — including a false-positive class in this tool that
 the write-up documents in full and does not paper over. And, validated one
-document at a time, 87% of everything the tool said was "I cannot see the
-document this points at"; supplying the 177 referenced documents through
+document at a time, 86% of the 348 findings the tool produced were "I cannot
+see the document this points at"; supplying the 177 referenced documents through
 `--resolve` turned 294 of those 299 non-answers into verdicts and surfaced two
 errors that were unreachable without it.
 

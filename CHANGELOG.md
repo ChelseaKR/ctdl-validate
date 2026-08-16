@@ -32,6 +32,14 @@ and this project adheres to
   including a false-positive class in this tool that the write-up documents
   rather than hides. `--resolve` turned 294 of 299 UNVERIFIABLE findings into
   verdicts and surfaced two errors that were unreachable without it.
+- `tests/test_findings_evidence.py` now recomputes the Registry survey's
+  rollups from its per-document records, and checks the write-up's prose
+  numbers against them. Three figures had been typed in and were wrong before
+  the test existed: the share of findings that were non-answers (86% of 348,
+  not 87%), the 81 documents below the error threshold described as producing
+  "only UNVERIFIABLE findings" when 9 of them produced a warning or a note,
+  and "46 of the 77 properties" for two range families that overlap on three
+  properties and so cover 74 distinct ones.
 - `ctdl-validate extract <url>`: deterministic extraction of CTDL-shaped
   JSON-LD from the structured markup a page already publishes (JSON-LD,
   microdata, RDFa Lite), with `--validate` running the full extract-then-check
