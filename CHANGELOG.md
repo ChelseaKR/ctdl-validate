@@ -45,7 +45,11 @@ and this project adheres to
   published human-facing page that nothing had ever checked. axe-core 4.13 at
   `wcag2a,wcag2aa,wcag22aa` in both colour schemes, a 320 CSS px reflow check,
   and a Lighthouse accessibility score that must be 1.00. Measured 2026-08-15:
-  0 violations, 25 rules passed, Lighthouse 1.00.
+  0 violations, 25 rules passed, Lighthouse 1.00. `audit.mjs` refuses to score
+  a page whose `?a11y-static` report did not render: pointed at a 404 error
+  page it used to report "5 passed, 0 violations" and exit 0, and a JS error
+  that stopped the static render short would have produced the same green
+  check on the empty page this gate exists to stop auditing.
 - `ctdl-validate extract <url>`: deterministic extraction of CTDL-shaped
   JSON-LD from the structured markup a page already publishes (JSON-LD,
   microdata, RDFa Lite), with `--validate` running the full extract-then-check

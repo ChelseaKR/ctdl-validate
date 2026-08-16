@@ -55,10 +55,36 @@ function fail(message) {
   console.log(`::error title=Accessibility::${message}`);
 }
 
+// The severities `?a11y-static` is supposed to put on the page. Checked
+// before anything is scanned, because this gate's whole reason for existing is
+// that auditing the page without its report passes and proves nothing. It was
+// worse than that: pointed at a 404 error page, this script reported "5
+// passed, 0 violations" and exited 0. The workflow's own serve step catches a
+// dead server, but a JS error that stops `?a11y-static` short would leave a
+// live page with an empty report and a green gate, which is the exact failure
+// this file was written to close.
+const EXPECTED_SEVERITIES = ["ERROR", "WARNING", "INFO", "UNVERIFIABLE"];
+
+async function requireTheReportRendered(page, scheme) {
+  if (!URL_UNDER_TEST.includes("a11y-static")) return;
+  const rendered = await page.evaluate(() =>
+    [...document.querySelectorAll(".finding .sev")].map((el) => el.textContent.trim()),
+  );
+  const missing = EXPECTED_SEVERITIES.filter((s) => !rendered.includes(s));
+  if (missing.length) {
+    fail(
+      `${scheme}: the static report did not render. Expected a finding at each of ` +
+        `${EXPECTED_SEVERITIES.join(", ")}; missing ${missing.join(", ")}. ` +
+        `Scanning the page without its report is not an audit.`,
+    );
+  }
+}
+
 for (const scheme of SCHEMES) {
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: scheme }]);
   await page.goto(URL_UNDER_TEST, { waitUntil: "networkidle0" });
+  await requireTheReportRendered(page, scheme);
   await page.evaluate(axeCore.source);
   const results = await page.evaluate(
     async (tags) => await window.axe.run(document, { runOnly: { type: "tag", values: tags } }),
