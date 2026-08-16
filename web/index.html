@@ -22,7 +22,15 @@
          /favicon.ico, gets a 404, and logs a console error. A tool whose
          argument is that it tells the truth about itself can afford not to
          ship a broken request on every page load. data: is already allowed by
-         img-src in the policy above. -->
+         img-src in the policy above.
+
+         nosemgrep: html.security.audit.missing-integrity.missing-integrity
+         The rule asks for a Subresource Integrity hash on externally hosted
+         files. This one is not hosted anywhere: the whole icon is in the
+         attribute, so there is no fetch for an attacker to intercept and no
+         hash SRI would accept. Suppressed here rather than repo-wide, so the
+         rule still fires on the next tag that does load something. -->
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -->
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%9C%93%3C/text%3E%3C/svg%3E"
