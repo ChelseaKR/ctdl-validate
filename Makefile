@@ -7,6 +7,9 @@ verify: sync lint format typecheck test audit
 	@echo "make verify: all gates passed."
 
 sync:
+	# `--frozen` installs a stale lock and exits 0, so it cannot gate drift.
+	# `uv lock --check` is the gate; keep it ahead of the install (CQ-09).
+	uv lock --check
 	uv sync --frozen
 
 lint:
