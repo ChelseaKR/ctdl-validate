@@ -108,6 +108,71 @@ Why this stops short of the ERROR that `oscal-validate` raises in the same
 situation, and every other constraint on it:
 [ADR-0004](docs/adr/0004-resolution-is-additive.md).
 
+## GitHub Action
+
+If the payloads you publish live in a repository, [`action.yml`](action.yml)
+validates them on every pull request and annotates each finding on the file it
+came from:
+
+```yaml
+name: Validate CTDL
+on: [pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Prefer a release tag or a commit SHA. `main` is shown because the
+      # action postdates v0.1.0 and no release carries it yet.
+      - uses: ChelseaKR/ctdl-validate@main
+        with:
+          path: payloads/
+```
+
+`path` takes one document, a directory (searched recursively for `*.json`), or
+a glob such as `payloads/**/*.json`. Two further inputs, both optional:
+
+- `resolve`: space-separated documents or directories to resolve references
+  against, passed through as repeated `--resolve`. Same rules as the CLI, so
+  they are indexed and never validated, and nothing is fetched.
+- `fail-on`: `error` (default), `warning`, or `info`. The CLI itself gates on
+  ERROR and only ERROR; a lower threshold is applied by the action, from the
+  counts in the CLI's own `--format json` summary. UNVERIFIABLE is gated at no
+  setting, because the tool counts it as neither a pass nor a fail.
+
+```yaml
+      - uses: ChelseaKR/ctdl-validate@main
+        id: ctdl
+        with:
+          path: payloads/**/*.json
+          resolve: reference-data/ organizations.json
+          fail-on: warning
+      - run: echo "${{ steps.ctdl.outputs.unverifiable-count }} reference(s) unsettled"
+```
+
+The counts are published as outputs: `error-count`, `warning-count`,
+`info-count`, `unverifiable-count`, and `files-validated`. The exit codes are
+the CLI's, unchanged: 0 when nothing meets the threshold, 1 when something
+does, 2 when a document could not be read. A `path` that matches no file at
+all is also exit 2, because a run that validated nothing is not a run that
+passed.
+
+There is no install step and no lock file to hash-pin, because there is
+nothing to install: `ctdl-validate` has zero runtime dependencies and ships
+`python -m ctdl_validate`, so the action runs the checked-out source directly
+and resolves nothing from PyPI while it runs. `actions/setup-python` is pinned
+to a commit SHA and to the same Python 3.12 the rest of this repository uses.
+
+The gate is tested in both directions, because a gate that cannot fail is
+worse than no gate: `tests/test_action_runner.py` asserts the exit code for
+clean documents, gated findings, unreadable input, and a `path` that matches
+nothing, and CI runs the composite action itself over a clean fixture and a
+deliberately broken one, failing the build if the broken one passes.
+
 ## Extraction
 
 `ctdl-validate extract <url>` reads the structured markup a page already

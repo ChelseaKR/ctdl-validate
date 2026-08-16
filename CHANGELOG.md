@@ -10,6 +10,16 @@ and this project adheres to
 
 ### Added
 
+- `action.yml`: a composite GitHub Action that runs the CLI over a file, a
+  directory, or a glob and annotates each finding on the file it came from.
+  Inputs are `path`, `resolve`, and `fail-on`; counts are published as step
+  outputs. Nothing is installed and nothing is fetched: the package has no
+  runtime dependencies, so the action runs the checked-out source off
+  `PYTHONPATH`, and `actions/setup-python` is pinned to a commit SHA. The exit
+  codes are the CLI's own, with two additions that refuse to pass silently: a
+  `path` matching no file is exit 2, and an unreadable document is exit 2 even
+  when every other document is clean. `tests/test_action_runner.py` and a CI
+  self-test prove the gate fails on a document with an ERROR finding.
 - `--resolve PATH`: hand the validator further CTDL documents, or directories
   of them, so a reference the payload does not define can be settled instead
   of reported as unknowable. A reference resolving in a supplied document

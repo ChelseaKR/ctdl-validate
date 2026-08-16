@@ -42,3 +42,40 @@ jobs:
 
       - name: Run the local verification gate
         run: make verify
+
+  # `make verify` covers the action's entry point (tests/test_action_runner.py).
+  # This job covers the composite wrapper around it: the inputs in action.yml,
+  # the interpreter it pins, and the exit code GitHub actually observes.
+  action-self-test:
+    name: action self-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: A clean document passes
+        uses: ./
+        with:
+          path: tests/fixtures/clean_framework.json
+
+      # The half of a gate that is easy to leave untested. `continue-on-error`
+      # here is not a bypass: the step after it fails the job unless this step
+      # failed, so the run is red either when the gate is broken or when the
+      # gate cannot break.
+      - name: A document with an ERROR finding must fail
+        id: broken
+        continue-on-error: true
+        uses: ./
+        with:
+          path: tests/fixtures/domain_violation.json
+
+      - name: Fail if the gate let the broken document through
+        if: steps.broken.outcome != 'failure'
+        run: |
+          echo "::error::action.yml passed a document with an ERROR finding"
+          exit 1
