@@ -8,9 +8,10 @@ verify: sync lint format typecheck test audit
 
 sync:
 	# `--frozen` installs a stale lock and exits 0, so it cannot gate drift.
-	# `uv lock --check` is the gate; keep it ahead of the install (CQ-09).
+	# `uv lock --check` and `uv sync --locked` both exit 1 on drift; keep the
+	# explicit check ahead of the install so the failure names the cause (CQ-09).
 	uv lock --check
-	uv sync --frozen
+	uv sync --locked
 
 lint:
 	uv run ruff check .

@@ -8,6 +8,26 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- `make sync` installs with `uv sync --locked` rather than `uv sync --frozen`,
+  and the README, `CONTRIBUTING.md`, the pull-request template, and the
+  provider-markup survey's reproduction steps say `--locked` to match.
+  `uv lock --check` already gated drift and still runs first, so the failure
+  names its cause; the change removes the second command that would have
+  installed a drifted lock and exited 0 if the first were ever dropped.
+- `CITATION.cff` now carries `version: 0.2.1` and `date-released: 2026-08-16`,
+  matching `pyproject.toml` and the signed tag. Both fields were omitted while
+  this was pre-release and were not added when the first release was cut.
+
+### Fixed
+
+- The README's Standards Conformance table declares all fifteen standards. AI
+  Development Measurement, Incident Response, and Data Governance had no row at
+  all, and the Accessibility and Performance rows opened in a form that read as
+  prose rather than as a state.
+
+
 ## [0.2.1] - 2026-08-16
 
 ## [0.2.0] - 2026-08-16

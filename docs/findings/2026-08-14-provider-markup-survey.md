@@ -298,7 +298,7 @@ for.
 ## Reproducing this
 
 ```sh
-uv sync --frozen
+uv sync --locked
 uv run python tools/survey.py tools/survey-urls.txt out.json
 ```
 
