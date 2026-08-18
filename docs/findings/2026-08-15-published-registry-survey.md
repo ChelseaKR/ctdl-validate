@@ -147,7 +147,7 @@ is declared is out of range on the face of the encoding.
 The reason to doubt the tool rather than the corpus is inside the same
 snapshot. CTDL has **two families of concept-valued properties**: 46
 properties declare `schema:rangeIncludes: ceterms:CredentialAlignmentObject`,
-and 31 declare `schema:rangeIncludes: skos:Concept`. The families are not
+and 45 declare `schema:rangeIncludes: skos:Concept`. The families are not
 distinguished by anything about the values they hold. The clearest
 demonstration is a pair that points at the *same* concept scheme:
 
@@ -156,13 +156,33 @@ demonstration is a pair that points at the *same* concept scheme:
 | `ceterms:audienceLevelType` | `ceterms:AudienceLevel` | `ceterms:CredentialAlignmentObject` |
 | `ceterms:creditLevelType` | `ceterms:AudienceLevel` | `skos:Concept` |
 
+> **Correction, 2026-08-18.** This paragraph first read "31 declare
+> `skos:Concept`". That was the count in `ctdl/schema.json` alone; the
+> validator indexes `ctdl/schema.json` and `ctdlasn/schema.json` together, and
+> across both the count is **45**. The `CredentialAlignmentObject` figure of 46
+> is the same either way. Nothing else in this write-up depends on the number,
+> and the run's own measurements below are unaffected — but the sentence
+> claimed to be about "the same snapshot" the tool reads, and was not.
+> `tests/test_domain_range.py` now derives these figures from the snapshot so
+> they cannot drift again.
+
 Both name a term from the CTDL Audience Level vocabulary. Publishers encode
 both the same way, as a `CredentialAlignmentObject` carrying `ceterms:framework`
-and `ceterms:targetNode`, and for 46 of the 74 distinct properties that is
-exactly what the schema asks for. The two families overlap on three
+and `ceterms:targetNode`. The two families overlap on three
 properties — `ceterms:instructionalProgramType`, `ceterms:specialistSubject`
-and `schema:unitText` — which declare both ranges, and 46 plus 31 counts those
+and `schema:unitText` — which declare both ranges, and 46 plus 45 counts those
 three twice.
+
+The `AudienceLevel` pair is not the only case. Measured across the snapshot,
+**three concept schemes are named by properties in both families**, and a
+fourth is named by one property that declares both ranges at once:
+
+| Concept scheme | `skos:Concept`-ranged | `CredentialAlignmentObject`-ranged |
+|---|---|---|
+| `ceterms:AudienceLevel` | `ceasn:educationLevelType`, `ceterms:creditLevelType` | `ceterms:audienceLevelType` |
+| `ceterms:CostType` | `ceterms:financialAssistanceForType` | `ceterms:directCostType` |
+| `ceterms:ScheduleFrequency` | `ceterms:paymentPatternType` | `ceterms:offerFrequencyType`, `ceterms:scheduleFrequencyType` |
+| `ceterms:InstructionalProgramClassification` | `ceterms:instructionalProgramType` | `ceterms:instructionalProgramType` (the same property declares **both**) |
 
 So the honest reading is that the `skos:Concept` range on those 31 properties
 does not describe how CTDL is actually encoded, and a validator that turns
@@ -175,9 +195,39 @@ report exactly this shape. It has not been applied here, deliberately: this
 write-up establishes the evidence, and changing the severity is a spec ruling
 that belongs in its own change with its own citations.
 
-Until that happens, read a `RANGE_VIOLATION` on a concept-valued property as
-"the schema encoding and the publishing practice disagree", not as "your
-document is wrong."
+> **Resolved, 2026-08-18.** That change landed. A new code,
+> `CONCEPT_RANGE_CONFLICT` (INFO), now covers the 20 properties that declare
+> both `skos:Concept` and a `meta:targetScheme` — the properties for which the
+> evidence above holds — and only those. A `skos:Concept` range with no
+> `meta:targetScheme` (`skos:broader`, `ceterms:classification`) is ordinary
+> SKOS and remains a `RANGE_VIOLATION` / ERROR, as does any other out-of-range
+> class on a scheme-bound property.
+>
+> **Measured on this same corpus**, re-validated offline from this run's cache
+> with no network access:
+>
+> | | before | after |
+> |---|---|---|
+> | Documents with >= 1 ERROR (alone) | 36 / 120 | **0 / 120** |
+> | Documents with >= 1 ERROR (`--resolve`) | 36 / 120 | **1 / 120** |
+> | ERROR findings (alone) | 38 | **0** |
+> | ERROR findings (`--resolve`) | 40 | **2** |
+> | `CONCEPT_RANGE_CONFLICT` (INFO) | — | 38 |
+>
+> The 2 surviving errors are the `ceterms:TransferValueProfile` version
+> relations in section 2 below, on `ce-5f2b7ce4-6952-43aa-89fa-bcb06d67313f`,
+> which are the ones this survey judged real. Every other finding, at every
+> severity, is unchanged across all 120 documents. The reclassified findings
+> are `ceterms:creditUnitType` (36) and `ceterms:creditLevelType` (2), which is
+> the whole of what section 1 predicted and nothing besides.
+>
+> What is and is not gated: the re-run is reproducible with
+> `tools/registry_survey.py --from-dir` against this run's cache, but that
+> cache is gitignored, so CI does not re-derive the table above. What CI does
+> gate is the mechanism — which properties the disposition covers, that it
+> covers them only when `meta:targetScheme` is declared, and that the
+> declarations it rests on are still in the vendored snapshot — in
+> `tests/test_domain_range.py`. The counts here are a measurement, not a gate.
 
 ### 2. Version relations whose domain includes a class their range excludes
 
@@ -232,7 +282,10 @@ first evidence for it.
 
 1. **A false-positive class in this tool is now documented with evidence.**
    See item 1. Nobody should ship a CTDL gate on `RANGE_VIOLATION` alone until
-   the concept-range question is settled.
+   the concept-range question is settled. *(Settled 2026-08-18: see the
+   resolution note in item 1. A gate on `RANGE_VIOLATION` is now safe against
+   this corpus — it fires twice in 120 documents, on the one case this survey
+   checked by hand and judged real.)*
 2. **`--resolve` earns its place empirically.** 294 of 299 non-answers became
    answers, and two errors existed that were unreachable without it. Before
    the flag, a survey of this corpus could only have reported that it could

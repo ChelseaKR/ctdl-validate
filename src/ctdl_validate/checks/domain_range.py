@@ -8,6 +8,13 @@ namespaces that the vendored schema snapshot does not declare are WARNINGs
 generic form of the wrong-framework-identifier bug: a Competency whose
 isPartOf matches no CompetencyFramework in its own payload even though the
 payload contains one.
+
+Two range disagreements are dispositions rather than errors, because the
+published sources contradict each other rather than the document contradicting
+a source: ``RANGE_DOCS_CONFLICT`` for ceasn:isChildOf, and
+``CONCEPT_RANGE_CONFLICT`` for the properties CTDL ranges on skos:Concept
+while ranging the same kind of value on ceterms:CredentialAlignmentObject
+elsewhere. Both are INFO and neither gates the exit code.
 """
 
 from __future__ import annotations
@@ -15,12 +22,16 @@ from __future__ import annotations
 from .. import rules
 from ..findings import Finding, Severity
 from ..graph import NestedRef, Node
-from ..schema import SchemaIndex, is_checked_term, vocab_prefix
+from ..schema import ALIGNMENT_RANGE_TERM, SchemaIndex, is_checked_term, vocab_prefix
 from ..session import Session
 
 #: Documented conflicts between the schema encoding and Credential Engine's
 #: own usage guidance. See rules.ISCHILDOF_RANGE_CONFLICT.
 DOCUMENTED_RANGE_CONFLICTS = frozenset({("ceasn:isChildOf", "ceasn:CompetencyFramework")})
+
+#: Classes that satisfy a declared skos:Concept range in practice even though
+#: the encoding gives them no path to it. See rules.concept_range_conflict_rule.
+ALIGNMENT_RANGE = frozenset({ALIGNMENT_RANGE_TERM})
 
 
 def _unknown_type_findings(node: Node, schema: SchemaIndex) -> list[Finding]:
@@ -70,6 +81,34 @@ def _range_findings(
         if schema.class_matches(target_types, prop_def.range):
             continue
         value_text = value if isinstance(value, str) else target_label
+        # CTDL ranges a reference to a term from one of its own concept schemes
+        # on skos:Concept for some properties and on CredentialAlignmentObject
+        # for others, with nothing about the value to tell the families apart,
+        # and its published documents use CredentialAlignmentObject for both.
+        # An ERROR here would report Credential Engine's dominant encoding as a
+        # defect, so this is reported and not gated on.
+        if prop_def.is_scheme_bound_concept and schema.class_matches(target_types, ALIGNMENT_RANGE):
+            siblings = schema.alignment_ranged_siblings(prop)
+            findings.append(
+                Finding(
+                    code="CONCEPT_RANGE_CONFLICT",
+                    severity=Severity.INFO,
+                    entity=node.label,
+                    prop=prop,
+                    value=value_text,
+                    message=(
+                        f"{prop} declares its range as skos:Concept, and this value is a "
+                        f"{ALIGNMENT_RANGE_TERM}. That is how the Registry's published "
+                        "documents encode it, and how CTDL declares the range of other "
+                        f"properties drawing on the same concept scheme "
+                        f"({', '.join(sorted(prop_def.target_scheme))}), so this is very "
+                        "likely correct as written. Nothing to fix unless you meant to "
+                        "reference a skos:Concept directly." + origin
+                    ),
+                    rule=rules.concept_range_conflict_rule(prop, prop_def.target_scheme, siblings),
+                )
+            )
+            continue
         conflict = next((t for t in target_types if (prop, t) in DOCUMENTED_RANGE_CONFLICTS), None)
         if conflict is not None:
             findings.append(
