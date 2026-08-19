@@ -353,6 +353,15 @@ see the document this points at"; supplying the 177 referenced documents through
 `--resolve` turned 294 of those 299 non-answers into verdicts and surfaced two
 errors that were unreachable without it.
 
+That false-positive class is now fixed (conflict 4 below), and the same corpus
+re-validated offline from the survey's own cache is the measurement of the
+fix: document by document, **36 of 120 documents failing became 0**, as all 38
+`RANGE_VIOLATION` findings became `CONCEPT_RANGE_CONFLICT` (INFO). With
+`--resolve`, 40 ERROR findings became 2 — and those 2 are the genuine
+`ceterms:TransferValueProfile` version-relation errors in conflict 5, in the
+one document the survey identified by hand. Every other finding, at every
+severity, is byte-for-byte unchanged.
+
 ## What it checks (v0)
 
 | # | Check | Codes | Rule source |
@@ -360,7 +369,7 @@ errors that were unreachable without it.
 | 1 | CTID grammar on `ceterms:ctid`, on `@id`, and on the tail of every Registry resource/graph URI; `ctid` must match the `@id` tail | `CTID_BARE_UUID`, `CTID_MALFORMED`, `CTID_UPPERCASE`, `CTID_NOT_UUIDV4`, `REGISTRY_URI_MALFORMED`, `CTID_URI_MISMATCH` | [About the CTID](https://credreg.net/ctdl/ctid), sections "CTID Structure" and "CTID-Based URI Structure" |
 | 2 | Identifier kind: properties the CTDL context declares as `{"@type": "@id"}` with entity ranges must carry IRIs or blank node ids, not bare UUIDs or bare CTIDs | `REF_BARE_UUID`, `REF_BARE_CTID`, `REF_NOT_IRI` | [CTDL context](https://credreg.net/ctdl/schema/context/json), [CTDL-ASN context](https://credreg.net/ctdlasn/schema/context/json) |
 | 3 | Reference resolution across what the run can see; undefined blank nodes are errors, IRIs resolved from a `--resolve` document are INFO, IRIs resolved nowhere are UNVERIFIABLE | `REF_UNRESOLVED_BNODE`, `REF_RESOLVED_SUPPLIED`, `REF_OUTSIDE_PAYLOAD` | Handbook, "Blank Node Identifier"; tool policy (below), [ADR-0004](docs/adr/0004-resolution-is-additive.md) |
-| 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
+| 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT`, `CONCEPT_RANGE_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
 | 5 | Inverse consistency for pairs the schema declares with `owl:inverseOf`; both directions present must agree, one direction alone is INFO | `INVERSE_MISMATCH`, `INVERSE_ONE_DIRECTION` | schema encodings, `owl:inverseOf` declarations |
 
 Every finding carries its rule citation, source URL, and retrieval date in
@@ -473,25 +482,34 @@ than picking a side silently:
 3. Some Handbook example URIs omit the ce- prefix inside Registry resource
    URIs, which the About the CTID page (updated 2024) contradicts. The tool
    follows About the CTID and flags such URIs.
+4. CTDL declares two different ranges for the same kind of concept reference.
+   Across the vendored snapshot, 46 properties declare
+   `schema:rangeIncludes: ceterms:CredentialAlignmentObject` and 45 declare
+   `skos:Concept`, and nothing about the values tells the families apart.
+   Three concept schemes are named by properties in *both* families —
+   `ceterms:AudienceLevel` (`ceterms:audienceLevelType` vs
+   `ceterms:creditLevelType` and `ceasn:educationLevelType`),
+   `ceterms:CostType`, and `ceterms:ScheduleFrequency` — and a fourth,
+   `ceterms:InstructionalProgramClassification`, is named by a single property
+   that declares *both* ranges at once. Published Registry documents encode
+   both families as a `CredentialAlignmentObject`. Reported as
+   `CONCEPT_RANGE_CONFLICT` (INFO), citing both declarations, on the 20
+   properties that declare `skos:Concept` **and** a `meta:targetScheme`. A
+   `skos:Concept`-ranged property with no `meta:targetScheme` — `skos:broader`,
+   `ceterms:classification` — is ordinary SKOS and still a `RANGE_VIOLATION`.
 
-Validating the published corpus on 2026-08-15 surfaced two more, and unlike
-the three above **the tool does not yet handle either one**; both are reported
-as `RANGE_VIOLATION` / ERROR today, and at least the first of them should not
-be. Both are set out with their declarations in
+Validating the published corpus on 2026-08-15 surfaced one more, and unlike
+the four above **the tool does not handle it**; it is reported as
+`RANGE_VIOLATION` / ERROR today. It is set out with its declarations in
 [the Registry survey](docs/findings/2026-08-15-published-registry-survey.md):
 
-4. CTDL declares two different ranges for the same kind of concept reference.
-   46 properties declare `schema:rangeIncludes: ceterms:CredentialAlignmentObject`
-   and 31 declare `skos:Concept`, including a pair that names the same concept
-   scheme (`ceterms:audienceLevelType` and `ceterms:creditLevelType`, both
-   `meta:targetScheme: ceterms:AudienceLevel`). Published documents encode both
-   families as a `CredentialAlignmentObject`. 38 of 40 errors in the survey are
-   this, so a `RANGE_VIOLATION` on a concept-valued property currently means
-   "the encoding and the practice disagree", not "your document is wrong."
 5. `ceterms:latestVersion`, `ceterms:nextVersion` and `ceterms:previousVersion`
    each declare `ceterms:TransferValueProfile` in `schema:domainIncludes` and
    omit it from `schema:rangeIncludes`, so a TransferValueProfile may carry a
    version relation but may not point it at another TransferValueProfile.
+   Left as an ERROR deliberately: unlike the concept ranges, one document in
+   the sample is the only evidence, and one publisher's usage is not enough to
+   overturn a declaration.
 
 ## Development
 

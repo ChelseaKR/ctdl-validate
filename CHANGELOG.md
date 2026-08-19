@@ -8,6 +8,34 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- `CONCEPT_RANGE_CONFLICT` (INFO): a new finding code for CTDL's two
+  incompatible declarations of the same kind of value. A property that
+  declares `schema:rangeIncludes: skos:Concept` **and** a `meta:targetScheme`
+  is a reference to a term from one of CTDL's own concept schemes, and the
+  Registry's published documents encode those as
+  `ceterms:CredentialAlignmentObject` — which the encoding gives no path to
+  `skos:Concept`. That combination is now reported as a documented conflict
+  rather than a `RANGE_VIOLATION` / ERROR, citing both declarations and, where
+  the snapshot has one, a sibling property drawing on the same concept scheme
+  with the other range declared.
+
+  Twenty properties are covered, derived from the vendored snapshot rather
+  than listed by hand. A `skos:Concept` range with no `meta:targetScheme`
+  (`skos:broader`, `ceterms:classification`) is ordinary SKOS and remains an
+  ERROR, as does any other out-of-range class on a covered property.
+
+  Measured against the 120 published Registry documents of the 2026-08-15
+  survey, re-validated offline from that run's cache: documents failing
+  validation went from 36 of 120 to 0 (document by document) and from 36 to 1
+  with `--resolve`; ERROR findings went from 38 to 0 and from 40 to 2. The two
+  survivors are the `ceterms:TransferValueProfile` version relations the survey
+  identified by hand as genuine. No other finding changed, at any severity.
+
+- `PropertyDef.target_scheme` on the schema index, carrying the
+  `meta:targetScheme` declarations that were previously parsed and discarded.
+
 ### Changed
 
 - `make sync` installs with `uv sync --locked` rather than `uv sync --frozen`,
@@ -26,6 +54,14 @@ and this project adheres to
   Development Measurement, Incident Response, and Data Governance had no row at
   all, and the Accessibility and Performance rows opened in a form that read as
   prose rather than as a state.
+- The 2026-08-15 Registry survey said 31 properties declare
+  `schema:rangeIncludes: skos:Concept`. That was the count in
+  `ctdl/schema.json` alone, while the validator indexes it together with
+  `ctdlasn/schema.json`, where the figure is 45. The sentence claimed to
+  describe "the same snapshot" the tool reads and did not. Corrected in place,
+  with a note; the run's own measurements never depended on it, and the figures
+  are now derived from the snapshot in `tests/test_domain_range.py` so they
+  cannot drift again.
 
 
 ## [0.2.1] - 2026-08-16

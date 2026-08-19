@@ -121,6 +121,52 @@ ISCHILDOF_RANGE_CONFLICT = Rule(
 )
 
 
+def concept_range_conflict_rule(
+    prop: str, scheme: frozenset[str], siblings: tuple[str, ...]
+) -> Rule:
+    """The concept-range inconsistency, cited against the snapshot it comes from.
+
+    CTDL declares references to terms from its own concept schemes with two
+    incompatible ranges. ``prop`` declares skos:Concept; other properties
+    naming the same kind of value declare ceterms:CredentialAlignmentObject,
+    whose only declared parent is schema:AlignmentObject — no path to
+    skos:Concept exists in the encoding. The published corpus encodes both
+    families as CredentialAlignmentObject, so the declaration, not the
+    document, is what is inconsistent. Reported as INFO, not an error,
+    because the sources disagree; see the isChildOf conflict for the same
+    disposition applied to the same kind of problem.
+    """
+    named = ", ".join(sorted(scheme))
+    if siblings:
+        shown = ", ".join(siblings[:3])
+        if len(siblings) > 3:
+            shown += f", ... ({len(siblings)} properties total)"
+        demonstration = (
+            f" The same snapshot declares {shown} over the same concept scheme with "
+            f"schema:rangeIncludes ceterms:CredentialAlignmentObject, so the two "
+            "declarations describe one kind of value."
+        )
+    else:
+        demonstration = (
+            " Across the snapshot, CTDL ranges scheme-bound concept references on "
+            "ceterms:CredentialAlignmentObject and on skos:Concept interchangeably; "
+            "three concept schemes are named by properties in both families."
+        )
+    return Rule(
+        citation=(
+            f"Conflicting declarations inside the schema encoding: {prop} declares "
+            f"schema:rangeIncludes skos:Concept and meta:targetScheme [{named}]."
+            f"{demonstration} ceterms:CredentialAlignmentObject declares only "
+            "rdfs:subClassOf schema:AlignmentObject, so it cannot satisfy a "
+            "skos:Concept range on the face of the encoding. Reported as INFO, not "
+            "an error, because the encoding and Credential Engine's own published "
+            "documents disagree."
+        ),
+        url=_vocab_schema_url(prop),
+        retrieved=RETRIEVED,
+    )
+
+
 def id_coercion_rule(prop: str) -> Rule:
     return Rule(
         citation=(

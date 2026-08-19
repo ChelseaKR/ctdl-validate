@@ -89,9 +89,13 @@ ADR and a README scope update in the same PR.
 The rules come verbatim from Credential Engine's published schema encodings
 and documentation; the tool adds no discretionary judgment per payload.
 Where the published sources disagree with each other, the tool reports the
-conflict (`RANGE_DOCS_CONFLICT`, INFO) citing both sides rather than
-silently picking one. Terms outside the CTDL namespaces are explicitly not
-judged.
+conflict (`RANGE_DOCS_CONFLICT` and `CONCEPT_RANGE_CONFLICT`, both INFO)
+citing both sides rather than silently picking one. The second of those was
+added after validating 120 published Registry documents showed the tool
+failing 36 of them on a declaration Credential Engine's own documents
+contradict: reporting a publisher's correct work as a defect is the same
+harm as missing a real one, in the direction that is harder to notice.
+Terms outside the CTDL namespaces are explicitly not judged.
 
 ## C. Privacy
 

@@ -44,6 +44,11 @@ LITERAL_RANGE_TERMS = frozenset(
 #: (schema.org, dct, foaf, ...) are not CTDL's to judge and are skipped.
 CHECKED_PREFIXES = ("ceterms:", "ceasn:")
 
+#: The two classes CTDL uses, inconsistently, to range a reference to a term
+#: from one of its own concept schemes. See rules.CONCEPT_RANGE_CONFLICT.
+CONCEPT_RANGE_TERM = "skos:Concept"
+ALIGNMENT_RANGE_TERM = "ceterms:CredentialAlignmentObject"
+
 
 @dataclass(frozen=True)
 class ClassDef:
@@ -59,11 +64,27 @@ class PropertyDef:
     inverse: str | None
     id_coerced: bool
     language_map: bool
+    #: meta:targetScheme declarations: the CTDL concept scheme(s) a value of
+    #: this property is drawn from. Present on both families of concept-valued
+    #: property, which is what makes it a discriminator for "this is a
+    #: controlled-vocabulary term reference" independent of the declared range.
+    target_scheme: frozenset[str] = frozenset()
 
     @property
     def range_has_entities(self) -> bool:
         """True when at least one declared range term is an entity class."""
         return bool(self.range - LITERAL_RANGE_TERMS)
+
+    @property
+    def is_scheme_bound_concept(self) -> bool:
+        """True when this property names a concept scheme and ranges on skos:Concept.
+
+        These are the properties caught by the concept-range inconsistency
+        described in ``rules.CONCEPT_RANGE_CONFLICT``: CTDL declares the same
+        kind of value — a term drawn from one of its own concept schemes —
+        with two incompatible ranges depending on the property.
+        """
+        return CONCEPT_RANGE_TERM in self.range and bool(self.target_scheme)
 
 
 class SchemaIndex:
@@ -117,6 +138,33 @@ class SchemaIndex:
     def known_types(self, node_types: tuple[str, ...]) -> tuple[str, ...]:
         return tuple(t for t in node_types if t in self.classes)
 
+    def alignment_ranged_siblings(self, prop: str) -> tuple[str, ...]:
+        """Properties naming the same concept scheme but ranged on the other class.
+
+        The demonstration that CTDL's two concept ranges describe one kind of
+        value: these properties draw from the *same* ``meta:targetScheme`` as
+        ``prop`` and declare ``ceterms:CredentialAlignmentObject`` where
+        ``prop`` declares ``skos:Concept``. Derived from the vendored snapshot
+        on every call rather than written down, so refreshing the snapshot
+        refreshes the evidence.
+        """
+        prop_def = self.properties.get(prop)
+        if prop_def is None or not prop_def.target_scheme:
+            return ()
+        return tuple(
+            sorted(
+                other.term
+                for other in self.properties.values()
+                if other.term != prop
+                and ALIGNMENT_RANGE_TERM in other.range
+                and other.target_scheme & prop_def.target_scheme
+            )
+        )
+
+    def scheme_bound_concept_properties(self) -> tuple[str, ...]:
+        """Every property the concept-range conflict disposition can apply to."""
+        return tuple(sorted(p.term for p in self.properties.values() if p.is_scheme_bound_concept))
+
 
 def _read_vendor(relpath: str) -> Any:
     path = resources.files("ctdl_validate").joinpath("vendor").joinpath(relpath)
@@ -164,9 +212,10 @@ def _index_schema_entry(
         )
         classes[term] = ClassDef(term=term, parents=parents)
     elif etype == "rdf:Property":
-        merged = raw_props.setdefault(term, {"domain": set(), "range": set()})
+        merged = raw_props.setdefault(term, {"domain": set(), "range": set(), "scheme": set()})
         merged["domain"].update(_as_list(entry.get("schema:domainIncludes")))
         merged["range"].update(_as_list(entry.get("schema:rangeIncludes")))
+        merged["scheme"].update(_as_list(entry.get("meta:targetScheme")))
         inverse = _as_list(entry.get("owl:inverseOf"))
         if inverse:
             merged["inverse"] = inverse[0]
@@ -201,6 +250,7 @@ def load_schema() -> SchemaIndex:
             inverse=merged.get("inverse"),
             id_coerced=coercion.get("@type") == "@id",
             language_map=coercion.get("@container") == "@language",
+            target_scheme=frozenset(merged["scheme"]),
         )
 
     return SchemaIndex(classes=classes, properties=properties, prefixes=prefixes)
@@ -215,7 +265,9 @@ def vocab_prefix(term: str) -> str:
 
 
 __all__ = [
+    "ALIGNMENT_RANGE_TERM",
     "CHECKED_PREFIXES",
+    "CONCEPT_RANGE_TERM",
     "LITERAL_RANGE_TERMS",
     "ClassDef",
     "PropertyDef",
