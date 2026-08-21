@@ -100,6 +100,18 @@ Open a PR against `main`. The short version of the checklist:
 - [`CHANGELOG.md`](CHANGELOG.md) `[Unreleased]` is updated for user-visible
   changes.
 
+## Cutting a release
+
+One commit moves everything that names the version, and
+`tests/test_release_state.py` fails the build if any of them is left behind:
+`version` in `pyproject.toml` (then `uv lock`), the `[Unreleased]` heading in
+`CHANGELOG.md` becoming `[X.Y.Z] - YYYY-MM-DD`, the README's `**Status:**`
+line and its `uses: ChelseaKR/ctdl-validate@vX.Y.Z` examples, `version` and
+`date-released` in `CITATION.cff`, and the Delivery health table in
+`docs/ROADMAP.md`. Then sign the tag and dispatch `release.yml` with it; the
+workflow re-runs `make verify` at the tagged commit before anything is built.
+The GitHub repository description carries no version on purpose.
+
 ## Reporting bugs and security issues
 
 - **Security, including any false-clean-report path:** do not open a public

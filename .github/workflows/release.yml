@@ -7,10 +7,12 @@ name: release
 # sdist+wheel, attest SLSA build provenance, and attach the build to a
 # GitHub Release whose notes are the matching CHANGELOG section.
 #
-# It has run once: `v0.1.0`, a signed tag dated 2026-08-08, released the same
-# day with the wheel and sdist attached and published to PyPI on 2026-08-13.
-# Tag the next one the same way:
-# `git tag -s v0.2.0 -m v0.2.0 && git push origin v0.2.0`.
+# It has run for every release so far: `v0.1.0` (2026-08-08), then `v0.2.0`
+# and `v0.2.1` (2026-08-16), each a signed tag with the wheel and sdist
+# attached to the Release and published to PyPI. Tag the next one the same
+# way, after bumping pyproject.toml, the README status line and CITATION.cff
+# together (tests/test_release_state.py fails the build if they disagree):
+# `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
 
 on:
   workflow_dispatch:

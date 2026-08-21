@@ -4,8 +4,8 @@ name: Deploy playground
 # with a wheel built from the same commit.
 #
 # The wheel is built here rather than installed from PyPI on purpose, and the
-# purpose is not that there is nothing on PyPI: ctdl-validate 0.1.0 has been
-# there since 2026-08-13. It is that serving a wheel built from this commit,
+# purpose is not that there is nothing on PyPI: ctdl-validate has been there
+# since 2026-08-13. It is that serving a wheel built from this commit,
 # from this origin, means the playground can never run a different version of
 # the validator than the source it is published beside. `main` is routinely
 # ahead of the last tag, so installing the released package here would put a

@@ -15,12 +15,16 @@ validate. It is the only part of this tool that opens a network connection,
 and it still makes no model calls: see [Extraction](#extraction) for the
 boundary, stated precisely.
 
-**Status:** Beta. Version `0.1.0`, released 2026-08-08 from a signed tag, with
-the sdist and wheel attached to the GitHub Release. The rule set, the CLI, and
-its text and JSON reporters are complete and covered by tests. The `extract`
-subcommand is newer than the release and is on `main` only. Nothing here has
-been published to the Credential Registry, and this project is not affiliated
-with or endorsed by Credential Engine.
+**Status:** Beta. Version `0.2.1`, released 2026-08-16 from a signed tag, with
+the sdist and wheel attached to the GitHub Release and published to PyPI as
+[`ctdl-validate`](https://pypi.org/project/ctdl-validate/). The rule set, the
+CLI, `extract`, `--resolve`, the GitHub Action, and the text and JSON
+reporters are all in that release. What `main` carries beyond it is listed
+under *Unreleased* in [CHANGELOG.md](CHANGELOG.md). This line is pinned to
+`pyproject.toml` by `tests/test_release_state.py`, because a validator whose
+own front page misreports its version has the defect it exists to catch.
+Nothing here has been published to the Credential Registry, and this project
+is not affiliated with or endorsed by Credential Engine.
 
 **Try it without installing anything:**
 [chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
@@ -126,9 +130,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Prefer a release tag or a commit SHA. `main` is shown because the
-      # action postdates v0.1.0 and no release carries it yet.
-      - uses: ChelseaKR/ctdl-validate@main
+      # Pin a release tag, or a commit SHA for stricter supply-chain hygiene.
+      - uses: ChelseaKR/ctdl-validate@v0.2.1
         with:
           path: payloads/
 ```
@@ -145,7 +148,7 @@ a glob such as `payloads/**/*.json`. Two further inputs, both optional:
   setting, because the tool counts it as neither a pass nor a fail.
 
 ```yaml
-      - uses: ChelseaKR/ctdl-validate@main
+      - uses: ChelseaKR/ctdl-validate@v0.2.1
         id: ctdl
         with:
           path: payloads/**/*.json
@@ -554,7 +557,7 @@ apply; the enforcement ledger with targets and owners is
 | AI Evaluation | N/A (deterministic rule engine and a deterministic extractor; no model, prompt, retrieval, embedding, or LLM call anywhere, including in `extract`; AI-assisted authoring is disclosed under [Disclosure](#disclosure)) | Zero runtime dependencies makes the no-model claim mechanically checkable; the extractor's refusals are tested in `tests/test_extract_break_the_gate.py`. |
 | Documentation | Applies | This README, [CHANGELOG.md](CHANGELOG.md), ADRs in [docs/adr/](docs/adr/), [CITATION.cff](CITATION.cff), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md). |
 | Quality & Metrics | Applies | [docs/ROADMAP.md](docs/ROADMAP.md) names every gate as AUTO, REVIEW, or a reasoned exception; nothing is silently skipped. |
-| Release & Versioning | Applies | SemVer; `CHANGELOG.md` kept current; trusted-main signed-tag release workflow. `v0.1.0` is a signed tag dated 2026-08-08, published as a GitHub Release the same day with the wheel and sdist attached, and on PyPI as `ctdl-validate` 0.1.0 since 2026-08-13. |
+| Release & Versioning | Applies | SemVer; `CHANGELOG.md` kept current; trusted-main signed-tag release workflow. Three signed tags (`v0.1.0` 2026-08-08; `v0.2.0` and `v0.2.1` 2026-08-16), each a GitHub Release with the wheel and sdist attached and on PyPI as `ctdl-validate`. `tests/test_release_state.py` pins this README, `CITATION.cff`, and the `uses:` examples to `pyproject.toml`'s version and to the CHANGELOG's dated heading for it. |
 | Performance | Applies — and one control is **not met**. The playground downloads a 5.6 MB WebAssembly Python runtime, because the alternative to running the validator in the visitor's browser is uploading unpublished credential data to a server. | Measured against the published page 2026-08-15: Lighthouse performance **0.42** against a budget of >= 0.90, script transfer **248,147 B** against a budget of < 204,800 B, LCP 29.2 s, accessibility 1.00, CLS 0. `PERF-02` cannot be met without giving up local execution; the trade is stated in [docs/ROADMAP.md](docs/ROADMAP.md) rather than waived quietly, and no advisory-mode gate is wired for a budget that is not met. |
 | AI Development Measurement | Applies — this tool was built with AI assistance and reviewed by a human, disclosed under [Disclosure](#disclosure). What is measured is delivery outcomes, not tool-usage counters: sessions, tokens, and percent-AI-generated are not tracked here, and would not gate anything if they were. | [docs/ROADMAP.md](docs/ROADMAP.md) § Delivery health carries the DORA signals with an explicit note that a single release supports a fact, not a rate; the rows that cannot be computed yet say so instead of carrying invented zeroes. |
 | Incident Response | Applies — private vulnerability reporting with a 72-hour acknowledgement target, and a definition of what counts as a vulnerability here that names a false clean report as a first-class integrity bug rather than a cosmetic one. | [SECURITY.md](SECURITY.md). No incident has been recorded for this repo, so there is no `docs/incidents/` directory; a real one would ship a dated postmortem alongside the fix. |
