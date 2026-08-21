@@ -32,7 +32,13 @@ if (!URL_UNDER_TEST) {
 
 // ACCESSIBILITY-STANDARD A11Y-01: zero violations of these impacts.
 const BLOCKING_IMPACTS = ["critical", "serious", "moderate"];
-const TAGS = ["wcag2a", "wcag2aa", "wcag22aa"];
+// The three WCAG tags are the standard's floor. `best-practice` adds the rules
+// axe keeps outside WCAG because no success criterion names them outright:
+// heading levels that do not skip (`heading-order`), exactly one `<main>` and
+// one `<h1>`, every region inside a landmark, no duplicate ids. The page
+// cleared all of them when first measured on 2026-08-21 (39 rules passed in
+// each colour scheme, up from 25), so they are held rather than watched.
+const TAGS = ["wcag2a", "wcag2aa", "wcag22aa", "best-practice"];
 // A11Y-09 / SC 1.4.10: no horizontal scroll at 320 CSS px.
 const REFLOW_VIEWPORT = { width: 320, height: 256 };
 const SCHEMES = ["light", "dark"];

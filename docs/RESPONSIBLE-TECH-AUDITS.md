@@ -2,8 +2,10 @@
 
 Project-specific findings under the portfolio Responsible-Tech Framework.
 This artifact is reviewed on release; generic thresholds remain in the
-portfolio standards. Last reviewed: 2026-08-15 (the playground was measured
-for the first time; section E rewritten from N/A and section H added).
+portfolio standards. Last reviewed: 2026-08-21 (section H re-measured with
+axe's best-practice rules added to the gate). Previous: 2026-08-15 (the
+playground was measured for the first time; section E rewritten from N/A and
+section H added).
 
 ## Applicability
 
@@ -172,6 +174,16 @@ person using a screen reader meets that wait before they meet the tool.
 `prefers-color-scheme` settings: **0 violations, 0 incomplete, 25 rules
 passed** in each. Lighthouse: **accessibility 1.00**, both locally and against
 the published page. Reflow at 320x256: clean, **after a fix**.
+
+**Re-measured on 2026-08-21, with a wider rule set.** The same axe-core 4.13
+run with the `best-practice` tag added to the three WCAG tags, in both colour
+schemes: **0 violations, 0 incomplete, 39 rules passed** in each. The added
+rules are the ones no WCAG success criterion names outright and the issue
+that opened this section asked about by name: heading levels that do not skip
+(`heading-order`; the page is h1, h2, h2, h3), exactly one `<main>` and one
+`<h1>`, all content inside a landmark, no duplicate ids. Because the page
+cleared them on first measurement, the gate now requires them rather than
+reporting them.
 
 **The one real defect, and how it was missed until now.** With the findings
 list rendered, the page was 366 CSS px wide at a 320 px viewport: a horizontal
