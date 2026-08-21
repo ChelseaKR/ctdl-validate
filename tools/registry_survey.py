@@ -234,10 +234,12 @@ def residue(findings: list[Finding]) -> dict[str, int]:
         if finding.code != "REF_OUTSIDE_PAYLOAD":
             continue
         host = urlparse(finding.value).netloc.lower().removeprefix("www.")
-        if host == "credreg.net":
+        if is_registry_resource(finding.value):
+            kinds["Registry /resources/ URI whose document was not supplied"] += 1
+        elif host == "credreg.net":
             kinds["credreg.net term"] += 1
         elif host == urlparse(REGISTRY).netloc:
-            kinds["registry, not a /resources/ URI"] += 1
+            kinds["Registry host, some other path"] += 1
         else:
             kinds["other host"] += 1
     return dict(sorted(kinds.items()))

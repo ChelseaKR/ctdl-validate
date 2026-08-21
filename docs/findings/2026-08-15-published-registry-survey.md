@@ -10,6 +10,10 @@ run it had never been pointed at a payload that already was. The provider
 survey of 2026-08-14 asked what credential providers publish on their own
 websites; this one asks what the Registry itself is holding.
 
+> **Followed by** [the 2026-08-21 run](2026-08-21-registry-survey-at-scale.md):
+> 1,200 documents, a protocol committed before the draw, and the false-positive
+> class this run found already removed from the tool.
+
 ## The headline
 
 **Forty ERROR findings across 120 randomly sampled published documents, and
