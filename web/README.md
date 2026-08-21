@@ -61,7 +61,7 @@ One-time repository setup: **Settings → Pages → Source: "GitHub Actions"**.
 ```sh
 uv build --wheel --out-dir dist
 mkdir -p site && cp web/index.html site/ && cp dist/*.whl site/
-printf '{"wheel": "%s", "version": "0.1.0"}\n' "$(basename dist/*.whl)" > site/wheel.json
+printf '{"wheel": "%s", "version": "%s"}\n' "$(basename dist/*.whl)" "$(uv version --short)" > site/wheel.json
 python -m http.server -d site 8899
 ```
 

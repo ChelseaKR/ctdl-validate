@@ -35,8 +35,25 @@ and this project adheres to
 
 - `PropertyDef.target_scheme` on the schema index, carrying the
   `meta:targetScheme` declarations that were previously parsed and discarded.
+- `tests/test_release_state.py`: the README status line, `CITATION.cff`, the
+  README's `uses:` examples, and the DORA rows in `docs/ROADMAP.md` are pinned
+  to `pyproject.toml`'s version and to the CHANGELOG's dated heading for it.
+  From 2026-08-16 to 2026-08-21 the README and the GitHub repository
+  description both said `0.1.0` while `0.2.1` was the release on PyPI, and the
+  `uses:` examples pointed at `@main` with a comment saying no release carried
+  the action (#19, #23). The repository description now carries no version at
+  all, for the same reason `__version__` no longer carries a literal: a field
+  that does not exist cannot drift.
 
 ### Changed
+
+- `docs/ROADMAP.md` § Delivery health carries measured values for all four
+  DORA signals across three releases, including a change-fail rate of 1 of 3
+  (`v0.2.0` reported itself as 0.1.0) and a 27-minute time to restore, each
+  with the timestamps it was computed from. Four owner actions that were
+  already done (branch ruleset, private vulnerability reporting, the
+  corrected portfolio manifest entry, the second release) are struck with the
+  evidence; the third release is added as the open one.
 
 - `make sync` installs with `uv sync --locked` rather than `uv sync --frozen`,
   and the README, `CONTRIBUTING.md`, the pull-request template, and the
@@ -50,6 +67,8 @@ and this project adheres to
 
 ### Fixed
 
+- The `[0.2.1]` section below was an empty heading; the release notes from the
+  GitHub Release are now under it.
 - The README's Standards Conformance table declares all fifteen standards. AI
   Development Measurement, Incident Response, and Data Governance had no row at
   all, and the Accessibility and Performance rows opened in a form that read as
@@ -65,6 +84,23 @@ and this project adheres to
 
 
 ## [0.2.1] - 2026-08-16
+
+This section was an empty heading from the day of the release until
+2026-08-21; the notes below are the ones published on the GitHub Release,
+moved here so the CHANGELOG is the record it claims to be.
+
+### Fixed
+
+- The package reported a version it was not. `v0.2.0` shipped
+  `pyproject.toml` at 0.2.0 while `__init__.py` hard-coded `"0.1.0"`, and
+  that constant feeds `--version`, the JSON report stamp, and the fetch
+  User-Agent, so every report 0.2.0 produced claimed it came from 0.1.0.
+  `__version__` now reads the installed distribution metadata, leaving
+  `pyproject.toml` the single source of truth with no literal left to drift.
+  `tests/test_version_single_source.py` AST-parses the package and fails if
+  any module assigns a version literal; the obvious guard, asserting
+  `__version__` equals the manifest, cannot fail because the runner
+  reinstalls from the manifest first, and was thrown away for that reason.
 
 ## [0.2.0] - 2026-08-16
 

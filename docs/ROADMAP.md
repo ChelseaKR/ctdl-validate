@@ -1,6 +1,6 @@
 # Standards and metrics ledger
 
-Last measured: 2026-08-14. Owner: Chelsea Kelly-Reif. Review cadence: per
+Last measured: 2026-08-21. Owner: Chelsea Kelly-Reif. Review cadence: per
 release and quarterly.
 
 This file is the enforcement ledger required by the portfolio Quality &
@@ -29,6 +29,9 @@ README's "Scope, honestly" section.
 | robots.txt enforcement | A Disallow stops the fetch before the page is requested; an unreachable robots.txt stops it too; no override flag exists | `tests/test_extract_fetch.py` against a server on localhost | AUTO | Maintainer |
 | Extractor invents nothing | 0 CTDL assertions without a declared equivalence; 0 generated CTIDs | `tests/test_extract_break_the_gate.py`, `tests/test_extract_crosswalk.py` (index checked against the vendored files, not a copy) | AUTO | Maintainer |
 | Extraction determinism | Same page bytes, byte-identical document and notes, across interpreter processes | `tests/test_determinism.py` | AUTO | Maintainer |
+| Findings write-ups agree with their evidence | Every number in a findings table is recomputed from the committed evidence JSON, and the Registry survey's draw is recomputed from its seed | `tests/test_findings_evidence.py` | AUTO | Maintainer |
+| Survey evidence holds no record content | Every recorded value in the Registry evidence passes an identifier allow-list; no third-party host appears | `tests/test_findings_evidence.py` | AUTO | Maintainer |
+| Self-description agrees with the release | The README status line, `CITATION.cff`, the `uses:` examples and this ledger carry `pyproject.toml`'s version and the CHANGELOG's dated heading for it | `tests/test_release_state.py` | AUTO | Maintainer |
 | Crosswalk freshness | The crosswalk is re-read from the vendored snapshot; a re-vendoring changes it with no code edit | `tests/test_extract_crosswalk.py`; reviewed with the snapshot | AUTO + REVIEW | Maintainer |
 | AI evaluation / GenAI telemetry | N/A: deterministic rule engine and deterministic extractor; no model, prompt, retrieval, embedding, or AI ranking path in either command | Dependency and import scan (zero runtime deps) | N/A | Maintainer |
 | Accessibility of the playground | 0 axe-core violations of critical/serious/moderate at `wcag2a,wcag2aa,wcag22aa`, in both colour schemes; no horizontal scroll at 320 CSS px; Lighthouse accessibility 1.00 | `.github/workflows/accessibility.yml` (axe-core 4.13 via `web/a11y/audit.mjs`, plus Lighthouse) against `web/index.html?a11y-static` | AUTO | Maintainer |
@@ -66,47 +69,51 @@ changes.
 
 ## Delivery health
 
-One release exists: `v0.1.0`, a signed tag dated 2026-08-08, published as a
-GitHub Release the same day with the wheel and sdist attached, and to PyPI on
-2026-08-13.
+Three releases exist, each a signed tag, a GitHub Release with the wheel and
+sdist attached, and a PyPI upload: `v0.1.0` (2026-08-08), `v0.2.0` and
+`v0.2.1` (both 2026-08-16). The rows below were measured on 2026-08-21 from
+the tag and commit timestamps in this repository's history.
+`tests/test_release_state.py` checks that the releases named here are exactly
+the ones `CHANGELOG.md` dates, and that the two arithmetic figures follow from
+the timestamps stated beside them; the lead-time figures are not re-derived in
+CI, whose checkout is too shallow to see the tags.
 
 | DORA signal | Value | Basis |
 |---|---|---|
-| Deployment frequency | 1 release in the 8 days since the first tag | `v0.1.0`, 2026-08-08 |
-| Change lead time | Not yet measurable | The first release carried the whole repository; there is no merge-to-release interval to measure until a second tag exists |
-| Change-fail rate | 0 of 1 | No release has been yanked, patched, or rolled back. One data point is a fact, not a rate; it becomes a rate at n=3 or so |
-| Time to restore | N/A | Nothing has needed restoring |
+| Deployment frequency | 3 releases in the 8 days from the first tag to the latest (2026-08-08 to 2026-08-16) | tag dates, which are the CHANGELOG's heading dates |
+| Change lead time | `v0.2.0`: 24 first-parent commits on `main` after `v0.1.0`, median 31.7 h from commit to tag, longest 185.3 h. `v0.2.1`: one commit, tagged 2 s after it landed | `git log --first-parent v0.1.0..v0.2.0` against the tag timestamp, measured locally |
+| Change-fail rate | 1 of 3. `v0.2.0` reported itself as 0.1.0 in `--version`, in every JSON report, and in the fetch User-Agent, and was superseded the same morning | `v0.2.1`'s release notes and `tests/test_version_single_source.py` |
+| Time to restore | 27 minutes: `v0.2.0` tagged 2026-08-16T14:58:39Z, `v0.2.1` tagged 2026-08-16T15:25:14Z | tag timestamps |
 
-These stay honest by being small. A single release does not support a
-frequency trend or a lead-time distribution, and filling those rows with
-invented zeroes would be worse than the empty ones they replaced.
+Three releases support facts, not trends. One failed release in three is not
+a 33% rate in any predictive sense, and a median over the 24 commits of one
+window describes that window. The rows will carry rates when there are
+enough tags for a rate to mean something, and not before.
 
 ## Open review and owner actions
 
-- Enable a branch protection ruleset on `main` (block force-push and
-  deletion). This is a GitHub settings change; it cannot be made from inside
-  the repository.
-- Correct this repository's entry in the portfolio `STANDARDS/applicability.yml`.
-  As of 2026-08-15 the entry on that repository's `main` still reads
-  `flags: { html: false, ..., hosted: false }` with `A11Y: { na: "offline
-  CLI/library with no human-facing HTML" }` and `PERF: { na: "pure
-  library/CLI, no hosted route or shipped HTML" }`, which is false: a Pages
-  playground has been live at chelseakr.github.io/ctdl-validate/ since
-  2026-08-08 and is linked from the top of this repository's README. The
-  accessibility gate wired here does not depend on that entry -- scope comes
-  from `ACCESSIBILITY-STANDARD` section 0, which puts a published HTML surface
-  in scope on its own -- but the manifest is the portfolio's scoping registry
-  and it is currently wrong about this repo.
-- (Done 2026-08-07.) The repo is registered in the portfolio
-  `applicability.yml` with `publication: cleared`. What that entry says about
-  the HTML surface is still wrong; see the correction item above.
-- Enable GitHub private vulnerability reporting in repository settings so
-  the channel `SECURITY.md` prefers is actually on.
-- Second release. The `extract` subcommand, `--resolve`, and the two findings
-  runs are all on `main` and in none of the published artifacts, so the
-  version a `pip install ctdl-validate` gets is materially smaller than what
-  this README describes. The README's Status paragraph says so; a tag would
-  say it better.
+- (Done.) A ruleset named `protect-main` is active on `main` and blocks
+  non-fast-forward pushes and deletion; verified through the repository API
+  on 2026-08-21.
+- (Done 2026-08-15.) This repository's entry in the portfolio
+  `STANDARDS/applicability.yml` was corrected on that repository's `main`
+  (commit `36747be`): `html: true`, `hosted: true`, tier `B+C`, `A11Y:
+  applies`, `PERF: applies`. From 2026-08-07 until then the entry had
+  declared no human-facing HTML while a Pages playground was live, which
+  switched the accessibility and performance standards off for a public
+  page. The gate wired here never depended on that entry, and the manifest
+  now agrees with it.
+- (Done.) GitHub private vulnerability reporting is enabled, so the channel
+  `SECURITY.md` prefers is on; verified through the repository API on
+  2026-08-21.
+- (Done 2026-08-16.) Second release: `v0.2.0` carried `extract`,
+  `--resolve`, the GitHub Action and both findings runs; `v0.2.1` followed
+  27 minutes later, for the reason in the table above.
+- Third release. `main` carries the `CONCEPT_RANGE_CONFLICT` disposition
+  that turned 36 of 120 published Registry documents from failing to passing,
+  and a `pip install ctdl-validate` does not: every published release still
+  reports that false-positive class as ERROR. The CHANGELOG's *Unreleased*
+  section is the release note; a tag is what is missing.
 - Decide whether to vendor schema.org's class hierarchy. Today a
   `schema:CollegeOrUniversity` maps to nothing because CTDL declares an
   equivalence for `schema:Organization` only, and resolving the subclass chain
