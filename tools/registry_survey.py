@@ -305,11 +305,16 @@ def collect_sample(fetcher: RegistryFetcher, cache: Path, size: int, seed: int) 
         except (FetchError, json.JSONDecodeError, OSError) as exc:
             print(f"  page {page}: {exc}", file=sys.stderr)
             failed[str(page)] = str(exc)
-            continue
-        if envelope is None:
-            failed[str(page)] = "empty-page"
-            continue
-        raw.write_text(json.dumps(envelope, sort_keys=True, ensure_ascii=False), "utf-8")
+        else:
+            if envelope is None:
+                failed[str(page)] = "empty-page"
+            else:
+                raw.write_text(json.dumps(envelope, sort_keys=True, ensure_ascii=False), "utf-8")
+                continue
+        # A failure is part of the record the moment it happens. Written
+        # here rather than at the end of the loop so that a run interrupted
+        # later does not resume by quietly retrying what already failed.
+        write_json(provenance_path, provenance)
     provenance["fetch"]["requests"] += fetcher.requests
     fetcher.requests = 0
     write_json(provenance_path, provenance)
