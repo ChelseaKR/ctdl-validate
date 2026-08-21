@@ -14,7 +14,10 @@ name: Accessibility
 #   and checks reflow at 320 CSS px. That is A11Y-01 (0 violations of
 #   critical/serious/moderate at wcag2a,wcag2aa,wcag22aa), A11Y-05 (contrast,
 #   an axe rule) and A11Y-09 (reflow) from the portfolio accessibility
-#   standard.
+#   standard. Since 2026-08-21 the run also includes axe's `best-practice`
+#   tag, which is where heading order, the one-main/one-h1 landmark rules and
+#   duplicate-id checks live; the page passed all of them when measured, so
+#   they are enforced rather than advisory.
 # - Lighthouse scores the same page, and the bar is 1.00. That is A11Y-02,
 #   whose floor is 0.90; the page measured 1.00 on 2026-08-15 and the standard
 #   says a repository that clears a higher bar enforces the higher one.

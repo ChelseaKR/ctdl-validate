@@ -47,6 +47,12 @@ and this project adheres to
 
 ### Changed
 
+- The playground's accessibility gate now runs axe-core's `best-practice`
+  rules alongside the three WCAG tags. That is where heading order
+  (`heading-order`), the one-`<main>`/one-`<h1>` landmark rules, and
+  duplicate-id checks live, none of which a WCAG tag selects. Measured
+  2026-08-21 in both colour schemes: 0 violations, 0 incomplete, 39 rules
+  passed (was 25). Nothing in the page changed; the bar did (#20).
 - `docs/ROADMAP.md` § Delivery health carries measured values for all four
   DORA signals across three releases, including a change-fail rate of 1 of 3
   (`v0.2.0` reported itself as 0.1.0) and a 27-minute time to restore, each
