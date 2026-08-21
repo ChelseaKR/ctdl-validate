@@ -219,3 +219,111 @@ def test_the_registry_writeup_matches_the_evidence() -> None:
     assert f"**{only_unverifiable} produced only UNVERIFIABLE findings**" in text
     assert f"{lesser['WARNING']} a `CTID_NOT_UUIDV4` warning" in text
     assert f"{lesser['INFO']} an `INVERSE_ONE_DIRECTION` note" in text
+
+
+# -- the same 120 documents, re-validated after the concept-range fix ---------
+
+REVALIDATED = (
+    ROOT / "docs" / "findings" / "2026-08-15-published-registry-survey.revalidated-2026-08-21.json"
+)
+README = ROOT / "README.md"
+
+
+def _revalidated() -> dict[str, Any]:
+    payload: dict[str, Any] = json.loads(REVALIDATED.read_text(encoding="utf-8"))
+    return payload
+
+
+def _rollup(documents: list[dict[str, Any]], run: str) -> dict[str, Any]:
+    """Recompute a rollup from per-document records, whatever file they came from."""
+    codes: dict[str, int] = {}
+    severities = {"ERROR": 0, "INFO": 0, "UNVERIFIABLE": 0, "WARNING": 0}
+    with_error = 0
+    for document in documents:
+        record = document[run]
+        for code, count in record["codes"].items():
+            codes[code] = codes.get(code, 0) + count
+        for severity, count in record["severities"].items():
+            severities[severity] += count
+        with_error += 1 if record["severities"]["ERROR"] else 0
+    return {"codes": codes, "severities": severities, "with_error": with_error}
+
+
+def _by_ctid(documents: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """The 2026-08-15 file orders documents by CTID; the harness now orders by page."""
+    indexed = {document["ctid"]: document for document in documents}
+    assert len(indexed) == len(documents), "a CTID appears twice"
+    return indexed
+
+
+def test_the_revalidation_is_the_same_draw_with_the_same_provenance() -> None:
+    before, after = _registry(), _revalidated()
+    assert set(_by_ctid(before["documents"])) == set(_by_ctid(after["documents"]))
+    assert after["access"]["carried_from"] == REGISTRY.name
+    for key in ("seed", "corpus_envelopes", "robots", "requests"):
+        assert after["access"][key] == before["access"][key], key
+    assert after["excluded"] == 0 and after["exclusions"] == []
+
+
+def test_the_before_and_after_table_is_the_difference_between_the_two_files() -> None:
+    """The concept-range fix was measured on this corpus; the table is that measurement."""
+    before, after = _registry()["documents"], _revalidated()["documents"]
+    text = " ".join(REGISTRY_WRITEUP.read_text(encoding="utf-8").split())
+    n = len(before)
+    rows = {
+        "Documents with >= 1 ERROR (alone)": (
+            f"{_rollup(before, 'alone')['with_error']} / {n}",
+            f"**{_rollup(after, 'alone')['with_error']} / {n}**",
+        ),
+        "Documents with >= 1 ERROR (`--resolve`)": (
+            f"{_rollup(before, 'resolved')['with_error']} / {n}",
+            f"**{_rollup(after, 'resolved')['with_error']} / {n}**",
+        ),
+        "ERROR findings (alone)": (
+            str(_rollup(before, "alone")["severities"]["ERROR"]),
+            f"**{_rollup(after, 'alone')['severities']['ERROR']}**",
+        ),
+        "ERROR findings (`--resolve`)": (
+            str(_rollup(before, "resolved")["severities"]["ERROR"]),
+            f"**{_rollup(after, 'resolved')['severities']['ERROR']}**",
+        ),
+        "`CONCEPT_RANGE_CONFLICT` (INFO)": (
+            "—",
+            str(_rollup(after, "alone")["codes"]["CONCEPT_RANGE_CONFLICT"]),
+        ),
+    }
+    for label, (was, now) in rows.items():
+        assert f"| {label} | {was} | {now} |" in text, label
+
+
+def test_the_only_change_is_range_violation_becoming_concept_range_conflict() -> None:
+    """ "Every other finding, at every severity, is unchanged" is checked per document."""
+    before, after = _registry()["documents"], _revalidated()["documents"]
+    later = _by_ctid(after)
+    reclassified_total = 0
+    for was in before:
+        now = later[was["ctid"]]
+        for run in ("alone", "resolved"):
+            old = dict(was[run]["codes"])
+            new = dict(now[run]["codes"])
+            moved = old.pop("RANGE_VIOLATION", 0) - new.pop("RANGE_VIOLATION", 0)
+            assert new.pop("CONCEPT_RANGE_CONFLICT", 0) == moved, was["ctid"]
+            assert old == new, was["ctid"]
+            reclassified_total += moved if run == "alone" else 0
+    assert reclassified_total == _rollup(after, "alone")["codes"]["CONCEPT_RANGE_CONFLICT"]
+
+
+def test_the_readme_quotes_the_measurement_not_a_memory_of_it() -> None:
+    before, after = _registry()["documents"], _revalidated()["documents"]
+    text = " ".join(README.read_text(encoding="utf-8").split())
+    n = len(before)
+    failing_before = _rollup(before, "alone")["with_error"]
+    failing_after = _rollup(after, "alone")["with_error"]
+    assert f"**{failing_before} of {n} documents failing became {failing_after}**" in text
+    moved = _rollup(after, "alone")["codes"]["CONCEPT_RANGE_CONFLICT"]
+    assert (
+        f"as all {moved} `RANGE_VIOLATION` findings became `CONCEPT_RANGE_CONFLICT` (INFO)" in text
+    )
+    errors_before = _rollup(before, "resolved")["severities"]["ERROR"]
+    errors_after = _rollup(after, "resolved")["severities"]["ERROR"]
+    assert f"`--resolve`, {errors_before} ERROR findings became {errors_after}" in text

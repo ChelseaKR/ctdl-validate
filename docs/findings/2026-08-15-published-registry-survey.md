@@ -222,12 +222,17 @@ that belongs in its own change with its own citations.
 > the whole of what section 1 predicted and nothing besides.
 >
 > What is and is not gated: the re-run is reproducible with
-> `tools/registry_survey.py --from-dir` against this run's cache, but that
-> cache is gitignored, so CI does not re-derive the table above. What CI does
-> gate is the mechanism — which properties the disposition covers, that it
+> `tools/registry_survey.py --from-dir` against this run's cache, and that
+> cache is gitignored, so CI cannot re-run it. What CI does gate, since
+> 2026-08-21, is the table itself: the re-run's evidence is committed as
+> [`2026-08-15-published-registry-survey.revalidated-2026-08-21.json`](2026-08-15-published-registry-survey.revalidated-2026-08-21.json),
+> and `tests/test_findings_evidence.py` recomputes every cell above from the
+> two evidence files and checks, document by document, that the only change
+> between them is `RANGE_VIOLATION` becoming `CONCEPT_RANGE_CONFLICT`. CI also
+> gates the mechanism — which properties the disposition covers, that it
 > covers them only when `meta:targetScheme` is declared, and that the
 > declarations it rests on are still in the vendored snapshot — in
-> `tests/test_domain_range.py`. The counts here are a measurement, not a gate.
+> `tests/test_domain_range.py`.
 
 ### 2. Version relations whose domain includes a class their range excludes
 
