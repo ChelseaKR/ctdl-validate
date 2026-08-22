@@ -40,6 +40,17 @@ LITERAL_RANGE_TERMS = frozenset(
     }
 )
 
+#: Range terms that constrain nothing, because they admit every entity there
+#: is. RDF Schema 1.1 section 3.1 defines rdfs:Resource as "the class of
+#: everything" and states that "all things described by RDF are called
+#: resources, and are instances of the class rdfs:Resource"
+#: (https://www.w3.org/TR/rdf11-schema/#ch_resource, retrieved 2026-08-22).
+#: CTDL declares it as the whole range of ceterms:hasMember,
+#: ceterms:isSimilarTo and owl:sameAs, and no CTDL class reaches it by
+#: rdfs:subClassOf, so matching a target's declared classes against it would
+#: reject every entity rather than accept every entity.
+UNIVERSAL_RANGE_TERMS = frozenset({"rdfs:Resource"})
+
 #: Prefixes whose unknown terms are worth a WARNING. Terms in other namespaces
 #: (schema.org, dct, foaf, ...) are not CTDL's to judge and are skipped.
 CHECKED_PREFIXES = ("ceterms:", "ceasn:")
@@ -74,6 +85,16 @@ class PropertyDef:
     def range_has_entities(self) -> bool:
         """True when at least one declared range term is an entity class."""
         return bool(self.range - LITERAL_RANGE_TERMS)
+
+    @property
+    def range_is_universal(self) -> bool:
+        """True when the declared range admits every entity, so it rules nothing out.
+
+        See ``UNIVERSAL_RANGE_TERMS``. A property declared this way says
+        "any resource may go here", and the honest reading of a range that
+        excludes nothing is that no reference can fall outside it.
+        """
+        return bool(self.range & UNIVERSAL_RANGE_TERMS)
 
     @property
     def is_scheme_bound_concept(self) -> bool:
@@ -160,6 +181,21 @@ class SchemaIndex:
                 and other.target_scheme & prop_def.target_scheme
             )
         )
+
+    def domain_only_classes(self, prop: str) -> frozenset[str]:
+        """Classes this property's domain admits and its own range excludes.
+
+        Read out of the vendored snapshot on every call rather than written
+        down, so refreshing the snapshot refreshes the evidence. For CTDL's
+        three version properties this set is the whole of the disagreement
+        described in ``rules.version_range_conflict_rule``: the encoding says
+        an instance of the class may *have* a version while saying its version
+        may not *be* one.
+        """
+        prop_def = self.properties.get(prop)
+        if prop_def is None:
+            return frozenset()
+        return prop_def.domain - prop_def.range
 
     def scheme_bound_concept_properties(self) -> tuple[str, ...]:
         """Every property the concept-range conflict disposition can apply to."""
@@ -269,6 +305,7 @@ __all__ = [
     "CHECKED_PREFIXES",
     "CONCEPT_RANGE_TERM",
     "LITERAL_RANGE_TERMS",
+    "UNIVERSAL_RANGE_TERMS",
     "ClassDef",
     "PropertyDef",
     "SchemaIndex",

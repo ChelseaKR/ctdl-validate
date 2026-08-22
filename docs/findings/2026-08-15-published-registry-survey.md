@@ -10,6 +10,10 @@ run it had never been pointed at a payload that already was. The provider
 survey of 2026-08-14 asked what credential providers publish on their own
 websites; this one asks what the Registry itself is holding.
 
+> **Followed by** [the 2026-08-21 run](2026-08-21-registry-survey-at-scale.md):
+> 1,200 documents, a protocol committed before the draw, and the false-positive
+> class this run found already removed from the tool.
+
 ## The headline
 
 **Forty ERROR findings across 120 randomly sampled published documents, and
@@ -222,12 +226,17 @@ that belongs in its own change with its own citations.
 > the whole of what section 1 predicted and nothing besides.
 >
 > What is and is not gated: the re-run is reproducible with
-> `tools/registry_survey.py --from-dir` against this run's cache, but that
-> cache is gitignored, so CI does not re-derive the table above. What CI does
-> gate is the mechanism — which properties the disposition covers, that it
+> `tools/registry_survey.py --from-dir` against this run's cache, and that
+> cache is gitignored, so CI cannot re-run it. What CI does gate, since
+> 2026-08-21, is the table itself: the re-run's evidence is committed as
+> [`2026-08-15-published-registry-survey.revalidated-2026-08-21.json`](2026-08-15-published-registry-survey.revalidated-2026-08-21.json),
+> and `tests/test_findings_evidence.py` recomputes every cell above from the
+> two evidence files and checks, document by document, that the only change
+> between them is `RANGE_VIOLATION` becoming `CONCEPT_RANGE_CONFLICT`. CI also
+> gates the mechanism — which properties the disposition covers, that it
 > covers them only when `meta:targetScheme` is declared, and that the
 > declarations it rests on are still in the vendored snapshot — in
-> `tests/test_domain_range.py`. The counts here are a measurement, not a gate.
+> `tests/test_domain_range.py`.
 
 ### 2. Version relations whose domain includes a class their range excludes
 

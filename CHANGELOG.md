@@ -31,7 +31,41 @@ and this project adheres to
   validation went from 36 of 120 to 0 (document by document) and from 36 to 1
   with `--resolve`; ERROR findings went from 38 to 0 and from 40 to 2. The two
   survivors are the `ceterms:TransferValueProfile` version relations the survey
-  identified by hand as genuine. No other finding changed, at any severity.
+  identified by hand. No other finding changed, at any severity. (Those two are
+  no longer errors either: the 1,200-document survey re-examined them and they
+  are now `VERSION_RANGE_CONFLICT` / INFO — see below. The revalidated evidence
+  file is left as written, because it measures a different fix.)
+
+- `VERSION_RANGE_CONFLICT` (INFO): CTDL's three version properties —
+  `ceterms:latestVersion`, `ceterms:nextVersion`, `ceterms:previousVersion` —
+  each declare a `schema:rangeIncludes` that is a strict subset of their own
+  `schema:domainIncludes`, dropping the same six classes from all three
+  (`ceasn:Competency`, `ceasn:CompetencyFramework`, `ceasn:Rubric`,
+  `ceterms:Collection`, `ceterms:Pathway`, `ceterms:TransferValueProfile`). A
+  resource of a dropped class versioned by another resource of that same class
+  is now this disposition rather than a `RANGE_VIOLATION` / ERROR: the domain
+  says such a resource may have a version, the range says that version may not
+  be one of its own kind, and every class the range does admit would make the
+  earlier version of a transfer value profile a credential. One of the two
+  declarations is wrong whatever anybody publishes, and an ERROR would be
+  telling a publisher to fix something with nothing to fix it to.
+
+  This reverses the deliberate decision recorded as conflict 5 in the README,
+  and reverses it on the declarations rather than on frequency: the
+  1,200-document survey found 32 documents doing this, but all 32 are from one
+  publisher, and only two publishers in the whole surveyed corpus use these
+  properties at all. The classes it applies to are derived from the vendored
+  snapshot (`SchemaIndex.domain_only_classes`), and a test fails if the
+  asymmetry ever leaves the snapshot. A version link to a *different* class is
+  still an ERROR.
+
+- `docs/findings/2026-08-21-registry-survey-at-scale.md` and its evidence JSON:
+  1,200 documents drawn uniformly at random from the 395,847 in the
+  `ce-registry` community, validated alone and again with all 1,659 reachable
+  referenced documents supplied through `--resolve`. 1,200 fetched, none
+  failed, none excluded. `--resolve` settled 3,171 of 3,326 UNVERIFIABLE
+  findings and introduced no new ERROR. Every number the write-up publishes is
+  recomputed from the evidence by `tests/test_findings_registry_at_scale.py`.
 
 - `PropertyDef.target_scheme` on the schema index, carrying the
   `meta:targetScheme` declarations that were previously parsed and discarded.
@@ -46,6 +80,26 @@ and this project adheres to
   that does not exist cannot drift.
 
 ### Changed
+
+- A declared range naming only `rdfs:Resource` is now treated as
+  unconstraining and raises nothing. RDF Schema 1.1 section 3.1 makes
+  `rdfs:Resource` "the class of everything", so it excludes no entity — but no
+  CTDL class reaches it by `rdfs:subClassOf`, so matching a target's declared
+  classes against it rejected *every* entity instead of accepting every one.
+  This affected `ceterms:hasMember`, `ceterms:isSimilarTo` and `owl:sameAs`;
+  in the 1,200-document survey it produced 47 spurious range errors against a
+  single published collection that listed 47 licences.
+
+- `tools/registry_survey.py` no longer publishes counts a resumed run can
+  lose. The request tally is banked to `provenance.json` after every request
+  rather than at the end of a phase — the 2026-08-21 draw was interrupted
+  after 1,091 pages and its record claimed 1,770 requests for work that cannot
+  have cost fewer than 2,861 — and the evidence file now reports both
+  `access.requests.recorded` and `access.requests.implied_by_the_cache`.
+  Neighbour tallies are counted off the cache and the sample's own references
+  instead of a per-run counter, and a referenced document that was neither
+  fetched nor recorded as failed is counted as `unresolved` rather than
+  vanishing from the denominator.
 
 - The playground's accessibility gate now runs axe-core's `best-practice`
   rules alongside the three WCAG tags. That is where heading order

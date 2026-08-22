@@ -24,6 +24,24 @@ the exact sentences relied on are quoted in `ctdl_validate/rules.py`):
   2026-08-06). Defines blank node identifier scope and documents that
   competency frameworks and their competencies are published in the same
   JSON-LD graph.
+- RDF Schema 1.1, W3C Recommendation 25 February 2014, section 3.1,
+  https://www.w3.org/TR/rdf11-schema/#ch_resource (retrieved 2026-08-22).
+  "All things described by RDF are called resources, and are instances of the
+  class rdfs:Resource ... This is the class of everything." Relied on to treat
+  a `schema:rangeIncludes` naming only `rdfs:Resource` as constraining
+  nothing, rather than as a range no CTDL class can satisfy. This is the one
+  source that makes a check emit *fewer* findings rather than more, so it
+  cites no finding of its own; see `schema.UNIVERSAL_RANGE_TERMS`.
+- CTDL QData schema encoding,
+  https://credreg.net/qdata/schema/encoding/json (retrieved 2026-08-22). Not
+  vendored and not read by the validator: `qdata:` properties reach the tool
+  through the CTDL encoding above, which declares them without declaring the
+  `qdata:` classes they range on. Consulted once, during the hand
+  verification behind
+  `docs/findings/2026-08-21-registry-survey-at-scale.md`, to check whether
+  `qdata:relevantDataSet` is declared for `ceterms:AggregateDataProfile` in
+  its own home encoding. It is not: both encodings declare the same 61-class
+  domain and both omit it.
 
 The `extract` subcommand cites four further sources, also quoted in
 `ctdl_validate/rules.py` rather than vendored. Nothing about the CTDL rules
