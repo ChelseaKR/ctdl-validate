@@ -4,14 +4,18 @@
     "corpus_envelopes": 395847,
     "from_cache": false,
     "neighbours": {
-      "attempted": 1660,
       "cap": 100000,
       "failed": 1,
-      "referenced": 1660
+      "fetched": 1659,
+      "referenced": 1660,
+      "unresolved": 0
     },
     "pages_drawn": 1200,
     "pages_failed": 0,
-    "requests": 1770,
+    "requests": {
+      "implied_by_the_cache": 2861,
+      "recorded": 1770
+    },
     "robots": "none published at https://credentialengineregistry.org/robots.txt (HTTP 404); RFC 9309 2.3.1.3 allows it",
     "seed": 20260821
   },
@@ -443,14 +447,12 @@
       },
       "resolved": {
         "codes": {
-          "RANGE_VIOLATION": 47,
           "REF_RESOLVED_SUPPLIED": 48
         },
         "documents": 1,
-        "documents_with_at_least_one_error": 1,
+        "documents_with_at_least_one_error": 0,
         "documents_with_no_findings": 0,
         "severities": {
-          "ERROR": 47,
           "INFO": 48
         }
       }
@@ -1127,16 +1129,16 @@
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 101,
           "CTID_NOT_UUIDV4": 20,
-          "RANGE_VIOLATION": 19,
           "REF_OUTSIDE_PAYLOAD": 218,
-          "REF_UNRESOLVED_BNODE": 22
+          "REF_UNRESOLVED_BNODE": 22,
+          "VERSION_RANGE_CONFLICT": 19
         },
         "documents": 74,
-        "documents_with_at_least_one_error": 28,
+        "documents_with_at_least_one_error": 22,
         "documents_with_no_findings": 0,
         "severities": {
-          "ERROR": 41,
-          "INFO": 101,
+          "ERROR": 22,
+          "INFO": 120,
           "UNVERIFIABLE": 218,
           "WARNING": 20
         }
@@ -1145,16 +1147,16 @@
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 101,
           "CTID_NOT_UUIDV4": 20,
-          "RANGE_VIOLATION": 61,
           "REF_RESOLVED_SUPPLIED": 218,
-          "REF_UNRESOLVED_BNODE": 22
+          "REF_UNRESOLVED_BNODE": 22,
+          "VERSION_RANGE_CONFLICT": 61
         },
         "documents": 74,
-        "documents_with_at_least_one_error": 32,
+        "documents_with_at_least_one_error": 22,
         "documents_with_no_findings": 0,
         "severities": {
-          "ERROR": 83,
-          "INFO": 319,
+          "ERROR": 22,
+          "INFO": 380,
           "WARNING": 20
         }
       }
@@ -20516,16 +20518,9 @@
       "residue": {},
       "resolved": {
         "codes": {
-          "RANGE_VIOLATION": 47,
           "REF_RESOLVED_SUPPLIED": 48
         },
         "examples": {
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-426b9b5d-81d3-43c5-941e-18969c1cba1f",
-            "property": "ceterms:hasMember",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-0f20da3a-6917-4ca0-9e59-c875ae5a899c"
-          },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-426b9b5d-81d3-43c5-941e-18969c1cba1f",
             "property": "ceterms:hasMember",
@@ -20534,7 +20529,7 @@
           }
         },
         "severities": {
-          "ERROR": 47,
+          "ERROR": 0,
           "INFO": 48,
           "UNVERIFIABLE": 0,
           "WARNING": 0
@@ -22635,9 +22630,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -22645,12 +22640,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705",
@@ -22663,11 +22652,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:96953f6f-4314-ec85-9a61-c52dc8b9b67b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -22692,9 +22687,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -22702,12 +22697,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705",
@@ -22720,11 +22709,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:96953f6f-4314-ec85-9a61-c52dc8b9b67b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-eba6705b-9ef4-422e-8368-9c5b65a03705"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -34940,9 +34935,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -34950,12 +34945,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b",
@@ -34968,11 +34957,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:d3a60aee-bfbb-65be-a2f1-ba3b68bf26a1"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -34997,9 +34992,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -35007,12 +35002,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b",
@@ -35025,11 +35014,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:d3a60aee-bfbb-65be-a2f1-ba3b68bf26a1"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-f5af1b64-696e-4db9-85d7-e5c0fea9d77b"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -41812,9 +41807,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -41822,12 +41817,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520",
@@ -41840,11 +41829,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:96953f6f-4314-ec85-9a61-c52dc8b9b67b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -41869,9 +41864,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -41879,12 +41874,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520",
@@ -41897,11 +41886,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:96953f6f-4314-ec85-9a61-c52dc8b9b67b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-87f081b4-efee-4369-a6d4-e69f6769c520"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -50806,9 +50801,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -50816,12 +50811,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc",
@@ -50834,11 +50823,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:8ff9f531-8757-dff4-646a-b42374abb66d"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -50863,9 +50858,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -50873,12 +50868,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc",
@@ -50891,11 +50880,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:8ff9f531-8757-dff4-646a-b42374abb66d"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-47602f69-b340-4714-92a6-c03c8e9075bc"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -54391,9 +54386,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 3,
           "REF_RESOLVED_SUPPLIED": 4,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 3
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54401,12 +54396,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-02c1f6af-cf0f-4a39-9138-c2a6c4a48339",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-995f9733-a106-4cfb-b4bc-34988ba599fe"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-02c1f6af-cf0f-4a39-9138-c2a6c4a48339",
@@ -54419,11 +54408,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:75c995ba-f8e1-76ed-b005-6fca529e7e3b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-02c1f6af-cf0f-4a39-9138-c2a6c4a48339",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-995f9733-a106-4cfb-b4bc-34988ba599fe"
           }
         },
         "severities": {
-          "ERROR": 4,
-          "INFO": 6,
+          "ERROR": 1,
+          "INFO": 9,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -54434,9 +54429,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54444,12 +54439,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612",
@@ -54462,11 +54451,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:9b0d6893-b6e6-deed-8eb6-061d8ffdbb57"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -54491,9 +54486,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54501,12 +54496,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612",
@@ -54519,11 +54508,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:9b0d6893-b6e6-deed-8eb6-061d8ffdbb57"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-2e4f495c-7ee0-49b4-b526-adf329b81612"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -54578,8 +54573,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
-          "REF_RESOLVED_SUPPLIED": 3
+          "REF_RESOLVED_SUPPLIED": 3,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54588,13 +54583,13 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
+          "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-bbee679e-aefa-4705-9078-4dd3acedf434",
             "property": "ceterms:latestVersion",
-            "severity": "ERROR",
+            "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-06f85d07-8f17-4902-83de-f4d36768333a"
           },
-          "REF_RESOLVED_SUPPLIED": {
+          "VERSION_RANGE_CONFLICT": {
             "entity": "https://credentialengineregistry.org/resources/ce-bbee679e-aefa-4705-9078-4dd3acedf434",
             "property": "ceterms:latestVersion",
             "severity": "INFO",
@@ -54602,8 +54597,8 @@
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 5,
+          "ERROR": 0,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -54614,8 +54609,8 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_OUTSIDE_PAYLOAD": 2
+          "REF_OUTSIDE_PAYLOAD": 2,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54624,22 +54619,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c"
-          },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c",
             "property": "ceterms:ownedBy",
             "severity": "UNVERIFIABLE",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 2,
+          "ERROR": 0,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -54665,8 +54660,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
-          "REF_RESOLVED_SUPPLIED": 2
+          "REF_RESOLVED_SUPPLIED": 2,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54675,22 +54670,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c"
-          },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c",
             "property": "ceterms:ownedBy",
             "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-20612525-cb36-4ca8-be3f-e377699d911c"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 4,
+          "ERROR": 0,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -54701,8 +54696,8 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_OUTSIDE_PAYLOAD": 1
+          "REF_OUTSIDE_PAYLOAD": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54711,22 +54706,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45"
-          },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45",
             "property": "ceterms:ownedBy",
             "severity": "UNVERIFIABLE",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 2,
+          "ERROR": 0,
+          "INFO": 3,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -54751,8 +54746,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_RESOLVED_SUPPLIED": 1
+          "REF_RESOLVED_SUPPLIED": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54761,22 +54756,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45"
-          },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45",
             "property": "ceterms:ownedBy",
             "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-c2330577-ef68-424d-80a2-ea4a1c59ca45"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 3,
+          "ERROR": 0,
+          "INFO": 4,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -54787,9 +54782,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54797,12 +54792,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d",
@@ -54815,11 +54804,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:f58ee353-2359-9c42-0b4c-9b9f694ae4a3"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -54844,9 +54839,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54854,12 +54849,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d",
@@ -54872,11 +54861,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:f58ee353-2359-9c42-0b4c-9b9f694ae4a3"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-6e2b7809-ab45-4263-94cc-52db3651d74d"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -54887,9 +54882,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54897,12 +54892,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436",
@@ -54915,11 +54904,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:96953f6f-4314-ec85-9a61-c52dc8b9b67b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -54944,9 +54939,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -54954,12 +54949,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436",
@@ -54972,11 +54961,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:96953f6f-4314-ec85-9a61-c52dc8b9b67b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-c3570a3b-fa79-4b25-bc1a-37c7e09df436"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55039,9 +55034,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 3,
           "REF_RESOLVED_SUPPLIED": 4,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 3
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55049,12 +55044,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-ab264e86-8188-4d54-bb7b-6477f2f36fdd",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-356d2517-b94a-403f-a527-4f7994a2d725"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-ab264e86-8188-4d54-bb7b-6477f2f36fdd",
@@ -55067,11 +55056,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:8ff9f531-8757-dff4-646a-b42374abb66d"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-ab264e86-8188-4d54-bb7b-6477f2f36fdd",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-356d2517-b94a-403f-a527-4f7994a2d725"
           }
         },
         "severities": {
-          "ERROR": 4,
-          "INFO": 6,
+          "ERROR": 1,
+          "INFO": 9,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55134,9 +55129,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 3,
           "REF_RESOLVED_SUPPLIED": 4,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 3
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55144,12 +55139,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-195526f5-904b-437a-9966-008154148d49",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-356d2517-b94a-403f-a527-4f7994a2d725"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-195526f5-904b-437a-9966-008154148d49",
@@ -55162,11 +55151,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:8ff9f531-8757-dff4-646a-b42374abb66d"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-195526f5-904b-437a-9966-008154148d49",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-356d2517-b94a-403f-a527-4f7994a2d725"
           }
         },
         "severities": {
-          "ERROR": 4,
-          "INFO": 6,
+          "ERROR": 1,
+          "INFO": 9,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55228,9 +55223,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 3,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55238,12 +55233,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-b0083555-5e0a-424f-9c28-2240221592ad",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-63befa37-8f81-4587-bb52-a0328df263cf"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-b0083555-5e0a-424f-9c28-2240221592ad",
@@ -55256,11 +55245,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:7912a141-c5c5-b6e2-aa09-a29b72785427"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-b0083555-5e0a-424f-9c28-2240221592ad",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-63befa37-8f81-4587-bb52-a0328df263cf"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 5,
+          "ERROR": 1,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55316,8 +55311,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
-          "REF_RESOLVED_SUPPLIED": 3
+          "REF_RESOLVED_SUPPLIED": 3,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55326,13 +55321,13 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
+          "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-d334deaf-05de-474b-9b1e-1f12fd4519da",
             "property": "ceterms:latestVersion",
-            "severity": "ERROR",
+            "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-823a65d2-b429-4e71-ac08-b6b091df9130"
           },
-          "REF_RESOLVED_SUPPLIED": {
+          "VERSION_RANGE_CONFLICT": {
             "entity": "https://credentialengineregistry.org/resources/ce-d334deaf-05de-474b-9b1e-1f12fd4519da",
             "property": "ceterms:latestVersion",
             "severity": "INFO",
@@ -55340,8 +55335,8 @@
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 5,
+          "ERROR": 0,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55352,9 +55347,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55362,12 +55357,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3",
@@ -55380,11 +55369,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:e60f60d1-c06b-5e26-d57d-30f547add988"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -55408,9 +55403,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_RESOLVED_SUPPLIED": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55418,12 +55413,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3",
@@ -55436,11 +55425,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:e60f60d1-c06b-5e26-d57d-30f547add988"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-03155d72-17e2-4dc5-a809-6b388e1a81c3"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 3,
+          "ERROR": 1,
+          "INFO": 4,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55451,8 +55446,8 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_OUTSIDE_PAYLOAD": 2
+          "REF_OUTSIDE_PAYLOAD": 2,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55461,22 +55456,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033"
-          },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033",
             "property": "ceterms:ownedBy",
             "severity": "UNVERIFIABLE",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 2,
+          "ERROR": 0,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -55502,8 +55497,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
-          "REF_RESOLVED_SUPPLIED": 2
+          "REF_RESOLVED_SUPPLIED": 2,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55512,22 +55507,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033"
-          },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033",
             "property": "ceterms:ownedBy",
             "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-0bd417d0-9861-4fc8-9f7b-8f7771f84033"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 4,
+          "ERROR": 0,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55538,9 +55533,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55548,12 +55543,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0",
@@ -55566,11 +55555,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:f58ee353-2359-9c42-0b4c-9b9f694ae4a3"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -55595,9 +55590,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55605,12 +55600,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0",
@@ -55623,11 +55612,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:f58ee353-2359-9c42-0b4c-9b9f694ae4a3"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-cfdea799-3feb-46f7-8233-e0aed115f2c0"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55683,8 +55678,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
-          "REF_RESOLVED_SUPPLIED": 3
+          "REF_RESOLVED_SUPPLIED": 3,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55693,13 +55688,13 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
+          "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-69581952-d140-4410-9d90-cd04d2e6b9b1",
             "property": "ceterms:latestVersion",
-            "severity": "ERROR",
+            "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-69269168-2454-4216-8169-161f4ef1c407"
           },
-          "REF_RESOLVED_SUPPLIED": {
+          "VERSION_RANGE_CONFLICT": {
             "entity": "https://credentialengineregistry.org/resources/ce-69581952-d140-4410-9d90-cd04d2e6b9b1",
             "property": "ceterms:latestVersion",
             "severity": "INFO",
@@ -55707,8 +55702,8 @@
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 5,
+          "ERROR": 0,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55719,8 +55714,8 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_OUTSIDE_PAYLOAD": 1
+          "REF_OUTSIDE_PAYLOAD": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55729,22 +55724,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9"
-          },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9",
             "property": "ceterms:ownedBy",
             "severity": "UNVERIFIABLE",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 2,
+          "ERROR": 0,
+          "INFO": 3,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -55769,8 +55764,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_RESOLVED_SUPPLIED": 1
+          "REF_RESOLVED_SUPPLIED": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55779,22 +55774,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9"
-          },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9",
             "property": "ceterms:ownedBy",
             "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-721a16ca-0bc5-436c-a16c-4c625e8754c9"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 3,
+          "ERROR": 0,
+          "INFO": 4,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55856,9 +55851,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 3,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55866,12 +55861,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-46ba1356-597e-4abc-86d4-dc511f0795cc",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-da78821d-f257-4bb1-a036-f1daf6a0621b"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-46ba1356-597e-4abc-86d4-dc511f0795cc",
@@ -55884,11 +55873,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:4d8dde63-86c2-fbc3-852f-c95d2c5d13b9"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-46ba1356-597e-4abc-86d4-dc511f0795cc",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-da78821d-f257-4bb1-a036-f1daf6a0621b"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 5,
+          "ERROR": 1,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -55951,9 +55946,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 3,
           "REF_RESOLVED_SUPPLIED": 4,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 3
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -55961,12 +55956,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-c73b88ac-d683-4784-bf9a-0c1e8d93374d",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-c3e93e8c-fa74-495b-b3dc-0cd893a0e6f5"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-c73b88ac-d683-4784-bf9a-0c1e8d93374d",
@@ -55979,11 +55968,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:6a5b7219-7113-b8d7-7a6e-6ad149ca3589"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-c73b88ac-d683-4784-bf9a-0c1e8d93374d",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-c3e93e8c-fa74-495b-b3dc-0cd893a0e6f5"
           }
         },
         "severities": {
-          "ERROR": 4,
-          "INFO": 6,
+          "ERROR": 1,
+          "INFO": 9,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56045,9 +56040,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 3,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56055,12 +56050,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-340cba36-8672-41b6-a279-5620d6295d6c",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-7457cb1d-0656-4ff4-a23a-f8c76d712cbf"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-340cba36-8672-41b6-a279-5620d6295d6c",
@@ -56073,11 +56062,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:c1a10130-9888-cb86-d5c8-6e398221b319"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-340cba36-8672-41b6-a279-5620d6295d6c",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-7457cb1d-0656-4ff4-a23a-f8c76d712cbf"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 5,
+          "ERROR": 1,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56139,9 +56134,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 3,
-          "RANGE_VIOLATION": 3,
           "REF_RESOLVED_SUPPLIED": 4,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 3
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56149,12 +56144,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-e3796db1-b190-4ace-ade1-a975134e07f1",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-ec99e398-1900-450a-a3d9-8b9a26828941"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-e3796db1-b190-4ace-ade1-a975134e07f1",
@@ -56167,11 +56156,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:96953f6f-4314-ec85-9a61-c52dc8b9b67b"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-e3796db1-b190-4ace-ade1-a975134e07f1",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-ec99e398-1900-450a-a3d9-8b9a26828941"
           }
         },
         "severities": {
-          "ERROR": 4,
-          "INFO": 7,
+          "ERROR": 1,
+          "INFO": 10,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56182,9 +56177,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56192,12 +56187,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97",
@@ -56210,11 +56199,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:7d19c6f0-55a1-45a4-0d69-eb40eab33204"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -56238,9 +56233,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_RESOLVED_SUPPLIED": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56248,12 +56243,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97",
@@ -56266,11 +56255,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:7d19c6f0-55a1-45a4-0d69-eb40eab33204"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-500e1760-e561-48fc-8299-9df04a1a5c97"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 3,
+          "ERROR": 1,
+          "INFO": 4,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56332,9 +56327,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 3,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56342,12 +56337,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-0b032255-5f55-40f4-bb1c-9790a97ece7b",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-5b85390b-34e9-4bdd-8f9a-a209a11e6f3b"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-0b032255-5f55-40f4-bb1c-9790a97ece7b",
@@ -56360,11 +56349,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:6ded20f3-a35b-7ad3-8c08-7230bdcaa9d4"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-0b032255-5f55-40f4-bb1c-9790a97ece7b",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-5b85390b-34e9-4bdd-8f9a-a209a11e6f3b"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 5,
+          "ERROR": 1,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56375,9 +56370,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 3,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56385,12 +56380,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527",
@@ -56403,11 +56392,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:e60f60d1-c06b-5e26-d57d-30f547add988"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 3,
+          "ERROR": 1,
+          "INFO": 4,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -56431,9 +56426,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 3,
-          "RANGE_VIOLATION": 1,
           "REF_RESOLVED_SUPPLIED": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56441,12 +56436,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527",
@@ -56459,11 +56448,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:e60f60d1-c06b-5e26-d57d-30f547add988"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-6c33ff48-c9c9-4f19-b32e-d3890cfc9527"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 5,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56474,9 +56469,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56484,12 +56479,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca",
@@ -56502,11 +56491,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:e60f60d1-c06b-5e26-d57d-30f547add988"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 2,
           "WARNING": 0
         }
@@ -56531,9 +56526,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
           "REF_RESOLVED_SUPPLIED": 2,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56541,12 +56536,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca",
@@ -56559,11 +56548,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:e60f60d1-c06b-5e26-d57d-30f547add988"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-d6feb462-f5f7-48e2-a0b8-6b9f99ae1bca"
           }
         },
         "severities": {
-          "ERROR": 3,
-          "INFO": 4,
+          "ERROR": 1,
+          "INFO": 6,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56574,9 +56569,9 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_OUTSIDE_PAYLOAD": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56584,12 +56579,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1"
           },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1",
@@ -56602,11 +56591,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:c1a10130-9888-cb86-d5c8-6e398221b319"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 2,
+          "ERROR": 1,
+          "INFO": 3,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -56630,9 +56625,9 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
           "REF_RESOLVED_SUPPLIED": 1,
-          "REF_UNRESOLVED_BNODE": 1
+          "REF_UNRESOLVED_BNODE": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56640,12 +56635,6 @@
             "property": "ceterms:creditLevelType",
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
-          },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1"
           },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1",
@@ -56658,11 +56647,17 @@
             "property": "ceterms:ownedBy",
             "severity": "ERROR",
             "value": "_:c1a10130-9888-cb86-d5c8-6e398221b319"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-3fe27180-3928-4ce2-9a09-c5fccde090e1"
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 3,
+          "ERROR": 1,
+          "INFO": 4,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56673,8 +56668,8 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 3,
-          "RANGE_VIOLATION": 1,
-          "REF_OUTSIDE_PAYLOAD": 1
+          "REF_OUTSIDE_PAYLOAD": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56683,22 +56678,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b"
-          },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b",
             "property": "ceterms:ownedBy",
             "severity": "UNVERIFIABLE",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 3,
+          "ERROR": 0,
+          "INFO": 4,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -56723,8 +56718,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 3,
-          "RANGE_VIOLATION": 1,
-          "REF_RESOLVED_SUPPLIED": 1
+          "REF_RESOLVED_SUPPLIED": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56733,22 +56728,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b"
-          },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b",
             "property": "ceterms:ownedBy",
             "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-80900aa8-554d-4d5f-8692-a9e5118b614b"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 4,
+          "ERROR": 0,
+          "INFO": 5,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56759,8 +56754,8 @@
       "alone": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_OUTSIDE_PAYLOAD": 1
+          "REF_OUTSIDE_PAYLOAD": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56769,22 +56764,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316"
-          },
           "REF_OUTSIDE_PAYLOAD": {
             "entity": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316",
             "property": "ceterms:ownedBy",
             "severity": "UNVERIFIABLE",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 2,
+          "ERROR": 0,
+          "INFO": 3,
           "UNVERIFIABLE": 1,
           "WARNING": 0
         }
@@ -56809,8 +56804,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 1,
-          "REF_RESOLVED_SUPPLIED": 1
+          "REF_RESOLVED_SUPPLIED": 1,
+          "VERSION_RANGE_CONFLICT": 1
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56819,22 +56814,22 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
-            "entity": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316",
-            "property": "ceterms:latestVersion",
-            "severity": "ERROR",
-            "value": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316"
-          },
           "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316",
             "property": "ceterms:ownedBy",
             "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-9c1c2d37-e525-43a3-9cea-97f076b2fe38"
+          },
+          "VERSION_RANGE_CONFLICT": {
+            "entity": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316",
+            "property": "ceterms:latestVersion",
+            "severity": "INFO",
+            "value": "https://credentialengineregistry.org/resources/ce-da217518-65f5-44c4-aae6-b8b7ca07f316"
           }
         },
         "severities": {
-          "ERROR": 1,
-          "INFO": 3,
+          "ERROR": 0,
+          "INFO": 4,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -56890,8 +56885,8 @@
       "resolved": {
         "codes": {
           "CONCEPT_RANGE_CONFLICT": 2,
-          "RANGE_VIOLATION": 2,
-          "REF_RESOLVED_SUPPLIED": 3
+          "REF_RESOLVED_SUPPLIED": 3,
+          "VERSION_RANGE_CONFLICT": 2
         },
         "examples": {
           "CONCEPT_RANGE_CONFLICT": {
@@ -56900,13 +56895,13 @@
             "severity": "INFO",
             "value": "$.@graph[0].ceterms:transferValue[0].ceterms:creditLevelType[0]"
           },
-          "RANGE_VIOLATION": {
+          "REF_RESOLVED_SUPPLIED": {
             "entity": "https://credentialengineregistry.org/resources/ce-7d36d9ed-e63b-45f7-b542-ed1bfa93489d",
             "property": "ceterms:latestVersion",
-            "severity": "ERROR",
+            "severity": "INFO",
             "value": "https://credentialengineregistry.org/resources/ce-7bb8e7d5-3a79-4e36-83f2-37443cb9bb3f"
           },
-          "REF_RESOLVED_SUPPLIED": {
+          "VERSION_RANGE_CONFLICT": {
             "entity": "https://credentialengineregistry.org/resources/ce-7d36d9ed-e63b-45f7-b542-ed1bfa93489d",
             "property": "ceterms:latestVersion",
             "severity": "INFO",
@@ -56914,8 +56909,8 @@
           }
         },
         "severities": {
-          "ERROR": 2,
-          "INFO": 5,
+          "ERROR": 0,
+          "INFO": 7,
           "UNVERIFIABLE": 0,
           "WARNING": 0
         }
@@ -72529,16 +72524,16 @@
       "CTID_NOT_UUIDV4": 42,
       "DOMAIN_VIOLATION": 137,
       "INVERSE_ONE_DIRECTION": 31,
-      "RANGE_VIOLATION": 19,
       "REF_OUTSIDE_PAYLOAD": 3326,
-      "REF_UNRESOLVED_BNODE": 22
+      "REF_UNRESOLVED_BNODE": 22,
+      "VERSION_RANGE_CONFLICT": 19
     },
     "documents": 1200,
-    "documents_with_at_least_one_error": 34,
+    "documents_with_at_least_one_error": 28,
     "documents_with_no_findings": 94,
     "severities": {
-      "ERROR": 178,
-      "INFO": 366,
+      "ERROR": 159,
+      "INFO": 385,
       "UNVERIFIABLE": 3326,
       "WARNING": 42
     }
@@ -72549,17 +72544,17 @@
       "CTID_NOT_UUIDV4": 42,
       "DOMAIN_VIOLATION": 137,
       "INVERSE_ONE_DIRECTION": 31,
-      "RANGE_VIOLATION": 108,
       "REF_OUTSIDE_PAYLOAD": 155,
       "REF_RESOLVED_SUPPLIED": 3171,
-      "REF_UNRESOLVED_BNODE": 22
+      "REF_UNRESOLVED_BNODE": 22,
+      "VERSION_RANGE_CONFLICT": 61
     },
     "documents": 1200,
-    "documents_with_at_least_one_error": 39,
+    "documents_with_at_least_one_error": 28,
     "documents_with_no_findings": 94,
     "severities": {
-      "ERROR": 267,
-      "INFO": 3537,
+      "ERROR": 159,
+      "INFO": 3598,
       "UNVERIFIABLE": 155,
       "WARNING": 42
     }

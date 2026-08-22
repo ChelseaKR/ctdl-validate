@@ -14,6 +14,7 @@ import importlib.util
 import json
 import random
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 from types import ModuleType
@@ -47,12 +48,28 @@ DOCUMENT_KEYS = {
 EXCLUSION_KEYS = {"detail", "page", "reason"}
 ALLOWED_HOSTS = {"credentialengineregistry.org", "credreg.net"}
 
+#: What the harness leaves behind when it refuses to record a value.
+WITHHELD = re.compile(r"<withheld: \d+ characters>")
+
+
+def _is_safe_to_publish(text: str, identifier_only: Any) -> bool:
+    """A recorded value is either an identifier shape, or already withheld.
+
+    ``identifier_only`` is not idempotent -- re-applying it to its own
+    placeholder withholds the placeholder -- so the two safe states have to be
+    named separately rather than by round-tripping the recorded value.
+    """
+    return bool(WITHHELD.fullmatch(text)) or identifier_only(text) == text
+
 
 def _harness() -> ModuleType:
     """The survey harness itself, so the allow-list checked is the one that ran."""
     spec = importlib.util.spec_from_file_location("registry_survey", HARNESS)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    # Registered before execution: the harness defines a dataclass, and
+    # dataclasses resolve their own annotations through sys.modules[__module__].
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -147,8 +164,8 @@ def test_the_evidence_carries_no_record_content() -> None:
         assert re.fullmatch(r"P\d{3}", document["publisher"]), document["publisher"]
         for run in ("alone", "resolved"):
             for example in document[run]["examples"].values():
-                assert identifier_only(example["entity"]) == example["entity"], example
-                assert identifier_only(example["value"]) == example["value"], example
+                assert _is_safe_to_publish(example["entity"], identifier_only), example
+                assert _is_safe_to_publish(example["value"], identifier_only), example
     hosts = {
         host.lower().removeprefix("www.")
         for host in re.findall(r"https?://([^/\"\s]+)", EVIDENCE.read_text(encoding="utf-8"))
@@ -196,7 +213,9 @@ def test_the_per_code_table_is_complete_and_correct() -> None:
     published = {
         code: (severity, int(a.replace(",", "")), int(b.replace(",", "")))
         for code, severity, a, b in re.findall(
-            r"\| `([A-Z_]+)` \| (ERROR|WARNING|INFO|UNVERIFIABLE) \| ([\d,]+) \| ([\d,]+) \|", text
+            # Digits are part of a code name: CTID_NOT_UUIDV4.
+            r"\| `([A-Z0-9_]+)` \| (ERROR|WARNING|INFO|UNVERIFIABLE) \| ([\d,]+) \| ([\d,]+) \|",
+            text,
         )
     }
     assert set(published) == codes, set(published) ^ codes

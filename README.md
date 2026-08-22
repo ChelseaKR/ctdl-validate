@@ -339,13 +339,26 @@ see before publishing, and it is what `extract --validate` shows.
 
 ## Pointed at the Registry
 
-[`docs/findings/2026-08-15-published-registry-survey.md`](docs/findings/2026-08-15-published-registry-survey.md)
-is what came back from validating 120 documents drawn uniformly at random from
-the 395,878 published in the Credential Registry's `ce-registry` community.
-The read surface is public and needs no key; the harness
-([`tools/registry_survey.py`](tools/registry_survey.py)) re-checks robots.txt
-every run, spends one request every two seconds, and records structure and
-counts rather than anybody's data.
+[`docs/findings/2026-08-21-registry-survey-at-scale.md`](docs/findings/2026-08-21-registry-survey-at-scale.md)
+is what came back from validating 1,200 documents drawn uniformly at random
+from the 395,847 published in the Credential Registry's `ce-registry`
+community, and [the 2026-08-15
+survey](docs/findings/2026-08-15-published-registry-survey.md) is the
+120-document run before it. The read surface is public and needs no key; the
+harness ([`tools/registry_survey.py`](tools/registry_survey.py)) re-checks
+robots.txt every run, spends one request every two seconds, and records
+structure and counts rather than anybody's data.
+
+At 1,200 documents, with every reference the sample named supplied back to it:
+1,200 fetched, none failed, none excluded; 1,659 of the 1,660 referenced
+Registry resources in hand, the last one a 404. **28 of 1,200 carried an ERROR
+finding**, and 94 carried nothing at all. Validated one document at a time, 85%
+of findings were "I cannot see the document this points at"; `--resolve`
+settled 3,171 of those 3,326 and **introduced no new ERROR**, which is the
+additive property [ADR 0004](docs/adr/0004-resolution-is-additive.md) claims.
+Of the 267 ERRORs the run first raised, 108 were defects in this validator,
+found by hand-checking every one against the cached bytes and fixed before
+publication; the write-up names all three shapes of the 159 that survived.
 
 Two results. Forty ERROR findings, **every one of which traces to an
 inconsistency inside CTDL's own published schema encoding rather than to a
@@ -360,10 +373,14 @@ That false-positive class is now fixed (conflict 4 below), and the same corpus
 re-validated offline from the survey's own cache is the measurement of the
 fix: document by document, **36 of 120 documents failing became 0**, as all 38
 `RANGE_VIOLATION` findings became `CONCEPT_RANGE_CONFLICT` (INFO). With
-`--resolve`, 40 ERROR findings became 2 — and those 2 are the genuine
-`ceterms:TransferValueProfile` version-relation errors in conflict 5, in the
-one document the survey identified by hand. Every other finding, at every
-severity, is byte-for-byte unchanged.
+`--resolve`, 40 ERROR findings became 2 — the `ceterms:TransferValueProfile`
+version-relation errors in conflict 5, in the one document that survey
+identified by hand. Every other finding, at every severity, is byte-for-byte
+unchanged. Those 2 are no longer errors either: the 1,200-document run
+re-examined conflict 5 and made it a disposition, so the same two findings are
+`VERSION_RANGE_CONFLICT` (INFO) under the current tool. The revalidated
+evidence file is left as it was written, because it is the measurement of a
+different fix and re-running it would erase that.
 
 ## What it checks (v0)
 
@@ -501,18 +518,33 @@ than picking a side silently:
    `skos:Concept`-ranged property with no `meta:targetScheme` — `skos:broader`,
    `ceterms:classification` — is ordinary SKOS and still a `RANGE_VIOLATION`.
 
-Validating the published corpus on 2026-08-15 surfaced one more, and unlike
-the four above **the tool does not handle it**; it is reported as
-`RANGE_VIOLATION` / ERROR today. It is set out with its declarations in
-[the Registry survey](docs/findings/2026-08-15-published-registry-survey.md):
+Validating the published corpus on 2026-08-15 surfaced a fifth, left as an
+ERROR at the time because one document was the only evidence for it. The
+1,200-document run of 2026-08-21 changed that disposition — on the strength of
+the declarations rather than the count, which is still one publisher:
 
 5. `ceterms:latestVersion`, `ceterms:nextVersion` and `ceterms:previousVersion`
-   each declare `ceterms:TransferValueProfile` in `schema:domainIncludes` and
-   omit it from `schema:rangeIncludes`, so a TransferValueProfile may carry a
-   version relation but may not point it at another TransferValueProfile.
-   Left as an ERROR deliberately: unlike the concept ranges, one document in
-   the sample is the only evidence, and one publisher's usage is not enough to
-   overturn a declaration.
+   each declare a `schema:rangeIncludes` that is a strict subset of their own
+   `schema:domainIncludes`, dropping the same six classes from all three:
+   `ceasn:Competency`, `ceasn:CompetencyFramework`, `ceasn:Rubric`,
+   `ceterms:Collection`, `ceterms:Pathway` and `ceterms:TransferValueProfile`.
+   So a TransferValueProfile may carry a version relation but may not point it
+   at another TransferValueProfile, and every class the range does admit would
+   make its earlier version a credential. One of the two declarations is wrong
+   whatever anybody publishes. Reported as `VERSION_RANGE_CONFLICT` (INFO),
+   citing both declarations, and only where a resource is versioned by another
+   of its own class — a version link to a *different* class is still a
+   `RANGE_VIOLATION`. Unlike conflict 4 this is **not** supported by a
+   frequency argument: only two publishers in the surveyed corpus use these
+   properties at all, which the survey states plainly.
+
+6. `ceterms:hasMember`, `ceterms:isSimilarTo` and `owl:sameAs` declare
+   `rdfs:Resource` as their whole range. RDF Schema 1.1 section 3.1 makes that
+   "the class of everything", so it excludes nothing — but no CTDL class
+   reaches it by `rdfs:subClassOf`, so a naive subclass match rejects every
+   entity instead of accepting every one. Not a conflict in CTDL so much as a
+   trap in reading it, and one this tool fell into: a declared range naming
+   only `rdfs:Resource` is now treated as unconstraining and raises nothing.
 
 ## Development
 
