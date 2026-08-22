@@ -32,7 +32,10 @@ interpreted.
 **Draw.** 1,200 page numbers: `random.Random(20260821).sample(range(1, X-Total + 1), 1200)`,
 sorted. The seed is the date. The evidence file records `X-Total`, the seed,
 and every page number, so the draw is recomputable without the network, and
-`tests/test_findings_evidence.py` recomputes it.
+`tests/test_findings_evidence.py` recomputes it. *(Amended after the draw,
+2026-08-21: the tests for this run were given their own module,
+`tests/test_findings_registry_at_scale.py`, to keep the 2026-08-15 tests
+untouched. Nothing else in this section has changed since it was committed.)*
 
 **Every drawn page is published.** Each of the 1,200 appears in the evidence
 exactly once: as a document row, or as an exclusion with one of six reasons
@@ -69,7 +72,8 @@ kind; and the change against the 120-document run, which is comparable because
 that run's cache has been re-validated by the same tool version
 ([`2026-08-15-published-registry-survey.revalidated-2026-08-21.json`](2026-08-15-published-registry-survey.revalidated-2026-08-21.json)).
 Every number in those tables is recomputed from the evidence JSON by
-`tests/test_findings_evidence.py`.
+`tests/test_findings_evidence.py` *(see the amendment above: the module is
+`tests/test_findings_registry_at_scale.py`)*.
 
 **Hand verification.** Every ERROR in the resolved pass is checked against the
 cached source bytes of the document and, where the finding depends on it, of
@@ -88,6 +92,67 @@ to the Registry's Minimum Data Policy, or to anything this tool does not
 check. No percentage here is a population estimate of anything but the
 documents the tool read.
 
-## Results
+## How the draw went
 
-*Written after the run. See below.*
+{{ACCESS}}
+
+## The headline
+
+{{HEADLINE_PROSE}}
+
+{{HEADLINE_TABLE}}
+
+By finding code:
+
+{{CODES_TABLE}}
+
+## By Registry type
+
+{{TYPES_PROSE}}
+
+{{TYPES_TABLE}}
+
+## Every ERROR, named and checked against the bytes
+
+{{ERRORS_PROSE}}
+
+{{ERRORS_TABLE}}
+
+{{ERRORS_ANALYSIS}}
+
+## What stayed unsettled after `--resolve`
+
+{{RESIDUE_PROSE}}
+
+{{RESIDUE_TABLE}}
+
+## Who published what
+
+{{PUBLISHERS_PROSE}}
+
+## Against the 120-document run
+
+{{DELTA_PROSE}}
+
+{{DELTA_TABLE}}
+
+## Exclusions
+
+{{EXCLUSIONS}}
+
+## What this changes
+
+{{CHANGES}}
+
+## Reproducing it
+
+    uv run python tools/registry_survey.py --sample 1200 --seed 20260821 \
+        --resolve-cap 100000 --cache .registry-cache-2026-08-21 \
+        --out docs/findings/2026-08-21-registry-survey-at-scale.json
+
+The same seed draws the same page numbers against the same `X-Total`; the
+corpus moves, so a fresh draw against today's `X-Total` is a different sample
+and is meant to be. Add `--from-dir` to re-derive this evidence file from the
+cache, byte for byte, with no network: the draw, the robots outcome, the
+request count and every fetch failure are read back from
+`<cache>/provenance.json`. The cache is gitignored; the evidence file is not.
