@@ -330,3 +330,119 @@ def test_siblings_of_a_property_with_no_target_scheme_is_empty() -> None:
     assert schema.alignment_ranged_siblings("ceterms:creditLevelType") == (
         "ceterms:audienceLevelType",
     )
+
+
+# -- a range of rdfs:Resource constrains nothing --------------------------------
+
+COLLECTION_IRI = (
+    "https://credentialengineregistry.org/resources/ce-1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+)
+MEMBER_IRI = (
+    "https://credentialengineregistry.org/resources/ce-2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+)
+
+
+def _collection_with_member() -> dict[str, object]:
+    return {
+        "@graph": [
+            {
+                "@id": COLLECTION_IRI,
+                "@type": "ceterms:Collection",
+                "ceterms:ctid": "ce-1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+                "ceterms:hasMember": [MEMBER_IRI],
+            },
+            {
+                "@id": MEMBER_IRI,
+                "@type": "ceterms:License",
+                "ceterms:ctid": "ce-2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+            },
+        ]
+    }
+
+
+def test_a_range_of_rdfs_resource_admits_every_entity() -> None:
+    """The 2026-08-21 survey raised 47 range errors on one Collection over this."""
+    findings = validate_document(_collection_with_member())
+    assert [f for f in findings if f.code == "RANGE_VIOLATION"] == []
+    assert findings == []
+
+
+def test_the_universal_range_the_fix_rests_on_is_still_in_the_snapshot() -> None:
+    """If CTDL ever ranges hasMember on something real, judge it again.
+
+    The fix is not "hasMember is exempt"; it is that a range naming only
+    rdfs:Resource excludes nothing, so matching against it would reject every
+    entity rather than accept every entity. Both halves are asserted here.
+    """
+    schema = load_schema()
+    assert schema.properties["ceterms:hasMember"].range == frozenset({"rdfs:Resource"})
+    assert schema.properties["ceterms:hasMember"].range_is_universal
+    assert "rdfs:Resource" not in schema.classes
+    assert not [c for c in schema.classes if "rdfs:Resource" in schema.ancestors_of(c)]
+
+
+# -- a version property whose range drops a class its own domain admits ---------
+
+TVP_IRI = "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344"
+OLDER_TVP_IRI = (
+    "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826"
+)
+
+
+def _versioned_transfer_value_profile(target_type: str) -> dict[str, object]:
+    return {
+        "@graph": [
+            {
+                "@id": TVP_IRI,
+                "@type": "ceterms:TransferValueProfile",
+                "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "ceterms:previousVersion": [OLDER_TVP_IRI],
+            },
+            {
+                "@id": OLDER_TVP_IRI,
+                "@type": target_type,
+                "ceterms:ctid": "ce-79298677-d0e4-4799-853a-a633d9071826",
+            },
+        ]
+    }
+
+
+def test_versioning_a_class_the_range_drops_is_info_not_an_error() -> None:
+    """61 of the survey's 267 errors were this, against 32 published documents."""
+    findings = validate_document(_versioned_transfer_value_profile("ceterms:TransferValueProfile"))
+    (finding,) = findings
+    assert finding.code == "VERSION_RANGE_CONFLICT"
+    assert finding.severity is Severity.INFO
+    assert finding.prop == "ceterms:previousVersion"
+
+
+def test_the_version_conflict_message_names_the_class_and_both_declarations() -> None:
+    findings = validate_document(_versioned_transfer_value_profile("ceterms:TransferValueProfile"))
+    (finding,) = findings
+    assert "ceterms:TransferValueProfile" in finding.message
+    assert "domain" in finding.rule.citation and "range" in finding.rule.citation
+    assert "schema:domainIncludes" in finding.rule.citation
+    assert "schema:rangeIncludes" in finding.rule.citation
+    assert finding.rule.url == "https://credreg.net/ctdl/schema/encoding/json"
+
+
+def test_a_version_link_to_a_different_class_is_still_an_error() -> None:
+    """The disposition is about versioning a thing with a thing of its own kind."""
+    findings = validate_document(
+        _versioned_transfer_value_profile("ceterms:CredentialOrganization")
+    )
+    (finding,) = [f for f in findings if f.code == "RANGE_VIOLATION"]
+    assert finding.severity is Severity.ERROR
+
+
+def test_the_version_asymmetry_the_disposition_rests_on_is_still_in_the_snapshot() -> None:
+    """If CTDL ever ranges these three on what it already domains them on, judge again."""
+    schema = load_schema()
+    dropped = None
+    for prop in ("ceterms:latestVersion", "ceterms:nextVersion", "ceterms:previousVersion"):
+        declared = schema.properties[prop]
+        assert declared.range < declared.domain, prop
+        assert "ceterms:TransferValueProfile" in schema.domain_only_classes(prop), prop
+        if dropped is None:
+            dropped = schema.domain_only_classes(prop)
+        assert schema.domain_only_classes(prop) == dropped, prop

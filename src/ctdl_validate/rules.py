@@ -167,6 +167,36 @@ def concept_range_conflict_rule(
     )
 
 
+def version_range_conflict_rule(prop: str, cls: str, dropped: frozenset[str]) -> Rule:
+    """A version property whose own range excludes a class its own domain admits.
+
+    CTDL's three version properties relate a resource to another version of
+    the same resource. For each of them the encoding declares
+    schema:rangeIncludes as a strict subset of schema:domainIncludes, dropping
+    the same classes from all three. For a dropped class the two declarations
+    cannot both be satisfied: the domain says an instance of that class may
+    have a version, and the range says that version may not be an instance of
+    that class, while a version of a thing is a thing of the same kind. The
+    document is following the domain declaration, so the disagreement is
+    inside the encoding and this is reported as INFO, not an error — the same
+    disposition the isChildOf and concept-range conflicts get.
+    """
+    others = ", ".join(sorted(dropped - {cls}))
+    return Rule(
+        citation=(
+            f"Conflicting declarations inside the schema encoding: {prop} declares "
+            f"schema:domainIncludes {cls}, so a {cls} may have a version, and omits "
+            f"{cls} from schema:rangeIncludes, so that version may not be a {cls}. "
+            f"The declared range of {prop} is a strict subset of its own declared "
+            f"domain; besides {cls} it also drops {others}. Reported as INFO, not an "
+            "error, because the two declarations disagree with each other and the "
+            "document satisfies one of them."
+        ),
+        url=_vocab_schema_url(prop),
+        retrieved=RETRIEVED,
+    )
+
+
 def id_coercion_rule(prop: str) -> Rule:
     return Rule(
         citation=(

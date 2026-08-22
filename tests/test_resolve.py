@@ -29,6 +29,8 @@ OWNER_IRI = "https://credentialengineregistry.org/resources/ce-79298677-d0e4-479
 FRAMEWORK_IRI = (
     "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
 )
+TVP_IRI = "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344"
+OLDER_TVP_IRI = OWNER_IRI
 
 
 def codes(findings: list[Any]) -> set[str]:
@@ -211,3 +213,37 @@ def test_an_unreadable_supplied_document_exits_two(capsys: pytest.CaptureFixture
     )
     assert exit_code == 2
     assert "cannot read" in capsys.readouterr().err
+
+
+def test_a_supplied_neighbour_can_settle_a_reference_into_a_disposition(
+    tmp_path: Path,
+) -> None:
+    """Resolution is additive in both directions: it can settle into INFO, not only ERROR.
+
+    Most of the 2026-08-21 survey's version-property findings only became
+    judgeable at all once the neighbour was supplied: 19 of them were visible
+    document-by-document and 61 with the sample supplied to itself. The
+    finding still names the file it rests on.
+    """
+    older = tmp_path / "older_transfer_value_profile.json"
+    older.write_text(
+        json.dumps(
+            {
+                "@id": OLDER_TVP_IRI,
+                "@type": "ceterms:TransferValueProfile",
+                "ceterms:ctid": "ce-79298677-d0e4-4799-853a-a633d9071826",
+            }
+        ),
+        encoding="utf-8",
+    )
+    payload = {
+        "@id": TVP_IRI,
+        "@type": "ceterms:TransferValueProfile",
+        "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+        "ceterms:previousVersion": [OLDER_TVP_IRI],
+    }
+    assert codes(validate_document(copy.deepcopy(payload))) == {"REF_OUTSIDE_PAYLOAD"}
+    findings = validate_document(payload, [older])
+    (finding,) = [f for f in findings if f.code == "VERSION_RANGE_CONFLICT"]
+    assert finding.severity is Severity.INFO
+    assert "older_transfer_value_profile.json" in finding.message
