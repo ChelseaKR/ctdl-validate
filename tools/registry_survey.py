@@ -312,15 +312,32 @@ def collect_sample(fetcher: RegistryFetcher, cache: Path, size: int, seed: int) 
                 failed[str(page)] = "empty-page"
             else:
                 raw.write_text(json.dumps(envelope, sort_keys=True, ensure_ascii=False), "utf-8")
-                continue
-        # A failure is part of the record the moment it happens. Written
-        # here rather than at the end of the loop so that a run interrupted
-        # later does not resume by quietly retrying what already failed.
-        write_json(provenance_path, provenance)
+        # The tally and any failure are part of the record the moment they
+        # happen. Written every time round rather than at the end of the loop
+        # so that a run interrupted later does not resume by quietly retrying
+        # what already failed, and does not take its request count with it.
+        # One small write per request, each already separated from the next by
+        # the politeness interval.
+        bank_requests(provenance, provenance_path, fetcher)
+    bank_requests(provenance, provenance_path, fetcher)
+    return provenance
+
+
+def bank_requests(
+    provenance: dict[str, Any], provenance_path: Path, fetcher: RegistryFetcher
+) -> None:
+    """Move the fetcher's request tally into the durable record, and write it.
+
+    The counter used to be banked once, after a phase finished, which meant a
+    run killed in the middle of a phase silently took its whole tally with it:
+    the 2026-08-21 draw was interrupted after 1,091 pages and the record it
+    left behind claimed 1,770 requests for work that cannot have cost fewer
+    than 2,861. A count that a resume can lose is not a measurement, so it is
+    banked after every request instead.
+    """
     provenance["fetch"]["requests"] += fetcher.requests
     fetcher.requests = 0
     write_json(provenance_path, provenance)
-    return provenance
 
 
 def fetch_neighbours(
@@ -329,27 +346,19 @@ def fetch_neighbours(
     """Fetch the documents the sample's references name, up to ``cap``."""
     neighbours = cache / "neighbours"
     failed: dict[str, str] = provenance["fetch"].setdefault("neighbours_failed", {})
-    attempted = 0
+    provenance["fetch"].setdefault("neighbours", {})["cap"] = cap
     for iri in wanted[:cap]:
         destination = neighbours / cache_name(iri)
         if destination.exists() or iri in failed:
             continue
-        attempted += 1
         try:
             result = fetcher.fetch(iri)
             destination.write_text(result.text, encoding="utf-8")
         except (FetchError, OSError) as exc:
             print(f"  neighbour {iri}: {exc}", file=sys.stderr)
             failed[iri] = str(exc)
-    provenance["fetch"]["neighbours"] = {
-        "referenced": len(wanted),
-        "cap": cap,
-        "attempted": attempted,
-        "failed": len(failed),
-    }
-    provenance["fetch"]["requests"] += fetcher.requests
-    fetcher.requests = 0
-    write_json(cache / PROVENANCE, provenance)
+        bank_requests(provenance, cache / PROVENANCE, fetcher)
+    bank_requests(provenance, cache / PROVENANCE, fetcher)
 
 
 def screen_neighbours(
@@ -514,9 +523,58 @@ def by_type(documents: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def access_block(provenance: dict[str, Any], from_cache: bool) -> dict[str, Any]:
+def neighbour_block(
+    provenance: dict[str, Any], cache: Path, documents: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """What the one resolve hop asked for, and what the cache actually holds.
+
+    Counted off the cache and the sample's own references rather than off a
+    per-run counter, so a resumed run reports the same numbers a single run
+    would have. ``unresolved`` is the honest residue: a reference nobody
+    fetched and nobody recorded a failure for -- beyond ``cap``, or dropped by
+    an interrupted run -- is neither supplied nor known-broken, and is counted
+    here rather than folded into either.
+    """
+    wanted = sorted({iri for d in documents for iri in d.get("registry_references", [])})
+    failures: dict[str, str] = provenance["fetch"].get("neighbours_failed", {})
+    fetched = sum(1 for iri in wanted if (cache / "neighbours" / cache_name(iri)).exists())
+    failed = sum(1 for iri in wanted if iri in failures)
+    return {
+        "referenced": len(wanted),
+        "cap": provenance["fetch"].get("neighbours", {}).get("cap"),
+        "fetched": fetched,
+        "failed": failed,
+        "unresolved": len(wanted) - fetched - failed,
+    }
+
+
+def request_block(
+    provenance: dict[str, Any], cache: Path, neighbours: dict[str, Any]
+) -> dict[str, Any]:
+    """The recorded request count, beside the floor the cache can prove.
+
+    ``recorded`` is what the harness counted. It can be short: a run killed
+    mid-phase used to lose its tally (see ``bank_requests``), and this cache
+    carries such a run. ``implied_by_the_cache`` is what the cache on disk
+    cannot have cost less than -- one request per cached document, one per
+    recorded failure, one to size the corpus -- so a write-up can quote a
+    number it can defend instead of a counter it cannot.
+    """
+    fetch = provenance["fetch"]
+    documents = len(list((cache / "pages").glob("*.json"))) + neighbours["fetched"]
+    failures = len(fetch.get("pages_failed", {})) + neighbours["failed"]
+    return {
+        "recorded": fetch.get("requests"),
+        "implied_by_the_cache": documents + failures + 1,
+    }
+
+
+def access_block(
+    provenance: dict[str, Any], cache: Path, documents: list[dict[str, Any]], from_cache: bool
+) -> dict[str, Any]:
     draw = provenance["draw"]
     fetch = provenance["fetch"]
+    neighbours = neighbour_block(provenance, cache, documents)
     return {
         "from_cache": from_cache,
         "corpus_envelopes": draw["corpus_envelopes"],
@@ -524,8 +582,8 @@ def access_block(provenance: dict[str, Any], from_cache: bool) -> dict[str, Any]
         "seed": draw["seed"],
         "pages_drawn": len(draw["pages"]),
         "pages_failed": len(fetch.get("pages_failed", {})),
-        "requests": fetch.get("requests"),
-        "neighbours": fetch.get("neighbours"),
+        "requests": request_block(provenance, cache, neighbours),
+        "neighbours": neighbours,
         "carried_from": provenance.get("carried_from"),
     }
 
@@ -544,6 +602,16 @@ def legacy_provenance(cache: Path, evidence: Path) -> dict[str, Any]:
     cached = sorted(int(p.stem) for p in (cache / "pages").glob("*.json"))
     if cached != pages:
         raise SystemExit(f"{cache} holds pages that are not the draw {evidence} describes")
+    # The legacy record counts neighbour failures without naming them, and a
+    # count cannot be re-attributed to the IRIs it belonged to. Carrying it as
+    # though the failures were known would let a later run report a document
+    # as unresolved that this one had recorded as broken, so a legacy record
+    # that has any is refused rather than approximated.
+    if access.get("failed"):
+        raise SystemExit(
+            f"{evidence} records {access['failed']} neighbour failures but not which IRIs "
+            "they were; that cache cannot be re-analysed faithfully"
+        )
     return {
         "draw": {
             "seed": access["seed"],
@@ -555,12 +623,7 @@ def legacy_provenance(cache: Path, evidence: Path) -> dict[str, Any]:
         "fetch": {
             "requests": access["requests"],
             "pages_failed": {str(p): "fetch-failed" for p in access.get("pages_unfetched", [])},
-            "neighbours": {
-                "referenced": access["referenced_registry_resources"],
-                "cap": access["cap"],
-                "attempted": access["attempted"],
-                "failed": access["failed"],
-            },
+            "neighbours": {"cap": access["cap"]},
         },
         "carried_from": evidence.name,
     }
@@ -624,7 +687,7 @@ def main(argv: list[str] | None = None) -> int:
             ),
             "exclusion_reasons": EXCLUSION_REASONS,
         },
-        "access": access_block(provenance, from_cache=args.from_dir),
+        "access": access_block(provenance, cache, documents, from_cache=args.from_dir),
         "sampled": len(documents),
         "excluded": len(result["exclusions"]),
         "supplied_documents": result["supplied_documents"],
