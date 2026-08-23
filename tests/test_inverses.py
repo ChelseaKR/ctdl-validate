@@ -51,3 +51,40 @@ def test_undeclared_pairs_are_not_invented() -> None:
         ]
     }
     assert validate_document(payload) == []
+
+
+def test_inverse_written_as_a_nested_object_still_counts_as_pointing_back() -> None:
+    # Course A ceterms:hasPart Course B, written as a plain IRI. Course B
+    # ceterms:isPartOf Course A, but written as a full nested object (@id plus
+    # other properties) rather than a bare {"@id": ...} reference -- a
+    # publisher embedding the entity it points at instead of just citing it,
+    # which is still the same document asserting both directions and
+    # agreeing. This must not be reported as a mismatch (the nested value
+    # never equals the plain node_id string it names) or reduced to "one
+    # direction alone" (Course A's own hasPart, declared at the top level,
+    # must still be visible from the embedded copy's identity).
+    payload = {
+        "@graph": [
+            {
+                "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "@type": "ceterms:Course",
+                "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "ceterms:name": {"en-US": "Course A"},
+                "ceterms:hasPart": [
+                    "https://credentialengineregistry.org/resources/ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e"
+                ],
+            },
+            {
+                "@id": "https://credentialengineregistry.org/resources/ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e",
+                "@type": "ceterms:Course",
+                "ceterms:ctid": "ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e",
+                "ceterms:name": {"en-US": "Course B"},
+                "ceterms:isPartOf": {
+                    "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                    "@type": "ceterms:Course",
+                    "ceterms:name": {"en-US": "Course A (embedded copy)"},
+                },
+            },
+        ]
+    }
+    assert validate_document(payload) == []

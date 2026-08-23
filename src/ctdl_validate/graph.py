@@ -52,8 +52,24 @@ class Graph:
     by_path: dict[str, Node]
 
     def resolve(self, value: Any) -> Node | None:
-        """Resolve a reference value to an in-payload node, if present."""
+        """Resolve a reference value to an in-payload node, if present.
+
+        A nested object that carries its own ``@id`` is, by JSON-LD's own
+        identity rule, the same node as anything else in the payload with that
+        ``@id`` -- not a second, unrelated entity that happens to render at a
+        different path. When that identifier is already registered (the usual
+        case: the entity is declared once at the top level and embedded again,
+        inline, wherever something points at it), resolving by identity finds
+        the fully-declared node instead of the thinner duplicate ``_Builder``
+        created for the nested occurrence, so every property asserted about
+        the entity anywhere in the document is visible from here. Falling back
+        to the path only covers a nested object with no ``@id`` at all (a
+        genuinely anonymous/blank node), or one whose ``@id`` this payload
+        never declares elsewhere.
+        """
         if isinstance(value, NestedRef):
+            if value.target_id is not None and value.target_id in self.by_id:
+                return self.by_id[value.target_id]
             return self.by_path.get(value.target_path)
         if isinstance(value, str):
             return self.by_id.get(value)

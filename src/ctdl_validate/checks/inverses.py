@@ -14,6 +14,27 @@ from ..graph import NestedRef
 from ..session import Session
 
 
+def _asserts_back(values: tuple[object, ...], node_id: str) -> bool:
+    """Whether any raw property value identifies the node ``node_id`` names.
+
+    A value is either the plain IRI/blank-node-id string a reference is
+    normally written as, or a ``NestedRef`` for a value that was a nested
+    object -- which carries the nested object's own ``@id`` (``target_id``)
+    when it declared one. Checking only the string case (a plain ``in`` test
+    against the raw tuple) misses a reference written as a full nested object
+    instead of a bare ``{"@id": ...}``: a ``NestedRef`` never equals the
+    string it was pointing at, so a target that legitimately points back --
+    just spelled as an inline object -- was reported as not pointing back at
+    all.
+    """
+    return any(
+        value == node_id
+        if isinstance(value, str)
+        else isinstance(value, NestedRef) and value.target_id == node_id
+        for value in values
+    )
+
+
 def check(session: Session) -> list[Finding]:
     graph, schema = session.graph, session.schema
     findings: list[Finding] = []
@@ -48,7 +69,7 @@ def check(session: Session) -> list[Finding]:
                             rule=rules.inverse_rule(prop, inverse),
                         )
                     )
-                elif node.node_id not in target.props[inverse]:
+                elif not _asserts_back(target.props[inverse], node.node_id):
                     findings.append(
                         Finding(
                             code="INVERSE_MISMATCH",
