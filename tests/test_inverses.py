@@ -51,3 +51,46 @@ def test_undeclared_pairs_are_not_invented() -> None:
         ]
     }
     assert validate_document(payload) == []
+
+
+def test_inverse_asserted_via_nested_object_is_not_a_mismatch() -> None:
+    """Regression: inverse written as inline nested object must not produce INVERSE_MISMATCH.
+
+    When the reverse direction of an owl:inverseOf pair is expressed as a
+    nested JSON object (e.g. ``{"@id": "...", "@type": "ceterms:Course", ...}``)
+    rather than a bare IRI string, the check was comparing node.node_id against
+    a NestedRef instance, which always returned False, producing a false-positive
+    ERROR on a fully compliant document.
+    """
+    doc = {
+        "@context": "https://credreg.net/ctdl/schema/context/json",
+        "@graph": [
+            {
+                "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "@type": "ceterms:Course",
+                "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "ceterms:name": {"en-US": "Course A"},
+                "ceterms:hasPart": [
+                    "https://credentialengineregistry.org/resources/ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e"
+                ],
+            },
+            {
+                "@id": "https://credentialengineregistry.org/resources/ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e",
+                "@type": "ceterms:Course",
+                "ceterms:ctid": "ce-d9a8ddae-ea6e-4f69-9c36-3f51a3104a0e",
+                "ceterms:name": {"en-US": "Course B"},
+                # inverse written as an inline nested object, not a bare IRI
+                "ceterms:isPartOf": [
+                    {
+                        "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                        "@type": "ceterms:Course",
+                        "ceterms:name": {"en-US": "Course A (embedded inline)"},
+                    }
+                ],
+            },
+        ],
+    }
+    mismatches = [f for f in validate_document(doc) if f.code == "INVERSE_MISMATCH"]
+    assert mismatches == [], (
+        "Both directions are present and agree — nested object form must not be a mismatch"
+    )

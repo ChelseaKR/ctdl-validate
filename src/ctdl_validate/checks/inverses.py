@@ -8,10 +8,26 @@ not an error: publishing one direction is normal.
 
 from __future__ import annotations
 
+from typing import Any
+
 from .. import rules
 from ..findings import Finding, Severity
-from ..graph import NestedRef
+from ..graph import Graph, NestedRef
 from ..session import Session
+
+
+def _references_node(values: tuple[Any, ...], node_id: str, graph: Graph) -> bool:
+    """Check if any value in a property references node_id, directly or via NestedRef."""
+    for value in values:
+        if isinstance(value, str) and value == node_id:
+            return True
+        if isinstance(value, NestedRef):
+            if value.target_id == node_id:
+                return True
+            target = graph.resolve(value)
+            if target is not None and target.node_id == node_id:
+                return True
+    return False
 
 
 def check(session: Session) -> list[Finding]:
@@ -48,7 +64,7 @@ def check(session: Session) -> list[Finding]:
                             rule=rules.inverse_rule(prop, inverse),
                         )
                     )
-                elif node.node_id not in target.props[inverse]:
+                elif not _references_node(target.props[inverse], node.node_id, graph):
                     findings.append(
                         Finding(
                             code="INVERSE_MISMATCH",
