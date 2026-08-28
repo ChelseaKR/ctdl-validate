@@ -114,9 +114,17 @@ class SchemaIndex:
         classes: dict[str, ClassDef],
         properties: dict[str, PropertyDef],
         prefixes: dict[str, str],
+        concepts: dict[str, frozenset[str]] | None = None,
+        schemes: frozenset[str] = frozenset(),
     ) -> None:
         self.classes = classes
         self.properties = properties
+        #: Concept term -> the concept scheme(s) the encoding declares it in,
+        #: from ``skos:inScheme``. Empty for a term the snapshot does not
+        #: declare, which is not the same as a term declared in no scheme.
+        self.concepts = concepts if concepts is not None else {}
+        #: Every ``skos:ConceptScheme`` the encoding declares.
+        self.schemes = schemes
         # Longest namespace first so the most specific prefix wins.
         self._namespaces = sorted(
             ((ns, prefix) for prefix, ns in prefixes.items()),
@@ -233,6 +241,8 @@ def _index_schema_entry(
     entry: dict[str, Any],
     classes: dict[str, ClassDef],
     raw_props: dict[str, dict[str, Any]],
+    concepts: dict[str, set[str]],
+    schemes: set[str],
 ) -> None:
     """Fold one @graph entry into the class and property indexes."""
     term = entry.get("@id")
@@ -247,6 +257,17 @@ def _index_schema_entry(
             )
         )
         classes[term] = ClassDef(term=term, parents=parents)
+    elif etype == "skos:Concept":
+        concepts.setdefault(term, set()).update(
+            entry_id
+            for entry_id in (
+                value.get("@id") if isinstance(value, dict) else value
+                for value in _as_list(entry.get("skos:inScheme"))
+            )
+            if isinstance(entry_id, str)
+        )
+    elif etype == "skos:ConceptScheme":
+        schemes.add(term)
     elif etype == "rdf:Property":
         merged = raw_props.setdefault(term, {"domain": set(), "range": set(), "scheme": set()})
         merged["domain"].update(_as_list(entry.get("schema:domainIncludes")))
@@ -261,10 +282,12 @@ def _index_schema_entry(
 def load_schema() -> SchemaIndex:
     classes: dict[str, ClassDef] = {}
     raw_props: dict[str, dict[str, Any]] = {}
+    concepts: dict[str, set[str]] = {}
+    schemes: set[str] = set()
 
     for relpath in ("ctdl/schema.json", "ctdlasn/schema.json"):
         for entry in vendor_graph(relpath):
-            _index_schema_entry(entry, classes, raw_props)
+            _index_schema_entry(entry, classes, raw_props, concepts, schemes)
 
     coercions: dict[str, dict[str, Any]] = {}
     prefixes: dict[str, str] = {}
@@ -289,7 +312,13 @@ def load_schema() -> SchemaIndex:
             target_scheme=frozenset(merged["scheme"]),
         )
 
-    return SchemaIndex(classes=classes, properties=properties, prefixes=prefixes)
+    return SchemaIndex(
+        classes=classes,
+        properties=properties,
+        prefixes=prefixes,
+        concepts={term: frozenset(inscheme) for term, inscheme in concepts.items()},
+        schemes=frozenset(schemes),
+    )
 
 
 def is_checked_term(term: str) -> bool:
