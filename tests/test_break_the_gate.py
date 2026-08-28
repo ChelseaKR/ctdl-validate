@@ -82,3 +82,22 @@ def test_giving_two_entities_one_identifier_is_caught(clean_payload: Any) -> Non
     assert len(merged) == 1
     assert merged[0].entity == duplicated
     assert merged[0].severity is Severity.INFO
+
+
+def test_a_concept_from_the_wrong_scheme_is_caught(clean_payload: Any) -> None:
+    # The framework gains a cost profile whose directCostType names a real
+    # CTDL concept from ceterms:CredentialStatus instead of ceterms:CostType.
+    clean_payload["@graph"].append(
+        {
+            "@id": "_:cost",
+            "@type": "ceterms:CostProfile",
+            "ceterms:directCostType": {
+                "@type": "ceterms:CredentialAlignmentObject",
+                "ceterms:targetNode": "credentialStat:Active",
+            },
+        }
+    )
+    findings = validate_document(clean_payload)
+    assert any(
+        f.code == "CONCEPT_OUTSIDE_SCHEME" and f.severity is Severity.WARNING for f in findings
+    )
