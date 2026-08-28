@@ -141,6 +141,22 @@ and this project adheres to
   with a note; the run's own measurements never depended on it, and the figures
   are now derived from the snapshot in `tests/test_domain_range.py` so they
   cannot drift again.
+- Check 5 (inverse consistency) could report `INVERSE_MISMATCH` (ERROR) on a
+  document whose two directions actually agreed. The bug: an inverse
+  reference written as a full nested object (`{"@id": ..., "@type": ..., ...}`)
+  rather than a bare `{"@id": ...}` is parsed into a `NestedRef`, and the
+  membership test that decides whether the other direction "points back"
+  compared that `NestedRef` against a plain `@id` string with `in` — which is
+  never true, since a `NestedRef` never equals a string. A publisher who
+  embeds the entity it points at, instead of just citing it, got an ERROR
+  reporting the two directions as contradictory when they were not. Fixed in
+  two places: `Graph.resolve()` now prefers resolving a nested object by its
+  own `@id` (`NestedRef.target_id`) when that identifier is already known
+  elsewhere in the payload, so a reference to an entity declared once at the
+  top level and embedded again inline resolves to the fully-declared node
+  rather than a thinner duplicate; and the inverse check's membership test
+  now recognizes a `NestedRef` whose `target_id` matches, instead of doing a
+  raw containment check that only a string could pass.
 
 
 ## [0.2.1] - 2026-08-16
