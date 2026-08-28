@@ -96,6 +96,21 @@ NO_NETWORK_POLICY = Rule(
     retrieved="-",
 )
 
+REPEATED_ID_POLICY = Rule(
+    citation=(
+        "ctdl-validate policy: one identifier, one entity. A payload may write the "
+        "same @id on more than one node object; this tool reads those as a single "
+        "entity, taking the union of their @type values and of their properties, and "
+        "reports that it did so. It does not keep whichever declaration it parsed "
+        "first and drop the rest, because that made a verdict depend on @graph array "
+        "order rather than on the document. The report is a disclosure, not a defect: "
+        "the tool states what it merged so a reader who did not intend one entity can "
+        "see that it read one."
+    ),
+    url="docs/adr/0005-one-identifier-one-entity.md",
+    retrieved="-",
+)
+
 RESOLUTION_POLICY = Rule(
     citation=(
         "ctdl-validate policy: --resolve is additive and is reported. A reference that "

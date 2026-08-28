@@ -10,6 +10,28 @@ and this project adheres to
 
 ### Added
 
+- `ID_DECLARED_MORE_THAN_ONCE` (INFO) and check 6, identity. Node objects that
+  declare the same `@id` are now read as one entity -- the union of their
+  `@type` values and of their properties -- and the merge is reported with
+  every path that declared the identifier.
+
+  Before this, `Graph.by_id` kept whichever declaration was parsed first and
+  dropped the rest, so a reference to a repeated identifier was judged against
+  a declaration chosen by `@graph` array position
+  ([#33](https://github.com/ChelseaKR/ctdl-validate/issues/33)). The issue's
+  worked case is a `ceterms:Place`, correctly declared and correctly
+  referenced by a `ceterms:address`, reported `RANGE_VIOLATION` / ERROR
+  because an unrelated entity embedded a stub with the same `@id` and an
+  incidental `ceterms:Organization` type earlier in the file. Moving the real
+  declaration to the front of the array made the ERROR disappear.
+
+  Measured against the 1,200 published Registry documents of the 2026-08-21
+  survey, re-validated offline from that run's cache: no document repeats an
+  `@id`, and all 1,200 produce findings identical to those on the previous
+  commit. The defect is real and reachable and does not occur in the published
+  corpus, which is the honest form of that result. See
+  [ADR-0005](docs/adr/0005-one-identifier-one-entity.md).
+
 - `CONCEPT_RANGE_CONFLICT` (INFO): a new finding code for CTDL's two
   incompatible declarations of the same kind of value. A property that
   declares `schema:rangeIncludes: skos:Concept` **and** a `meta:targetScheme`
