@@ -13,6 +13,7 @@ from . import (
     identifier_kind,
     identity,
     inverses,
+    language_map,
     references,
 )
 
@@ -26,6 +27,7 @@ ALL_CHECKS: tuple[Check, ...] = (
     inverses.check,
     identity.check,
     concept_scheme.check,
+    language_map.check,
 )
 
 __all__ = ["ALL_CHECKS", "Check"]

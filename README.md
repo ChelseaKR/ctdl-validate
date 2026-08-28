@@ -393,6 +393,7 @@ different fix and re-running it would erase that.
 | 5 | Inverse consistency for pairs the schema declares with `owl:inverseOf`; both directions present must agree, one direction alone is INFO | `INVERSE_MISMATCH`, `INVERSE_ONE_DIRECTION` | schema encodings, `owl:inverseOf` declarations |
 | 6 | Identity: node objects sharing an `@id` are read as one entity, union of `@type` and properties, and the merge is reported | `ID_DECLARED_MORE_THAN_ONCE` | tool policy (below), [ADR-0005](docs/adr/0005-one-identifier-one-entity.md) |
 | 7 | Concept scheme membership: a value on a property declaring `meta:targetScheme`, against the scheme it names; a term from another scheme is a WARNING, a term the snapshot does not declare is UNVERIFIABLE | `CONCEPT_OUTSIDE_SCHEME`, `CONCEPT_OUTSIDE_SNAPSHOT`, `CONCEPT_NOT_IDENTIFIED` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json) `meta:targetScheme` and `skos:inScheme` declarations, [ADR-0006](docs/adr/0006-concept-scheme-membership-is-a-warning.md) |
+| 8 | Language-map shape: a property the context declares `{"@container": "@language"}` carrying a bare literal | `LANGUAGE_MAP_EXPECTED` | [CTDL context](https://credreg.net/ctdl/schema/context/json), [CTDL-ASN context](https://credreg.net/ctdlasn/schema/context/json) |
 
 Every finding carries its rule citation, source URL, and retrieval date in
 the output itself, in both text and JSON formats.
@@ -468,8 +469,14 @@ Not covered in v0, deliberately:
 
 - Required-property checking (the Registry's Minimum Data and Currency
   Policy). v0 checks what is present, not what is missing.
-- Literal datatype validation beyond the CTID (dates, durations, language
-  map shapes).
+- Literal datatype validation beyond the CTID (dates, durations). Language
+  map *shape* is now check 8, because the declaration it rests on is in the
+  vendored context. The datatypes are not, and are blocked rather than
+  deferred: checking that a value coerced to `xsd:date` is a date means
+  knowing the lexical space of `xsd:date`, and nothing in the four vendored
+  files defines it. Writing that grammar from memory is the one thing this
+  project does not do. It needs the XML Schema datatypes specification
+  vendored under the existing hashing policy.
 - Vocabularies beyond CTDL and CTDL-ASN (QData and other profiles).
 - Fetching anything *during validation*. References outside the payload are
   UNVERIFIABLE by design, not a network call away from being verified.

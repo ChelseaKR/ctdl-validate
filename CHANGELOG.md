@@ -10,6 +10,27 @@ and this project adheres to
 
 ### Added
 
+- Check 8, language-map shape: `LANGUAGE_MAP_EXPECTED` (WARNING). The vendored
+  contexts declare 80 terms with `{"@container": "@language"}`, 67 of which the
+  schema encodings also declare as properties. The validator already read that
+  declaration -- `graph.py` keeps such a value as the map it is rather than
+  walking it as a nested node -- and now reports a bare literal in that
+  position instead of only relying on it.
+
+  The other half of the README's "literal datatype validation" line is
+  **blocked, not deferred**, and the README now says so. The contexts declare
+  87 datatype coercions, but nothing in the four vendored files defines the
+  lexical space of `xsd:date`, `xsd:duration` or any other datatype: their
+  only keys are RDF, SKOS, OWL, `meta:` and `vs:` terms, with no pattern or
+  format among them. Writing that grammar from memory is the rule-from-memory
+  the first invariant forbids, and `xsd:date` admits a timezone offset and a
+  negative year, which recollection reliably gets wrong. It needs the XML
+  Schema datatypes specification vendored under the existing hashing policy.
+
+  Measured against the 1,200 published Registry documents of the 2026-08-21
+  survey, re-validated offline from that run's cache: zero findings added. No
+  published document puts a bare literal on a language-map property.
+
 - Check 7, concept scheme membership: `CONCEPT_OUTSIDE_SCHEME` (WARNING),
   `CONCEPT_OUTSIDE_SNAPSHOT` (UNVERIFIABLE) and `CONCEPT_NOT_IDENTIFIED`
   (UNVERIFIABLE). 48 properties across the two encodings declare
