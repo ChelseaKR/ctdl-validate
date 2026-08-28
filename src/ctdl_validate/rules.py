@@ -136,6 +136,41 @@ ISCHILDOF_RANGE_CONFLICT = Rule(
 )
 
 
+def concept_scheme_rule(prop: str, scheme: frozenset[str]) -> Rule:
+    """A property's meta:targetScheme, cited against the snapshot it comes from.
+
+    The CTDL and CTDL-ASN encodings declare, for 48 properties, the concept
+    scheme a value of that property is drawn from, and they declare for each
+    concept the scheme it belongs to. Both halves are in the vendored files,
+    which is what makes membership checkable without fetching anything.
+    """
+    named = ", ".join(sorted(scheme))
+    return Rule(
+        citation=(
+            f"CTDL schema encoding: {prop} declares meta:targetScheme {named}. The same "
+            "encoding declares each concept's own scheme with skos:inScheme. A value that "
+            "the encoding declares in a different scheme is a term from the wrong "
+            "vocabulary for this property."
+        ),
+        url=_vocab_schema_url(prop),
+        retrieved=RETRIEVED,
+    )
+
+
+CONCEPT_OUTSIDE_SNAPSHOT = Rule(
+    citation=(
+        "ctdl-validate policy: a value on a scheme-bound property that the vendored "
+        "encoding does not declare is reported UNVERIFIABLE, never as a pass or a fail. "
+        "CTDL's alignment objects are built to point at frameworks outside CTDL, and the "
+        "Registry's published documents do point at O*NET, CIP and NAICS on these very "
+        "properties. This tool has not vendored those frameworks and does not fetch, so "
+        "it can say only that it did not check the value, not that the value is wrong."
+    ),
+    url="README.md (Methodology)",
+    retrieved="-",
+)
+
+
 def concept_range_conflict_rule(
     prop: str, scheme: frozenset[str], siblings: tuple[str, ...]
 ) -> Rule:

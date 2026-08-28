@@ -10,6 +10,28 @@ and this project adheres to
 
 ### Added
 
+- Check 7, concept scheme membership: `CONCEPT_OUTSIDE_SCHEME` (WARNING),
+  `CONCEPT_OUTSIDE_SNAPSHOT` (UNVERIFIABLE) and `CONCEPT_NOT_IDENTIFIED`
+  (UNVERIFIABLE). 48 properties across the two encodings declare
+  `meta:targetScheme`, and 456 concepts declare `skos:inScheme`; both halves
+  were already vendored and neither was read. A value on a scheme-bound
+  property is now classified against the scheme the property names, and every
+  outcome is reported rather than skipped.
+
+  A term the snapshot declares in another scheme is a WARNING, not an ERROR:
+  no published Credential Engine document says the Registry enforces
+  `meta:targetScheme` on ingest. A term the snapshot does not declare is
+  UNVERIFIABLE, because roughly a quarter of the values published on these
+  properties point at O*NET, CIP and NAICS by design, and this tool has not
+  vendored those frameworks and fetches nothing.
+
+  Measured against the 1,200 published Registry documents of the 2026-08-21
+  survey, re-validated offline from that run's cache: 1,190
+  `CONCEPT_OUTSIDE_SNAPSHOT` and 30 `CONCEPT_NOT_IDENTIFIED` added across 504
+  documents, no finding removed, and ERROR and WARNING counts unchanged at 159
+  and 42. `CONCEPT_OUTSIDE_SCHEME` fires zero times on the published corpus.
+  See [ADR-0006](docs/adr/0006-concept-scheme-membership-is-a-warning.md).
+
 - `ID_DECLARED_MORE_THAN_ONCE` (INFO) and check 6, identity. Node objects that
   declare the same `@id` are now read as one entity -- the union of their
   `@type` values and of their properties -- and the merge is reported with
