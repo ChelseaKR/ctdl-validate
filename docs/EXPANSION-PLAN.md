@@ -142,20 +142,50 @@ README's scope list moves this line out of "not covered in v0".
 
 ### Phase 3: literal datatypes and language-map shape
 
-**Delivers.** Check 7. The contexts' 87 datatype coercions and 80
-`{"@container": "@language"}` declarations become checks: a value coerced to
-`xsd:date` that is not a date, to `xsd:boolean` that is not a boolean, and a
-language-map property carrying a bare string instead of a language-keyed
-object.
+This was drafted as one phase and is two, with different grounding. Building
+it is what showed the difference, and the plan is corrected here rather than
+left as written.
 
-**Depends on.** Phase 1. Independent of Phase 2; sequenced after it only
-because both touch the same check registry.
+#### Phase 3a: language-map shape. Buildable.
 
-**Done when.** Every distinct coerced datatype in the contexts is either
-checked or listed in the module with the reason it is not; language-map shape
-is checked in both directions (a map where a literal belongs, a literal where a
-map belongs); a break-the-gate case exists per finding code; and the corpus
-result is published.
+**Delivers.** A check over the 80 `{"@container": "@language"}` declarations
+in the contexts, 67 of which the schema encodings also declare as properties:
+a bare literal where the context declares a language map.
+
+**Why this half is groundable.** The declaration being violated is in the
+vendored context itself, and the validator already reads it -- `graph.py`
+keeps such a value as the map it is instead of walking it as a nested node
+object. The check reports that same reading rather than only relying on it.
+
+**Done when.** Language-map shape is reported at a severity that cannot gate
+an exit code, the covered properties are read out of the index rather than
+listed by hand, a break-the-gate case exists, and the corpus result is
+published including if it is nothing.
+
+#### Phase 3b: literal datatype validation. Blocked.
+
+**Blocked on the same kind of thing as Phases 5 and 6: bytes this repository
+does not vendor.** The contexts declare 87 datatype coercions, but nothing in
+the four vendored files defines the lexical space of any datatype. Their
+complete key set is `@id`, `@type`, `dct:description`, `meta:changeHistory`,
+`meta:domainFor`, `meta:hasConcept`, `meta:targetScheme`,
+`owl:equivalentClass`, `owl:equivalentProperty`, `owl:inverseOf`,
+`rdfs:comment`, `rdfs:label`, `rdfs:subClassOf`, `rdfs:subPropertyOf`,
+`schema:domainIncludes`, `schema:rangeIncludes`, `skos:broader`,
+`skos:definition`, `skos:hasTopConcept`, `skos:inScheme`, `skos:narrowMatch`,
+`skos:narrower`, `skos:prefLabel`, `skos:relatedMatch`, `skos:topConceptOf`,
+`vann:usageNote` and `vs:term_status`, plus the contexts' `@container` and
+`@type`. No pattern, no format, no lexical constraint.
+
+Writing the grammar of an ISO 8601 date from memory is the rule-from-memory
+the first invariant forbids, and it is not a small risk in this instance:
+`xsd:date` admits a timezone offset and a negative year, which a regexp
+written from recollection reliably gets wrong.
+
+**What would unblock it.** The XML Schema Part 2 datatypes specification
+retrieved byte-exact, committed under `src/ctdl_validate/vendor/` with its
+SHA-256 in `SOURCES.md` and enforced by `tests/test_vendor_integrity.py`. A
+maintainer action at a network connection.
 
 ### Phase 4: term status, disclosed
 
@@ -243,7 +273,8 @@ Reopening one of these means overturning its reason, not re-proposing the idea.
 |---|---|---|
 | 1. One `@id`, one entity | — | Yes |
 | 2. Concept scheme membership | 1 | Yes |
-| 3. Literal datatypes and language maps | 1 | Yes |
+| 3a. Language-map shape | 1 | Yes |
+| 3b. Literal datatype validation | vendored XSD datatype bytes | No |
 | 4. Term status, disclosed | 1 | Yes |
 | 5. Required properties | vendored policy bytes | No |
 | 6. Vocabularies beyond CTDL/CTDL-ASN | vendored encoding bytes | No |
