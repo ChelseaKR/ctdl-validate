@@ -19,10 +19,68 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
+from ctdl_validate import validate_document
+
 ROOT = Path(__file__).resolve().parent.parent
 PLAN = ROOT / "docs" / "EXPANSION-PLAN.md"
 
 VOCABULARIES = ("ctdl", "ctdlasn")
+
+
+CONCEPT_PROBE = {
+    "@graph": [
+        {
+            "@id": "https://credentialengineregistry.org/resources/"
+            "ce-11111111-1111-4111-8111-111111111111",
+            "@type": "ceterms:CostProfile",
+            # A real CTDL concept, from a scheme this property
+            # does not name.
+            "ceterms:directCostType": {
+                "@type": "ceterms:CredentialAlignmentObject",
+                "ceterms:targetNode": "credentialStat:Active",
+            },
+        }
+    ]
+}
+
+DATE_PROBE = {
+    "@graph": [
+        {
+            "@id": "https://credentialengineregistry.org/resources/"
+            "ce-11111111-1111-4111-8111-111111111111",
+            "@type": "ceterms:Credential",
+            # ceterms:dateEffective is coerced to xsd:date.
+            "ceterms:dateEffective": "the fourteenth of never",
+        }
+    ]
+}
+
+LANGUAGE_PROBE = {
+    "@graph": [
+        {
+            "@id": "https://credentialengineregistry.org/resources/"
+            "ce-11111111-1111-4111-8111-111111111111",
+            "@type": "ceterms:Credential",
+            # ceterms:name is a language map; this is a bare literal.
+            "ceterms:name": "an untagged string",
+        }
+    ]
+}
+
+TERM_STATUS_PROBE = {
+    "@graph": [
+        {
+            "@id": "https://credentialengineregistry.org/resources/"
+            "ce-11111111-1111-4111-8111-111111111111",
+            "@type": "ceterms:Credential",
+            # ceterms:audienceLevelType is declared vs:unstable.
+            "ceterms:audienceLevelType": {
+                "@type": "ceterms:CredentialAlignmentObject",
+                "ceterms:targetNode": "audLevel:BeginnerLevel",
+            },
+        }
+    ]
+}
 
 
 def _vendored(relpath: str) -> Any:
@@ -115,6 +173,25 @@ def _published_table() -> dict[str, int]:
     return found
 
 
+def _read_column() -> dict[str, int]:
+    """Label -> the "Read by a check today" column of the same table."""
+    found: dict[str, int] = {}
+    inside = False
+    for line in PLAN.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == "## The measured gap"
+            continue
+        if line.startswith("### "):
+            inside = False
+        if not inside:
+            continue
+        cells = [cell.strip() for cell in line.split("|")]
+        if len(cells) != 5 or not re.fullmatch(r"[0-9]+", cells[3]):
+            continue
+        found[cells[1]] = int(cells[3])
+    return found
+
+
 def test_every_row_of_the_measured_gap_table_is_recomputed() -> None:
     published = _published_table()
     expected = _counts()
@@ -166,3 +243,66 @@ def test_nothing_in_the_gap_table_is_read_by_a_check_yet() -> None:
     source = "\n".join(path.read_text(encoding="utf-8") for path in sorted(checks.glob("*.py")))
     for key in ("skos:inScheme", "vs:term_status", "@container"):
         assert key not in source, f"a check now reads {key}; update the expansion plan's gap table"
+
+
+#: Row label -> (a payload exercising the declaration, a string that a finding
+#: resting on that declaration would have to cite).
+#:
+#: The marker is looked for in the *rule citation of a finding the validator
+#: actually produced*, not in the source tree. That is sound here because of
+#: the project's first invariant: every check traces to a vendored declaration
+#: or a quoted prose rule, and the finding carries that citation in its output.
+#: A check that starts reading one of these declarations cannot report on it
+#: without naming it.
+#:
+#: This replaced a version that searched the check modules for the term name.
+#: That guard could not fail: a check can read every ``skos:inScheme``
+#: declaration in the snapshot without the string ``skos:inScheme`` appearing
+#: anywhere in it, so it would have stayed green through exactly the change it
+#: existed to catch.
+PROBES: dict[str, tuple[dict[str, Any], str]] = {
+    "Properties declaring `meta:targetScheme`": (
+        CONCEPT_PROBE,
+        "meta:targetScheme",
+    ),
+    "Concept schemes": (CONCEPT_PROBE, "meta:targetScheme"),
+    "Concepts declaring `skos:inScheme`": (CONCEPT_PROBE, "skos:inScheme"),
+    "Context datatype coercions": (DATE_PROBE, "xsd:date"),
+    'Context `{"@container": "@language"}` declarations': (LANGUAGE_PROBE, "@language"),
+    "Terms declaring `vs:term_status`": (TERM_STATUS_PROBE, "term_status"),
+}
+
+
+def _cites(payload: dict[str, Any], marker: str) -> bool:
+    """Did any finding this payload produced cite ``marker``?"""
+    return any(marker in f.rule.citation for f in validate_document(payload))
+
+
+def test_the_read_column_says_what_the_validator_actually_does() -> None:
+    """A row claiming zero must produce no finding resting on that declaration.
+
+    When a phase lands and starts reading one of these, this fails, which is
+    the reminder to move that row's Read column off zero rather than leaving
+    the plan claiming a gap it closed.
+    """
+    read = _read_column()
+    for label, (payload, marker) in PROBES.items():
+        assert label in read, f"the plan's table has no row for {label}"
+        cited = _cites(payload, marker)
+        if read[label] == 0:
+            assert not cited, (
+                f"the plan says nothing reads {label}, but a finding cites {marker}. "
+                "Move that row's Read column off zero."
+            )
+        else:
+            assert cited, (
+                f"the plan says {read[label]} for {label}, but no finding cites "
+                f"{marker}. Either the check went away or the row claims work that "
+                "is not there."
+            )
+
+
+def test_every_row_of_the_table_has_a_probe() -> None:
+    """A row nobody probes is a claim nothing is holding to account."""
+    unprobed = set(_published_table()) - set(PROBES)
+    assert not unprobed, f"the plan's table has rows with no probe: {unprobed}"
