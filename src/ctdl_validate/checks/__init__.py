@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 from ..findings import Finding
 from ..session import Session
-from . import ctid_format, domain_range, identifier_kind, inverses, references
+from . import ctid_format, domain_range, identifier_kind, identity, inverses, references
 
 Check = Callable[[Session], list[Finding]]
 
@@ -16,6 +16,7 @@ ALL_CHECKS: tuple[Check, ...] = (
     references.check,
     domain_range.check,
     inverses.check,
+    identity.check,
 )
 
 __all__ = ["ALL_CHECKS", "Check"]

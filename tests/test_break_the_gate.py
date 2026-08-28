@@ -65,3 +65,20 @@ def test_corrupting_a_registry_uri_is_caught(clean_payload: Any) -> None:
     assert any(
         f.code == "REGISTRY_URI_MALFORMED" and f.severity is Severity.ERROR for f in findings
     )
+
+
+def test_giving_two_entities_one_identifier_is_caught(clean_payload: Any) -> None:
+    # Competency 2 is re-declared as an embedded stub under competency 1, so
+    # one identifier is now claimed by two node objects. The parser reads them
+    # as one entity (ADR-0005) and check 6 says so; nothing about the clean
+    # payload is otherwise wrong, so this must be the only new finding.
+    duplicated = clean_payload["@graph"][2]["@id"]
+    clean_payload["@graph"][1]["ceasn:isRelatedTo"] = {
+        "@id": duplicated,
+        "@type": "ceasn:Competency",
+    }
+    findings = validate_document(clean_payload)
+    merged = [f for f in findings if f.code == "ID_DECLARED_MORE_THAN_ONCE"]
+    assert len(merged) == 1
+    assert merged[0].entity == duplicated
+    assert merged[0].severity is Severity.INFO

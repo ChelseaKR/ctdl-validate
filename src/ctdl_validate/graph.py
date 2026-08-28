@@ -11,7 +11,7 @@ guessed at.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from .schema import SchemaIndex
@@ -50,6 +50,15 @@ class Graph:
     nodes: list[Node]
     by_id: dict[str, Node]
     by_path: dict[str, Node]
+    #: Identifier -> every path in the document that declared it, in walk
+    #: order. An entry with more than one path is a node object written more
+    #: than once; the builder merges those into a single node, and
+    #: ``checks.identity`` reports that it did.
+    declarations: dict[str, tuple[str, ...]] = field(default_factory=dict)
+
+    def repeated_ids(self) -> dict[str, tuple[str, ...]]:
+        """Identifiers declared by more than one node object, with their paths."""
+        return {node_id: paths for node_id, paths in self.declarations.items() if len(paths) > 1}
 
     def resolve(self, value: Any) -> Node | None:
         """Resolve a reference value to an in-payload node, if present."""
@@ -64,12 +73,54 @@ def _is_reference_only(obj: dict[str, Any]) -> bool:
     return set(obj.keys()) == {"@id"} and isinstance(obj["@id"], str)
 
 
+def _merged_types(first: tuple[str, ...], second: tuple[str, ...]) -> tuple[str, ...]:
+    """Union two declarations' @type tuples, sorted.
+
+    Sorted, where a single declaration's types keep the order the document
+    wrote them in, because between two declarations there is no document
+    order: which one the walk reached first is a function of ``@graph`` array
+    position and JSON key order. Type names reach the reader inside messages
+    (``domain_range`` renders ``[{', '.join(types)}]``), so leaving the union
+    in encounter order would make the same document produce different bytes
+    when its entities were rearranged.
+    """
+    if not second or set(second) <= set(first):
+        return first
+    return tuple(sorted(set(first) | set(second)))
+
+
 class _Builder:
     def __init__(self, schema: SchemaIndex) -> None:
         self.schema = schema
         self.nodes: list[Node] = []
         self.by_id: dict[str, Node] = {}
         self.by_path: dict[str, Node] = {}
+        self.declarations: dict[str, list[str]] = {}
+
+    def _node_for(self, path: str, node_id: str | None, types: tuple[str, ...]) -> Node:
+        """The node this declaration belongs to: a new one, or one it joins.
+
+        A second node object claiming an identity the document already gave to
+        another one is merged into it. JSON-LD reads those as one node, so
+        this unions them rather than keeping whichever was walked first and
+        dropping the rest, which made a verdict a function of ``@graph`` array
+        order (issue #33, ADR-0005).
+        """
+        if node_id is not None:
+            self.declarations.setdefault(node_id, []).append(path)
+
+        existing = self.by_id.get(node_id) if node_id is not None else None
+        if existing is not None:
+            existing.types = _merged_types(existing.types, types)
+            self.by_path[path] = existing
+            return existing
+
+        node = Node(path=path, node_id=node_id, types=types, props={})
+        self.nodes.append(node)
+        if node_id is not None:
+            self.by_id[node_id] = node
+        self.by_path[path] = node
+        return node
 
     def walk(self, obj: dict[str, Any], path: str) -> Node:
         node_id = obj.get("@id") if isinstance(obj.get("@id"), str) else None
@@ -77,11 +128,7 @@ class _Builder:
         type_list = raw_types if isinstance(raw_types, list) else [raw_types] if raw_types else []
         types = tuple(self.schema.compact_iri(t) for t in type_list if isinstance(t, str))
 
-        node = Node(path=path, node_id=node_id, types=types, props={})
-        self.nodes.append(node)
-        self.by_path[path] = node
-        if node_id is not None and node_id not in self.by_id:
-            self.by_id[node_id] = node
+        node = self._node_for(path, node_id, types)
 
         for key, raw in obj.items():
             if key.startswith("@"):
@@ -103,7 +150,14 @@ class _Builder:
                         values.append(NestedRef(target_path=child.path, target_id=child.node_id))
                 else:
                     values.append(item)
-            node.props[prop] = tuple(values)
+            if prop in node.props:
+                # Only reachable on a merge: a decoded JSON object cannot
+                # carry the same key twice. Within one declaration the values
+                # are kept exactly as written, repeats included.
+                already = node.props[prop]
+                node.props[prop] = already + tuple(v for v in values if v not in already)
+            else:
+                node.props[prop] = tuple(values)
         return node
 
 
@@ -137,4 +191,9 @@ def parse_document(data: Any, schema: SchemaIndex) -> Graph:
         path = f"{prefix}[{index}]" if (len(entities) > 1 or prefix.endswith("@graph")) else prefix
         builder.walk(entity, path)
 
-    return Graph(nodes=builder.nodes, by_id=builder.by_id, by_path=builder.by_path)
+    return Graph(
+        nodes=builder.nodes,
+        by_id=builder.by_id,
+        by_path=builder.by_path,
+        declarations={k: tuple(v) for k, v in builder.declarations.items()},
+    )
