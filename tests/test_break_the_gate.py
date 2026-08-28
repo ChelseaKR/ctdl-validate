@@ -112,3 +112,23 @@ def test_untagging_a_language_map_is_caught(clean_payload: Any) -> None:
     assert any(
         f.code == "LANGUAGE_MAP_EXPECTED" and f.severity is Severity.WARNING for f in findings
     )
+
+
+def test_using_a_term_the_encoding_marks_unstable_is_disclosed(clean_payload: Any) -> None:
+    # The clean fixture uses only stable terms. Adding a ceterms:Collection --
+    # declared vs:unstable in the published encoding -- must be disclosed.
+    clean_payload["@graph"].append(
+        {
+            "@id": "https://credentialengineregistry.org/resources/"
+            "ce-7f8e9d0c-1b2a-4c3d-8e4f-5a6b7c8d9e0f",
+            "@type": "ceterms:Collection",
+            "ceterms:ctid": "ce-7f8e9d0c-1b2a-4c3d-8e4f-5a6b7c8d9e0f",
+        }
+    )
+    findings = validate_document(clean_payload)
+    assert any(
+        f.code == "TERM_UNSTABLE"
+        and f.value == "ceterms:Collection"
+        and f.severity is Severity.INFO
+        for f in findings
+    )

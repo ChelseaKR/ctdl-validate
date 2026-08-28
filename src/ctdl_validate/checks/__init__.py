@@ -15,6 +15,7 @@ from . import (
     inverses,
     language_map,
     references,
+    term_status,
 )
 
 Check = Callable[[Session], list[Finding]]
@@ -28,6 +29,7 @@ ALL_CHECKS: tuple[Check, ...] = (
     identity.check,
     concept_scheme.check,
     language_map.check,
+    term_status.check,
 )
 
 __all__ = ["ALL_CHECKS", "Check"]

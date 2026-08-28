@@ -394,6 +394,7 @@ different fix and re-running it would erase that.
 | 6 | Identity: node objects sharing an `@id` are read as one entity, union of `@type` and properties, and the merge is reported | `ID_DECLARED_MORE_THAN_ONCE` | tool policy (below), [ADR-0005](docs/adr/0005-one-identifier-one-entity.md) |
 | 7 | Concept scheme membership: a value on a property declaring `meta:targetScheme`, against the scheme it names; a term from another scheme is a WARNING, a term the snapshot does not declare is UNVERIFIABLE | `CONCEPT_OUTSIDE_SCHEME`, `CONCEPT_OUTSIDE_SNAPSHOT`, `CONCEPT_NOT_IDENTIFIED` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json) `meta:targetScheme` and `skos:inScheme` declarations, [ADR-0006](docs/adr/0006-concept-scheme-membership-is-a-warning.md) |
 | 8 | Language-map shape: a property the context declares `{"@container": "@language"}` carrying a bare literal | `LANGUAGE_MAP_EXPECTED` | [CTDL context](https://credreg.net/ctdl/schema/context/json), [CTDL-ASN context](https://credreg.net/ctdlasn/schema/context/json) |
+| 9 | Term status: a term the encoding declares `vs:term_status vs:unstable`, used as a class, a property or a concept value, is disclosed and not interpreted | `TERM_UNSTABLE` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json) `vs:term_status` declarations |
 
 Every finding carries its rule citation, source URL, and retrieval date in
 the output itself, in both text and JSON formats.

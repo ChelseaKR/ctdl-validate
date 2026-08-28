@@ -364,7 +364,13 @@ def test_a_range_of_rdfs_resource_admits_every_entity() -> None:
     """The 2026-08-21 survey raised 47 range errors on one Collection over this."""
     findings = validate_document(_collection_with_member())
     assert [f for f in findings if f.code == "RANGE_VIOLATION"] == []
-    assert findings == []
+    # Kept exhaustive rather than loosened. ceterms:Collection and
+    # ceterms:hasMember are both declared vs:unstable in the published
+    # encoding, so check 9 discloses them; nothing else fires on this payload.
+    assert {(f.code, f.value) for f in findings} == {
+        ("TERM_UNSTABLE", "ceterms:Collection"),
+        ("TERM_UNSTABLE", "ceterms:hasMember"),
+    }
 
 
 def test_the_universal_range_the_fix_rests_on_is_still_in_the_snapshot() -> None:

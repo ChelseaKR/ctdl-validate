@@ -10,7 +10,7 @@ owl:inverseOf), and the JSON-LD contexts supply per-property value coercions
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from importlib import resources
 from typing import Any
@@ -108,29 +108,56 @@ class PropertyDef:
         return CONCEPT_RANGE_TERM in self.range and bool(self.target_scheme)
 
 
+@dataclass(frozen=True)
+class TermIndex:
+    """The encoding's statements about terms, as opposed to about structure.
+
+    Grouped into one value because they are read together and because they
+    arrive together: one pass over the same ``@graph`` produces all three.
+    """
+
+    #: Concept term -> the concept scheme(s) the encoding declares it in, from
+    #: ``skos:inScheme``. Absent for a term the snapshot does not declare,
+    #: which is not the same as a term declared in no scheme.
+    concepts: dict[str, frozenset[str]] = field(default_factory=dict)
+    #: Every ``skos:ConceptScheme`` the encoding declares.
+    schemes: frozenset[str] = frozenset()
+    #: Every term the encoding declares ``vs:term_status vs:unstable``, of any
+    #: kind: class, property, concept or concept scheme. What that status
+    #: means is not recorded here, because the encoding does not say it and
+    #: this tool does not guess.
+    unstable: frozenset[str] = frozenset()
+
+
 class SchemaIndex:
     def __init__(
         self,
         classes: dict[str, ClassDef],
         properties: dict[str, PropertyDef],
         prefixes: dict[str, str],
-        concepts: dict[str, frozenset[str]] | None = None,
-        schemes: frozenset[str] = frozenset(),
+        terms: TermIndex | None = None,
     ) -> None:
         self.classes = classes
         self.properties = properties
-        #: Concept term -> the concept scheme(s) the encoding declares it in,
-        #: from ``skos:inScheme``. Empty for a term the snapshot does not
-        #: declare, which is not the same as a term declared in no scheme.
-        self.concepts = concepts if concepts is not None else {}
-        #: Every ``skos:ConceptScheme`` the encoding declares.
-        self.schemes = schemes
+        self.terms = terms if terms is not None else TermIndex()
         # Longest namespace first so the most specific prefix wins.
         self._namespaces = sorted(
             ((ns, prefix) for prefix, ns in prefixes.items()),
             key=lambda pair: -len(pair[0]),
         )
         self._ancestor_cache: dict[str, frozenset[str]] = {}
+
+    @property
+    def concepts(self) -> dict[str, frozenset[str]]:
+        return self.terms.concepts
+
+    @property
+    def schemes(self) -> frozenset[str]:
+        return self.terms.schemes
+
+    @property
+    def unstable(self) -> frozenset[str]:
+        return self.terms.unstable
 
     def compact_iri(self, iri: str) -> str:
         """Compact a full IRI to prefix:local using the vendored contexts."""
@@ -210,6 +237,15 @@ class SchemaIndex:
         return tuple(sorted(p.term for p in self.properties.values() if p.is_scheme_bound_concept))
 
 
+@dataclass
+class _Found:
+    """Mutable accumulator for one pass over the vendored graphs."""
+
+    concepts: dict[str, set[str]] = field(default_factory=dict)
+    schemes: set[str] = field(default_factory=set)
+    unstable: set[str] = field(default_factory=set)
+
+
 def _read_vendor(relpath: str) -> Any:
     path = resources.files("ctdl_validate").joinpath("vendor").joinpath(relpath)
     with path.open("r", encoding="utf-8") as handle:
@@ -241,14 +277,15 @@ def _index_schema_entry(
     entry: dict[str, Any],
     classes: dict[str, ClassDef],
     raw_props: dict[str, dict[str, Any]],
-    concepts: dict[str, set[str]],
-    schemes: set[str],
+    found: _Found,
 ) -> None:
     """Fold one @graph entry into the class and property indexes."""
     term = entry.get("@id")
     etype = entry.get("@type")
     if not isinstance(term, str):
         return
+    if entry.get("vs:term_status") == "vs:unstable":
+        found.unstable.add(term)
     if etype == "rdfs:Class":
         parents = tuple(
             sorted(
@@ -258,7 +295,7 @@ def _index_schema_entry(
         )
         classes[term] = ClassDef(term=term, parents=parents)
     elif etype == "skos:Concept":
-        concepts.setdefault(term, set()).update(
+        found.concepts.setdefault(term, set()).update(
             entry_id
             for entry_id in (
                 value.get("@id") if isinstance(value, dict) else value
@@ -267,7 +304,7 @@ def _index_schema_entry(
             if isinstance(entry_id, str)
         )
     elif etype == "skos:ConceptScheme":
-        schemes.add(term)
+        found.schemes.add(term)
     elif etype == "rdf:Property":
         merged = raw_props.setdefault(term, {"domain": set(), "range": set(), "scheme": set()})
         merged["domain"].update(_as_list(entry.get("schema:domainIncludes")))
@@ -282,12 +319,11 @@ def _index_schema_entry(
 def load_schema() -> SchemaIndex:
     classes: dict[str, ClassDef] = {}
     raw_props: dict[str, dict[str, Any]] = {}
-    concepts: dict[str, set[str]] = {}
-    schemes: set[str] = set()
+    found = _Found()
 
     for relpath in ("ctdl/schema.json", "ctdlasn/schema.json"):
         for entry in vendor_graph(relpath):
-            _index_schema_entry(entry, classes, raw_props, concepts, schemes)
+            _index_schema_entry(entry, classes, raw_props, found)
 
     coercions: dict[str, dict[str, Any]] = {}
     prefixes: dict[str, str] = {}
@@ -316,8 +352,11 @@ def load_schema() -> SchemaIndex:
         classes=classes,
         properties=properties,
         prefixes=prefixes,
-        concepts={term: frozenset(inscheme) for term, inscheme in concepts.items()},
-        schemes=frozenset(schemes),
+        terms=TermIndex(
+            concepts={term: frozenset(scheme) for term, scheme in found.concepts.items()},
+            schemes=frozenset(found.schemes),
+            unstable=frozenset(found.unstable),
+        ),
     )
 
 
@@ -338,6 +377,7 @@ __all__ = [
     "ClassDef",
     "PropertyDef",
     "SchemaIndex",
+    "TermIndex",
     "is_checked_term",
     "load_schema",
     "rules",

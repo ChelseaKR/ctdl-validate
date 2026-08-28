@@ -10,6 +10,26 @@ and this project adheres to
 
 ### Added
 
+- Check 9, term status: `TERM_UNSTABLE` (INFO). Both encodings carry
+  `vs:term_status` on every term they declare -- 675 `vs:stable`, 478
+  `vs:unstable` -- and nothing read either. A payload could have been built
+  entirely from terms the vocabulary itself flags as unsettled and this tool
+  would have said nothing. Terms are covered in whichever role they appear:
+  as a class on `@type`, as a property key, or as a concept a scheme-bound
+  property points at.
+
+  The finding states the declaration and stops. Nothing in the four vendored
+  files defines what `vs:unstable` obliges a publisher to do, so the message
+  does not say the term will be withdrawn, that the Registry will reject it,
+  or that the payload should change. `test_the_finding_does_not_say_what_unstable_means`
+  holds the claim to that size.
+
+  Measured against the 1,200 published Registry documents of the 2026-08-21
+  survey, re-validated offline from that run's cache: 1,540 findings added
+  across 710 documents, none removed, and ERROR and WARNING counts unchanged
+  at 159 and 42. Two thirds of published documents use at least one term the
+  vocabulary marks unstable, which is the reason this was worth reading.
+
 - Check 8, language-map shape: `LANGUAGE_MAP_EXPECTED` (WARNING). The vendored
   contexts declare 80 terms with `{"@container": "@language"}`, 67 of which the
   schema encodings also declare as properties. The validator already read that
