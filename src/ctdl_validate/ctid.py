@@ -2,8 +2,9 @@
 
 Source ("About the CTID", https://credreg.net/ctdl/ctid, retrieved
 2026-08-06): "Each CTID is made up of a standard UUID v4 prefixed with ce-",
-"in the form 8-4-4-4-12", "a total of 39 characters (34 hexadecimal
-characters and 5 hyphens)". Example: ce-e8a41a52-6ff6-48f0-9872-889c87b093b7.
+"in the form 8-4-4-4-12", and, with the prefix, "there are a total of 34
+hexadecimal characters and 5 hyphens for a total of 39 characters".
+Example: ce-e8a41a52-6ff6-48f0-9872-889c87b093b7.
 """
 
 from __future__ import annotations
