@@ -39,6 +39,21 @@
       name="description"
       content="Structural validation for CTDL JSON-LD, run before you publish to the Credential Registry. Nothing is uploaded: the validator runs in your browser via WebAssembly."
     />
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity
+         The rule asks for a Subresource Integrity hash on a subresource the
+         browser fetches and executes, a script or a stylesheet from a host
+         that could serve different bytes than the ones anyone reviewed. This
+         tag is not one. rel="canonical" states which URL this page is, for a
+         crawler to read; the browser fetches nothing from it, and integrity
+         is not defined on it, so there is no hash SRI would accept. Measured
+         rather than assumed: on a probe page carrying four link tags at four
+         paths on a local server, Chrome requested the stylesheet and preload
+         hrefs and never requested the canonical or alternate ones. The rule
+         matches every link whose href has a scheme, whatever its rel, and
+         already carves out preconnect for the same reason this tag needs
+         carving out. Suppressed here rather than repo-wide, so the rule still
+         fires on the next tag that does load something. -->
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -->
     <link rel="canonical" href="https://chelseakr.github.io/ctdl-validate/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="ctdl-validate" />
