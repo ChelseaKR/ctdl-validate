@@ -80,6 +80,29 @@ function fail(message) {
 // this file was written to close.
 const EXPECTED_SEVERITIES = ["ERROR", "WARNING", "INFO", "UNVERIFIABLE"];
 
+// The page has two static states, and this script audits whichever one the URL
+// asks for. `?a11y-static` is the post-run state: the report and the rule
+// catalogue, which between them hold nearly all of this page's markup and all
+// four severity colours. `?a11y-static=loading` is the startup state, which
+// docs/RESPONSIBLE-TECH-AUDITS.md section H recorded as unscanned: a progress
+// element, a status line, and a Validate button that is not yet a Validate
+// button. Neither state boots Pyodide, so neither fetches anything.
+const MODE = new URL(URL_UNDER_TEST).searchParams.get("a11y-static");
+const IS_STATIC = new URL(URL_UNDER_TEST).searchParams.has("a11y-static");
+const IS_LOADING = MODE === "loading";
+
+// Every id this script reaches for, in one place, so that renaming one in the
+// page fails here loudly instead of turning a check into a no-op that passes.
+const REQUIRED_IN_REPORT_STATE = [
+  "report-actions",
+  "copy-text",
+  "download-json",
+  "copy-link",
+  "share-row",
+  "share-link",
+];
+const REQUIRED_IN_LOADING_STATE = ["boot-progress", "status", "run"];
+
 // ---------------------------------------------------------------------------
 // The head
 // ---------------------------------------------------------------------------
@@ -184,18 +207,90 @@ async function requireTheHeadNamesThisPage(page) {
   }
 }
 
+async function requireTheStaticStateRendered(page, scheme) {
+  if (!IS_STATIC) return;
+  if (IS_LOADING) return requireTheStartupRendered(page, scheme);
+  return requireTheReportRendered(page, scheme);
+}
+
 async function requireTheReportRendered(page, scheme) {
-  if (!URL_UNDER_TEST.includes("a11y-static")) return;
-  const rendered = await page.evaluate(() =>
-    [...document.querySelectorAll(".finding .sev")].map((el) => el.textContent.trim()),
-  );
-  const missing = EXPECTED_SEVERITIES.filter((s) => !rendered.includes(s));
-  if (missing.length) {
+  const state = await page.evaluate((ids) => {
+    const severities = (selector) =>
+      [...document.querySelectorAll(selector)].map((el) => el.textContent.trim());
+    const shown = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      // offsetParent is null for a hidden element and for a positioned one;
+      // nothing on this page is positioned, so it reads as "on the page".
+      return el.offsetParent !== null || el === document.body;
+    };
+    return {
+      findings: severities(".finding .sev"),
+      catalogue: severities(".rulecard .sev"),
+      present: Object.fromEntries(ids.map((id) => [id, shown(id)])),
+    };
+  }, REQUIRED_IN_REPORT_STATE);
+
+  for (const [what, rendered] of [
+    ["report", state.findings],
+    ["rule catalogue", state.catalogue],
+  ]) {
+    const missing = EXPECTED_SEVERITIES.filter((s) => !rendered.includes(s));
+    if (missing.length) {
+      fail(
+        `${scheme}: the static ${what} did not render. Expected an entry at each of ` +
+          `${EXPECTED_SEVERITIES.join(", ")}; missing ${missing.join(", ")}. ` +
+          `Scanning the page without it is not an audit.`,
+      );
+    }
+  }
+  for (const [id, present] of Object.entries(state.present)) {
+    if (present !== true) {
+      fail(
+        `${scheme}: #${id} is ${present === null ? "not in the page" : "not visible"} in the ` +
+          `static report state. UI the gate cannot see is UI the gate does not audit.`,
+      );
+    }
+  }
+}
+
+async function requireTheStartupRendered(page, scheme) {
+  const state = await page.evaluate((ids) => {
+    const el = (id) => document.getElementById(id);
+    return {
+      present: Object.fromEntries(ids.map((id) => [id, Boolean(el(id))])),
+      progressVisible: Boolean(el("boot-progress") && el("boot-progress").offsetParent !== null),
+      progressValue: el("boot-progress") ? el("boot-progress").value : null,
+      progressName: el("boot-progress") ? el("boot-progress").getAttribute("aria-label") : null,
+      status: el("status") ? el("status").textContent.trim() : "",
+      runDisabled: el("run") ? el("run").getAttribute("aria-disabled") : null,
+      findings: document.querySelectorAll(".finding").length,
+    };
+  }, REQUIRED_IN_LOADING_STATE);
+
+  for (const [id, present] of Object.entries(state.present)) {
+    if (!present) fail(`${scheme}: #${id} is not in the page in the static startup state`);
+  }
+  if (!state.progressVisible) {
     fail(
-      `${scheme}: the static report did not render. Expected a finding at each of ` +
-        `${EXPECTED_SEVERITIES.join(", ")}; missing ${missing.join(", ")}. ` +
-        `Scanning the page without its report is not an audit.`,
+      `${scheme}: the startup progress element is not visible, so the state this mode ` +
+        `exists to audit is not on the page`,
     );
+  }
+  if (!state.progressName) fail(`${scheme}: the startup progress element has no accessible name`);
+  if (!(state.progressValue > 0)) {
+    fail(`${scheme}: the startup progress element reads ${state.progressValue}, not a step underway`);
+  }
+  if (!state.status) fail(`${scheme}: the startup status line is empty, so the wait is unannounced`);
+  if (state.runDisabled !== "true") {
+    fail(
+      `${scheme}: the Validate button reads aria-disabled=${JSON.stringify(state.runDisabled)} ` +
+        `during startup. It stays focusable on purpose, so a keyboard user meets it during the ` +
+        `wait; it has to say it is not ready yet.`,
+    );
+  }
+  if (state.findings) {
+    fail(`${scheme}: the startup state rendered ${state.findings} findings; it is meant to be pre-run`);
   }
 }
 
@@ -203,7 +298,7 @@ for (const scheme of SCHEMES) {
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: scheme }]);
   await page.goto(URL_UNDER_TEST, { waitUntil: "networkidle0" });
-  await requireTheReportRendered(page, scheme);
+  await requireTheStaticStateRendered(page, scheme);
   if (scheme === SCHEMES[0]) await requireTheHeadNamesThisPage(page);
   await page.evaluate(axeCore.source);
   const results = await page.evaluate(

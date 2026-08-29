@@ -200,26 +200,66 @@ therefore renders one finding of each severity before scanning, through the
 same code path a real run uses, which is also the only way the four severity
 colours get their contrast checked at all.
 
-**Controls now in place.** `.github/workflows/accessibility.yml`, merge-blocking,
-no advisory mode: axe-core in both colour schemes, the 320 px reflow check, and
-a Lighthouse accessibility score that must be 1.00 rather than the standard's
-0.90 floor, because the page measured 1.00 and the standard says a repository
-clearing a higher bar enforces the higher one. The audit runs against
-`?a11y-static`, which fetches nothing, so the gate is deterministic and does
-not make a merge depend on a CDN being up.
+**Re-measured on 2026-08-29, after the page roughly tripled in markup.** The
+playground gained a derived rule catalogue, three report actions, a share
+field, a second payload box for `--resolve`, and a startup progress element.
+axe-core 4.13 at the same four tags, both colour schemes: **0 violations, 0
+incomplete, 42 rules passed** in the post-run state and **39** in the new
+startup state. Lighthouse accessibility **1.00** in both. Reflow at 320x256
+clean in all four combinations.
 
-**REVIEW gate, open.** A keyboard and screen-reader walkthrough by a human,
-covering the Pyodide startup state specifically. Nothing automated can judge
-whether `role="status"` on a paragraph that says "Loading Python (this takes a
-few seconds the first time)" is an adequate account of a thirty-second wait,
-and the honest answer is that it probably is not: it announces once, and never
-again until the runtime is ready. This is recorded as open rather than
-declared passed.
+**The wait is no longer unscanned, and no longer announced once.** Two
+separate changes, and it is worth keeping them apart.
 
-**Residual risk.** Two things the automated gate does not see. The live boot
-path is not scanned, by design, because gating it would put jsDelivr in the
-merge path; the static mode renders the same markup from the same functions,
-so what is unscanned is the loading state and any error state, not the report.
-And automated tooling catches something like a third to a half of WCAG
-failures; 0 violations means 0 machine-detectable violations, which is not the
-same as conformance and is not claimed as one.
+The gate now audits the startup. `?a11y-static=loading` renders the state a
+visitor meets first, with no Pyodide boot, and the audit script fails if the
+progress element is missing, invisible, or unnamed; if the status line is
+empty; or if the Validate button does not say it is not ready. That closes
+half of the residual risk this section recorded, which was that the only
+scanned state was the one after a run.
+
+The state itself changed too. The status region now announces four named
+stages rather than one sentence, so a screen-reader user hears the fetch
+start, Python start, the validator load, and readiness, instead of one
+announcement followed by half a minute of nothing. A `<progress>` element with
+an accessible name advances alongside. And the Validate button is no longer
+`disabled`: a disabled button is not focusable, so a keyboard user tabbing the
+page during the wait never met the control at all. It is now focusable, marked
+`aria-disabled`, and it *queues* -- pressing it during startup runs the
+validation the moment the runtime is ready, rather than doing nothing.
+
+**Controls now in place.** `.github/workflows/accessibility.yml`,
+merge-blocking, no advisory mode: axe-core in both colour schemes across both
+static states, the 320 px reflow check in each, and a Lighthouse accessibility
+score that must be 1.00 rather than the standard's 0.90 floor, because the
+page measured 1.00 and the standard says a repository clearing a higher bar
+enforces the higher one. Both audited URLs fetch nothing, so the gate is
+deterministic and does not make a merge depend on a CDN being up.
+
+`web/a11y/audit.mjs` also fails if any control the post-run state adds is
+absent or invisible. That is not an accessibility rule; it is the gate
+refusing to grade a page that is missing the parts it was extended to grade.
+New UI that the audit cannot see is UI the audit does not audit, and this page
+grew a rule catalogue, three buttons and a share field in one change.
+
+**REVIEW gate, still open.** A keyboard and screen-reader walkthrough by a
+human. The four-stage announcement and the queueing button are better than one
+sentence and a dead control, and nothing automated can judge whether they are
+an adequate account of a thirty-second wait, or whether hearing four stage
+changes is an improvement or a nuisance. Recorded as open rather than declared
+passed, on the same grounds as before.
+
+**Residual risk.** The live boot path is still not scanned, by design, because
+gating it would put jsDelivr in the merge path. What is unscanned is now the
+error states and the transitions between stages, rather than the whole
+startup. And automated tooling catches something like a third to a half of
+WCAG failures; 0 violations means 0 machine-detectable violations, which is
+not the same as conformance and is not claimed as one.
+
+**One thing the accessibility work fixed that was not an accessibility
+defect.** Until 2026-08-29 the runtime booted on the main thread, so for about
+eight seconds the page could not scroll, could not take a keystroke, and could
+not repaint the status line it had just changed. Every announcement this
+section argues about was being made by a thread that was not going to respond
+for another eight seconds. The runtime now boots on a worker; Lighthouse total
+blocking time went from 8,020 ms to 0. See `docs/ROADMAP.md`.

@@ -8,6 +8,101 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- **The playground lists every rule this build can report, and states nothing
+  about any of them.** For a tool whose whole argument is that every finding
+  cites published text, the page never showed the rule set: three samples, one
+  textarea, one button. It now derives the list. One document per finding code
+  ships in the page, the validator is run over each in the browser, and each
+  row is that run's own output, so the severity, the wording and the citation
+  are this build's rather than a description of it. The list of codes is not
+  written down anywhere on the page either: the embedded Python walks the AST
+  of the check modules inside the wheel it just unpacked, which is the same
+  scan `tests/test_every_rule_fires.py` uses. Every row carries a button that
+  loads the payload that produced it, which is also the answer to three
+  samples being too few to explore twenty-three rules.
+
+  `tests/test_playground_catalogue.py` is what keeps it derived. It reads the
+  page's two data blocks, *executes the page's own Python* rather than a
+  second copy of the same logic, and fails in five directions: a code with no
+  document, a document filed under a code the source no longer emits, a
+  document that stops producing its code, the page's scan disagreeing with the
+  suite's, and the static accessibility fixture naming a rule the page ships
+  no payload for. Each was broken on purpose and watched go red.
+
+- The playground reaches `--resolve`. A second payload box supplies documents
+  a run can resolve references against, which is the difference between "this
+  reference points at something I cannot check" and "this reference points at
+  an entity of the wrong class". Until now the page could not reach that
+  distinction at all, and `REF_RESOLVED_SUPPLIED` was a rule the browser had
+  no way to produce.
+
+- The report can leave the page. Copy it in the layout the command line
+  prints, download it as the JSON `--format json` writes, or copy a link that
+  carries the payload. The first two call `render_findings_text` and
+  `render_findings_json` through Pyodide rather than reformatting anything in
+  JavaScript, so what you get is byte for byte what the CLI would have
+  printed. The link puts the payload in the URL fragment, which browsers never
+  send to a server -- the only encoding that keeps this page's promise -- and
+  the confirmation says in as many words that the link is therefore a copy of
+  the payload. It refuses above 8,000 characters and gives the number.
+
+- A short lede for people who have not met CTDL, and what the four severities
+  mean, on the page rather than only in the repository README.
+
+- `?a11y-static=loading` renders the startup state for the accessibility gate,
+  which now audits it. `docs/RESPONSIBLE-TECH-AUDITS.md` section H recorded the
+  loading state as unscanned residual risk while the page spends tens of
+  seconds in it.
+
+### Changed
+
+- **The Pyodide runtime boots on a worker thread.** It used to boot on the
+  main thread, so for about eight seconds the page could not scroll, could not
+  take a keystroke, and could not repaint the status line it had just changed.
+  Lighthouse on the published page: total blocking time 8,020 ms, time to
+  interactive 9.2 s, performance 0.70. After: **0 ms, 1.0 s, 1.00**, measured
+  on one machine minutes apart. The download still starts on load; deferring it
+  behind the Validate button would have cleared the score too and would have
+  replaced a wait you were told about with one you were not.
+
+  Subresource Integrity is not defined on a worker's top-level script, so the
+  page fetches `pyodide.js`, hashes it with SubtleCrypto, compares it to the
+  same pinned `sha384-` digest the `<script>` tag carried, and builds the
+  worker only from matching bytes. The policy still has no `'unsafe-eval'`.
+  Where `crypto.subtle` does not exist, meaning any origin that is not a
+  secure context, the page falls back to the original main-thread load with
+  the `integrity` attribute and says so in the status line and the footer.
+
+  The script *byte* budget is still not met and still declared. Lighthouse's
+  "script" resource type now sums to less only because a worker requested most
+  of the runtime; `docs/ROADMAP.md` counts every JavaScript byte crossing the
+  network by hand, 248,286 B against a 204,800 B budget, so the figure stays
+  comparable to the one it published before.
+
+- The startup announces four named stages instead of one sentence, and carries
+  a `<progress>` element with an accessible name. The Validate button is no
+  longer `disabled`: a disabled button is not focusable, so a keyboard user
+  tabbing the page during the wait never met the control at all. It stays
+  focusable, says `aria-disabled`, and queues -- pressing it during startup
+  runs the validation the moment the runtime is ready.
+
+- `web/a11y/audit.mjs` audits both static states, checks the rule catalogue
+  renders at all four severities as well as the report, and fails when a
+  control the post-run state adds is missing or invisible. That last one is
+  not an accessibility rule; it is the gate refusing to grade a page missing
+  the parts it was extended to grade. Measured after the change: 0 violations,
+  0 incomplete, 42 rules passed in the post-run state and 39 in the startup
+  state, in both colour schemes, Lighthouse accessibility 1.00 in each.
+
+- `tests/test_playground_catalogue.py` also holds the page's network posture,
+  which nothing checked before: the Content-Security-Policy directive by
+  directive, the absence of `'unsafe-eval'`, and the absence of `sendBeacon`,
+  `XMLHttpRequest`, `WebSocket`, `EventSource` and `<form` anywhere in the
+  page. The policy is the control that keeps a payload in the browser, and a
+  control nothing checks is a comment.
+
 ### Fixed
 
 - The `CTID_STRUCTURE` citation and the `ctid.py` module docstring put

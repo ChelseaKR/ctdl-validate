@@ -1,6 +1,6 @@
 # Standards and metrics ledger
 
-Last measured: 2026-08-21. Owner: Chelsea Kelly-Reif. Review cadence: per
+Last measured: 2026-08-29. Owner: Chelsea Kelly-Reif. Review cadence: per
 release and quarterly.
 
 This file is the enforcement ledger required by the portfolio Quality &
@@ -34,38 +34,76 @@ README's "Scope, honestly" section.
 | Self-description agrees with the release | The README status line, `CITATION.cff`, the `uses:` examples and this ledger carry `pyproject.toml`'s version and the CHANGELOG's dated heading for it | `tests/test_release_state.py` | AUTO | Maintainer |
 | Crosswalk freshness | The crosswalk is re-read from the vendored snapshot; a re-vendoring changes it with no code edit | `tests/test_extract_crosswalk.py`; reviewed with the snapshot | AUTO + REVIEW | Maintainer |
 | AI evaluation / GenAI telemetry | N/A: deterministic rule engine and deterministic extractor; no model, prompt, retrieval, embedding, or AI ranking path in either command | Dependency and import scan (zero runtime deps) | N/A | Maintainer |
-| Accessibility of the playground | 0 axe-core violations of critical/serious/moderate at `wcag2a,wcag2aa,wcag22aa` and `best-practice` (heading order, landmarks, duplicate ids), in both colour schemes; no horizontal scroll at 320 CSS px; Lighthouse accessibility 1.00 | `.github/workflows/accessibility.yml` (axe-core 4.13 via `web/a11y/audit.mjs`, plus Lighthouse) against `web/index.html?a11y-static` | AUTO | Maintainer |
-| Keyboard and screen-reader walkthrough of the playground | Every primary task completable by keyboard; the Pyodide startup state is announced | Human walkthrough, recorded in `docs/RESPONSIBLE-TECH-AUDITS.md` section H | REVIEW | Maintainer |
-| Playground performance | **Not met and declared.** Lighthouse performance 0.42 against a >= 0.90 budget and 248,147 B of script against a < 204,800 B budget, measured on the published page 2026-08-15 | Lighthouse against `https://chelseakr.github.io/ctdl-validate/`; re-measure per release | REVIEW | Maintainer |
+| Accessibility of the playground | 0 axe-core violations of critical/serious/moderate at `wcag2a,wcag2aa,wcag22aa` and `best-practice` (heading order, landmarks, duplicate ids), in both colour schemes and in both static states; no horizontal scroll at 320 CSS px; Lighthouse accessibility 1.00 in each | `.github/workflows/accessibility.yml` (axe-core 4.13 via `web/a11y/audit.mjs`, plus Lighthouse) against `web/index.html?a11y-static` and `?a11y-static=loading` | AUTO | Maintainer |
+| Keyboard and screen-reader walkthrough of the playground | Every primary task completable by keyboard; the Pyodide startup state is announced | Human walkthrough, recorded in `docs/RESPONSIBLE-TECH-AUDITS.md` section H. Still open. The startup state is now announced in four stages instead of once, carries a `<progress>` element with an accessible name, and the Validate button stays focusable and says it is not ready rather than being `disabled` and therefore untabbable; a machine can check that those exist and cannot judge whether they are an adequate account of a thirty-second wait | REVIEW | Maintainer |
+| Playground performance | **Score met; byte budget still not met and declared.** Lighthouse performance 1.00 against a >= 0.90 budget, up from 0.70, after the runtime moved to a worker thread. 248,286 B of JavaScript against a < 204,800 B budget, effectively unchanged: the runtime is the same size and Lighthouse now files most of it under a different resource type because a worker requested it. Measured 2026-08-29 | Lighthouse against `https://chelseakr.github.io/ctdl-validate/`; re-measure per release | AUTO-able score, REVIEW byte budget | Maintainer |
 
-### Why the performance budget is not met
+### Why the byte budget is not met, and what the score was actually failing on
 
 The playground runs the validator in the visitor's browser through Pyodide,
 which is a 5.6 MB WebAssembly Python runtime fetched from a CDN. That is the
 whole point of the page: CTDL payloads most need checking while they are still
 unpublished, and the alternative to running locally is asking people to upload
 unreleased credential and competency data to somebody's server. No amount of
-tuning brings a 5.6 MB runtime inside a 204,800 B script budget.
+tuning brings a 5.6 MB runtime inside a 204,800 B script budget, and none has
+been attempted.
 
-What has been done instead:
+**What the score was failing on was not the bytes.** Measured on 2026-08-29,
+one machine, one Chrome, minutes apart:
 
-- The runtime is injected by `boot()` rather than written as a `<script src>`
-  in the markup, so a visitor who reads the page without validating anything,
-  and the accessibility gate, make no CDN request at all.
-- The numbers are measured and published rather than waived quietly, and they
-  are re-measured per release. Layout stability (CLS 0) and accessibility
-  (1.00) are both clean; what fails is exactly the byte cost, and it is a
-  fixed cost of the Pyodide version.
+| | Published page (before) | Local, before | Local, after |
+|---|---|---|---|
+| Lighthouse performance | 0.70 | 0.70 | **1.00** |
+| Total blocking time | 8,020 ms | 7,710 ms | **0 ms** |
+| Time to interactive | 9.2 s | 8.7 s | **1.0 s** |
+| First contentful paint | 0.9 s | 0.8 s | 1.0 s |
+| Cumulative layout shift | 0 | 0 | 0 |
+| JavaScript over the network | 248,183 B | 248,154 B | 248,286 B |
+
+Every byte-weight audit scored the same before and after. What scored 0 was
+total blocking time: compiling 10 MB of WebAssembly and starting CPython took
+about eight seconds, and it took them on the main thread, so for eight seconds
+the page could not scroll, could not take a keystroke, and could not repaint
+the status line it had just changed. The 0.42 recorded here on 2026-08-15 and
+the 0.70 above are the same defect measured on different hardware.
+
+The runtime now boots on a worker thread. The download still starts on load;
+what changed is where the work happens.
+
+- **The informed wait is intact.** Deferring the download behind the Validate
+  button would move 5.6 MB off the critical path and clear the score too, at
+  the cost of making the first validation take tens of seconds with no
+  warning. That trade is still refused. The page starts fetching immediately,
+  says what it is fetching and how big it is, and shows a `<progress>` element
+  that advances through four named stages.
+- **The integrity pin survived the move.** Subresource Integrity is not
+  defined on a worker's top-level script, so the page fetches `pyodide.js`,
+  hashes it with SubtleCrypto, compares the digest to the same pinned
+  `sha384-` value the `<script>` tag used to carry, and refuses to build the
+  worker if they differ. `tests/test_playground_catalogue.py` fails if that
+  check is removed. The policy still has no `'unsafe-eval'`: the worker is
+  built from verified bytes, not from a string handed to `eval`.
+- **There is still a main-thread path.** `crypto.subtle` does not exist outside
+  a secure context, so a page served over plain http to another machine cannot
+  hash anything and has no business building a worker out of unchecked bytes.
+  That case falls back to the original `<script integrity=...>` load on the
+  main thread and says so in the status line and the footer.
+
+**The byte budget is still not met, and reporting it as met would be a lie of
+classification.** Lighthouse's "script" resource type now sums to a smaller
+number only because `pyodide.asm.js` is requested by a worker and lands under
+a different type; the same 241 kB is still downloaded. The figure in the table
+above is every JavaScript byte the page causes to cross the network, counted
+by hand from the request list, so that it stays comparable to the number this
+file published before.
+
 - No advisory-mode gate is wired. `PERFORMANCE-STANDARD` section 3 is explicit
   that a gate that cannot pass is declared N/A-with-reason, not run with
   `continue-on-error`.
-
-The option not taken: deferring the runtime download to the first Validate
-click would move 5.6 MB off the critical path and would very likely clear the
-score, at the cost of making the first validation take tens of seconds with no
-warning. Starting the download on load is a deliberate choice in the user's
-favour, and `loadPyodideRuntime()` is a single call site if that judgement
-changes.
+- The numbers above are local measurements against a local server. The
+  published page has to be re-measured after this deploys; the blocking-time
+  figure should carry over, since it is main-thread work rather than latency,
+  and the paint figures will not.
 
 ## Delivery health
 
