@@ -1,6 +1,7 @@
 # ctdl-validate
 
-Deterministic structural validation for [CTDL](https://credreg.net/ctdl/handbook)
+Deterministic structural validation for
+[CTDL (Credential Transparency Description Language)](https://credreg.net/ctdl/handbook)
 JSON-LD payloads, meant to run before publication to the Credential Registry.
 Point it at the document you are about to publish; it checks the things a
 publisher can get wrong silently: identifier kinds, reference targets, and
@@ -25,6 +26,17 @@ under *Unreleased* in [CHANGELOG.md](CHANGELOG.md). This line is pinned to
 own front page misreports its version has the defect it exists to catch.
 Nothing here has been published to the Credential Registry, and this project
 is not affiliated with or endorsed by Credential Engine.
+
+**Measured against the Registry:** this tool has been run over published
+Credential Registry documents three times: a 120-document survey, that
+survey's offline revalidation after a rule fix, and a 1,200-document run
+drawn uniformly at random from the 395,847 documents in the `ce-registry`
+community, with every referenced document the sample named supplied back to
+it. What came back, including the 108 defects in this validator the
+1,200-document run surfaced (hand-checked against the cached bytes and fixed
+before publication) and the conflicts found in the published spec itself, is
+in [Pointed at the Registry](#pointed-at-the-registry) and under
+[`docs/findings/`](docs/findings/).
 
 **Try it without installing anything:**
 [chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
