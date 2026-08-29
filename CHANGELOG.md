@@ -8,6 +8,19 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- The `CTID_STRUCTURE` citation and the `ctid.py` module docstring put
+  quotation marks around words the cited page does not say in that order.
+  Both quoted "a total of 39 characters (34 hexadecimal characters and 5
+  hyphens)"; the "About the CTID" page's sentence is "there are a total of
+  34 hexadecimal characters and 5 hyphens for a total of 39 characters".
+  Same facts, but a paraphrase was dressed as a quotation, in the one part
+  of a finding that promises to be verbatim. Both now quote the sentence as
+  published, re-verified against the live page on 2026-08-29 (the page still
+  carries its 5/10/2024 date). The grammar itself, and every finding
+  message, were already consistent with the source and are unchanged.
+
 ### Added
 
 - The playground's head says what the page is and where it is. `web/index.html`
