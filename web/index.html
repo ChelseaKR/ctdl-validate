@@ -17,7 +17,41 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; worker-src blob:; child-src blob:;"
     />
-    <title>ctdl-validate playground</title>
+    <title>ctdl-validate playground: check CTDL JSON-LD in your browser</title>
+    <!--
+      The description and the Open Graph block below say what the lede says,
+      and nothing the lede does not. In particular no rule count, no
+      conformance level, and no coverage claim: this tool checks the things a
+      publisher can get wrong silently, the README says which ones, and a
+      number repeated here would be a copy nothing derives. It also does not
+      suggest that Credential Engine has anything to do with it. web/a11y/
+      audit.mjs fails on any of that.
+
+      Every absolute URL carries /ctdl-validate/. GitHub Pages serves this
+      page at a path under chelseakr.github.io, which five sibling projects
+      also publish under, and https://chelseakr.github.io/ is itself a 404, so
+      a canonical naming the bare origin would tell a crawler that six
+      unrelated projects are one page. A root-relative href would be the same
+      mistake pointing the other way: it would resolve to another project or
+      to nothing.
+    -->
+    <meta
+      name="description"
+      content="Structural validation for CTDL JSON-LD, run before you publish to the Credential Registry. Nothing is uploaded: the validator runs in your browser via WebAssembly."
+    />
+    <link rel="canonical" href="https://chelseakr.github.io/ctdl-validate/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ctdl-validate" />
+    <meta property="og:url" content="https://chelseakr.github.io/ctdl-validate/" />
+    <meta
+      property="og:title"
+      content="ctdl-validate playground: check CTDL JSON-LD in your browser"
+    />
+    <meta
+      property="og:description"
+      content="Structural validation for CTDL JSON-LD, run before you publish to the Credential Registry. Nothing is uploaded: the validator runs in your browser via WebAssembly."
+    />
+    <meta name="twitter:card" content="summary" />
     <!-- Inline, because without it every visitor's browser requests
          /favicon.ico, gets a 404, and logs a console error. A tool whose
          argument is that it tells the truth about itself can afford not to
