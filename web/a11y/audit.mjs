@@ -18,6 +18,15 @@
 //    renders #111827 on #ffffff, about 16:1. Pinning axe here keeps the gate
 //    from being trained on a false positive.
 //
+// It also checks the document head, which is not an accessibility question.
+// That is deliberate rather than sloppy. This script is the only merge-blocking
+// gate this repository points at web/index.html, it already has the page open
+// in a browser, and the head's failure modes are the same kind as the ones
+// above: invisible to anyone looking at the page, because the browser has
+// already been handed the page it is going to render. A second workflow to
+// read six meta tags would be a parallel gate over one file, which is how a
+// repository ends up with two checks that each assume the other is doing it.
+//
 // Usage: node web/a11y/audit.mjs <url>
 // Requires puppeteer-core and axe-core, and a Chrome at $CHROME_PATH.
 
@@ -71,6 +80,110 @@ function fail(message) {
 // this file was written to close.
 const EXPECTED_SEVERITIES = ["ERROR", "WARNING", "INFO", "UNVERIFIABLE"];
 
+// ---------------------------------------------------------------------------
+// The head
+// ---------------------------------------------------------------------------
+
+// Written out rather than derived from the page, which is the whole point: an
+// expectation read out of the thing under test moves with the mistake and
+// stays green.
+const PUBLISHED_AT = "https://chelseakr.github.io/ctdl-validate/";
+
+// Words that would make the description claim something the page does not.
+// This is a validator for a published specification it does not speak for, so
+// two kinds of sentence are out: one that implies Credential Engine has
+// endorsed, approved or published it, and one that quotes a rule count or a
+// conformance level. The README carries the affiliation disclaimer in full;
+// the description's job is not to repeat it but not to contradict it.
+const FORBIDDEN_IN_DESCRIPTION = [
+  "official",
+  "endorsed",
+  "approved",
+  "certified",
+  "conformant",
+  "conformance",
+  "compliant",
+  "authoritative",
+  "complete coverage",
+  "full coverage",
+];
+
+async function requireTheHeadNamesThisPage(page) {
+  const head = await page.evaluate(() => {
+    const meta = (selector) =>
+      document.head.querySelector(selector)?.getAttribute("content") ?? null;
+    return {
+      title: document.title,
+      description: meta('meta[name="description"]'),
+      canonical: document.head.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? null,
+      ogUrl: meta('meta[property="og:url"]'),
+      ogTitle: meta('meta[property="og:title"]'),
+      ogDescription: meta('meta[property="og:description"]'),
+      ogType: meta('meta[property="og:type"]'),
+      ogSiteName: meta('meta[property="og:site_name"]'),
+      twitterCard: meta('meta[name="twitter:card"]'),
+      // Root-relative only. A protocol-relative //host/x is a different thing
+      // and is not this mistake.
+      rooted: [...document.querySelectorAll("[href], [src]")]
+        .map((el) => el.getAttribute("href") ?? el.getAttribute("src"))
+        .filter((value) => value && value.startsWith("/") && !value.startsWith("//")),
+    };
+  });
+
+  if (!head.title || !head.title.trim()) fail("the page has no title");
+  if (!head.description || !head.description.trim()) {
+    fail("the page has no meta description, so anything that reads a head reads only a title");
+  }
+  for (const [name, value] of [
+    ["canonical", head.canonical],
+    ["og:url", head.ogUrl],
+  ]) {
+    if (value !== PUBLISHED_AT) {
+      fail(
+        `${name} is ${value === null ? "absent" : JSON.stringify(value)}; expected ` +
+          `${JSON.stringify(PUBLISHED_AT)}. This page is served at a path on an origin five ` +
+          `sibling projects share, and the bare origin is a 404, so an address without ` +
+          `/ctdl-validate/ names another project or nothing.`,
+      );
+    }
+  }
+  if (head.rooted.length) {
+    fail(
+      `root-relative references escape /ctdl-validate/: ${head.rooted.join(", ")}. ` +
+        `They resolve against chelseakr.github.io, not against this page.`,
+    );
+  }
+  if (head.ogType !== "website") fail(`og:type is ${JSON.stringify(head.ogType)}, expected "website"`);
+  if (!head.ogSiteName) fail("og:site_name is absent");
+  if (head.twitterCard !== "summary") {
+    fail(`twitter:card is ${JSON.stringify(head.twitterCard)}, expected "summary"`);
+  }
+  // The card and the page are two statements about one thing, so they are held
+  // equal rather than each checked for being non-empty.
+  if (head.ogTitle !== head.title) {
+    fail(`og:title and <title> disagree: ${JSON.stringify(head.ogTitle)} vs ${JSON.stringify(head.title)}`);
+  }
+  if (head.ogDescription !== head.description) {
+    fail("og:description and the meta description disagree");
+  }
+
+  const description = (head.description ?? "").toLowerCase();
+  for (const word of FORBIDDEN_IN_DESCRIPTION) {
+    if (description.includes(word)) {
+      fail(
+        `the description contains ${JSON.stringify(word)}. This tool does not speak for ` +
+          `the specification it validates, and it states no coverage it has not measured.`,
+      );
+    }
+  }
+  if (/\b[0-9]+\b/.test(head.description ?? "")) {
+    fail(
+      `the description states a figure: ${JSON.stringify(head.description)}. A rule count ` +
+        `here would be a copy nothing derives and nothing checks.`,
+    );
+  }
+}
+
 async function requireTheReportRendered(page, scheme) {
   if (!URL_UNDER_TEST.includes("a11y-static")) return;
   const rendered = await page.evaluate(() =>
@@ -91,6 +204,7 @@ for (const scheme of SCHEMES) {
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: scheme }]);
   await page.goto(URL_UNDER_TEST, { waitUntil: "networkidle0" });
   await requireTheReportRendered(page, scheme);
+  if (scheme === SCHEMES[0]) await requireTheHeadNamesThisPage(page);
   await page.evaluate(axeCore.source);
   const results = await page.evaluate(
     async (tags) => await window.axe.run(document, { runOnly: { type: "tag", values: tags } }),

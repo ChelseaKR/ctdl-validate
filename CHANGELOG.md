@@ -10,6 +10,24 @@ and this project adheres to
 
 ### Added
 
+- The playground's head says what the page is and where it is. `web/index.html`
+  carried a title and no description, no canonical, and no Open Graph or
+  Twitter tags, so a search result or a share preview had one word of it. All
+  of them are there now, and the description repeats the lede rather than
+  claiming anything the page does not: no rule count, no conformance level, no
+  coverage figure, and nothing suggesting Credential Engine has endorsed or
+  published this. Every absolute URL carries `/ctdl-validate/`, because this
+  page is served at a path on an origin five sibling projects share and
+  `https://chelseakr.github.io/` is itself a 404.
+
+  `web/a11y/audit.mjs` is where the check lives, extended rather than joined by
+  a second workflow: it is the only merge-blocking gate pointed at this file,
+  it already has the page open, and a head defect fails the same way an
+  accessibility one does, invisibly. It fails on an address that drops the
+  project path, on a missing description or card, on any root-relative `href`
+  or `src`, on a description containing a word like "official", "endorsed" or
+  "conformance", and on a description containing a figure.
+
 - `ID_DECLARED_MORE_THAN_ONCE` (INFO) and check 6, identity. Node objects that
   declare the same `@id` are now read as one entity -- the union of their
   `@type` values and of their properties -- and the merge is reported with
