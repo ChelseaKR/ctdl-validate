@@ -1,6 +1,7 @@
 # ctdl-validate
 
-Deterministic structural validation for [CTDL](https://credreg.net/ctdl/handbook)
+Deterministic structural validation for
+[CTDL (Credential Transparency Description Language)](https://credreg.net/ctdl/handbook)
 JSON-LD payloads, meant to run before publication to the Credential Registry.
 Point it at the document you are about to publish; it checks the things a
 publisher can get wrong silently: identifier kinds, reference targets, and
@@ -25,6 +26,17 @@ under *Unreleased* in [CHANGELOG.md](CHANGELOG.md). This line is pinned to
 own front page misreports its version has the defect it exists to catch.
 Nothing here has been published to the Credential Registry, and this project
 is not affiliated with or endorsed by Credential Engine.
+
+**Measured against the Registry:** this tool has been run over published
+Credential Registry documents three times: a 120-document survey, that
+survey's offline revalidation after a rule fix, and a 1,200-document run
+drawn uniformly at random from the 395,847 documents in the `ce-registry`
+community, with every referenced document the sample named supplied back to
+it. What came back, including the 108 defects in this validator the
+1,200-document run surfaced (hand-checked against the cached bytes and fixed
+before publication) and the conflicts found in the published spec itself, is
+in [Pointed at the Registry](#pointed-at-the-registry) and under
+[`docs/findings/`](docs/findings/).
 
 **Try it without installing anything:**
 [chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
@@ -389,7 +401,7 @@ different fix and re-running it would erase that.
 | 1 | CTID grammar on `ceterms:ctid`, on `@id`, and on the tail of every Registry resource/graph URI; `ctid` must match the `@id` tail | `CTID_BARE_UUID`, `CTID_MALFORMED`, `CTID_UPPERCASE`, `CTID_NOT_UUIDV4`, `REGISTRY_URI_MALFORMED`, `CTID_URI_MISMATCH` | [About the CTID](https://credreg.net/ctdl/ctid), sections "CTID Structure" and "CTID-Based URI Structure" |
 | 2 | Identifier kind: properties the CTDL context declares as `{"@type": "@id"}` with entity ranges must carry IRIs or blank node ids, not bare UUIDs or bare CTIDs | `REF_BARE_UUID`, `REF_BARE_CTID`, `REF_NOT_IRI` | [CTDL context](https://credreg.net/ctdl/schema/context/json), [CTDL-ASN context](https://credreg.net/ctdlasn/schema/context/json) |
 | 3 | Reference resolution across what the run can see; undefined blank nodes are errors, IRIs resolved from a `--resolve` document are INFO, IRIs resolved nowhere are UNVERIFIABLE | `REF_UNRESOLVED_BNODE`, `REF_RESOLVED_SUPPLIED`, `REF_OUTSIDE_PAYLOAD` | Handbook, "Blank Node Identifier"; tool policy (below), [ADR-0004](docs/adr/0004-resolution-is-additive.md) |
-| 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT`, `CONCEPT_RANGE_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
+| 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT`, `CONCEPT_RANGE_CONFLICT`, `VERSION_RANGE_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
 | 5 | Inverse consistency for pairs the schema declares with `owl:inverseOf`; both directions present must agree, one direction alone is INFO | `INVERSE_MISMATCH`, `INVERSE_ONE_DIRECTION` | schema encodings, `owl:inverseOf` declarations |
 | 6 | Identity: node objects sharing an `@id` are read as one entity, union of `@type` and properties, and the merge is reported | `ID_DECLARED_MORE_THAN_ONCE` | tool policy (below), [ADR-0005](docs/adr/0005-one-identifier-one-entity.md) |
 

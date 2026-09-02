@@ -8,7 +8,38 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- The `CTID_STRUCTURE` citation and the `ctid.py` module docstring put
+  quotation marks around words the cited page does not say in that order.
+  Both quoted "a total of 39 characters (34 hexadecimal characters and 5
+  hyphens)"; the "About the CTID" page's sentence is "there are a total of
+  34 hexadecimal characters and 5 hyphens for a total of 39 characters".
+  Same facts, but a paraphrase was dressed as a quotation, in the one part
+  of a finding that promises to be verbatim. Both now quote the sentence as
+  published, re-verified against the live page on 2026-08-29 (the page still
+  carries its 5/10/2024 date). The grammar itself, and every finding
+  message, were already consistent with the source and are unchanged.
+
 ### Added
+
+- The playground's head says what the page is and where it is. `web/index.html`
+  carried a title and no description, no canonical, and no Open Graph or
+  Twitter tags, so a search result or a share preview had one word of it. All
+  of them are there now, and the description repeats the lede rather than
+  claiming anything the page does not: no rule count, no conformance level, no
+  coverage figure, and nothing suggesting Credential Engine has endorsed or
+  published this. Every absolute URL carries `/ctdl-validate/`, because this
+  page is served at a path on an origin five sibling projects share and
+  `https://chelseakr.github.io/` is itself a 404.
+
+  `web/a11y/audit.mjs` is where the check lives, extended rather than joined by
+  a second workflow: it is the only merge-blocking gate pointed at this file,
+  it already has the page open, and a head defect fails the same way an
+  accessibility one does, invisibly. It fails on an address that drops the
+  project path, on a missing description or card, on any root-relative `href`
+  or `src`, on a description containing a word like "official", "endorsed" or
+  "conformance", and on a description containing a figure.
 
 - `ID_DECLARED_MORE_THAN_ONCE` (INFO) and check 6, identity. Node objects that
   declare the same `@id` are now read as one entity -- the union of their
@@ -100,6 +131,25 @@ and this project adheres to
   the action (#19, #23). The repository description now carries no version at
   all, for the same reason `__version__` no longer carries a literal: a field
   that does not exist cannot drift.
+- `tests/test_every_rule_fires.py`, a gate that counts rules rather than lines.
+  It reads every finding code out of `src/ctdl_validate/checks/` by AST, holds
+  a document that trips each one, and fails in four independent directions: a
+  code the source emits with no document that reaches it; a listed code the
+  source no longer emits, so a stale entry cannot outlive a deleted rule; a
+  code whose document does not actually produce it at the documented severity;
+  and any disagreement between the source and the README's rule table. The
+  third is the one that matters, because it is behavioural: every entry is a
+  payload the validator is run over, not a string compared against another
+  string.
+
+  Reading the codes is by AST rather than by regex on purpose. A `[A-Z_]+` scan
+  silently omits `CTID_NOT_UUIDV4`, because that code carries a digit, which is
+  exactly how a rule goes missing from a list of rules.
+
+  Broken deliberately in eight directions before being trusted, including one
+  first attempt that stayed green because it corrupted the wrong one of two
+  `CTID_MALFORMED` sites. `src/ctdl_validate/checks/ctid_format.py` and
+  `identifier_kind.py` are now at 100% line and branch coverage.
 
 ### Changed
 
@@ -179,6 +229,18 @@ and this project adheres to
   rather than a thinner duplicate; and the inverse check's membership test
   now recognizes a `NestedRef` whose `target_id` matches, instead of doing a
   raw containment check that only a string could pass.
+- Three rules fired against nothing. `CTID_MALFORMED` (ERROR),
+  `REF_BARE_CTID` (WARNING) and `REF_NOT_IRI` (WARNING) were emitted by the
+  check modules, named in the README's rule table, and asserted by no test in
+  the suite: any one of them could have been deleted without turning a single
+  gate red. The 90% coverage floor could not see it, because three missing
+  rules are four missing lines out of eighteen hundred. All three were verified
+  to fire correctly, so they were untested rather than broken, and each now has
+  a corruption in `tests/test_break_the_gate.py`.
+- `VERSION_RANGE_CONFLICT` shipped implemented and missing from the README's
+  rule table, which listed twenty-one of the twenty-two codes the source can
+  emit. Added, and the omission is now impossible to repeat: see
+  `tests/test_every_rule_fires.py` under Added.
 
 
 ## [0.2.1] - 2026-08-16
