@@ -136,6 +136,44 @@ and this project adheres to
   or `src`, on a description containing a word like "official", "endorsed" or
   "conformance", and on a description containing a figure.
 
+- Check 9, term status: `TERM_UNSTABLE` (INFO). Both encodings carry
+  `vs:term_status` on every term they declare -- 675 `vs:stable`, 478
+  `vs:unstable` -- and nothing read either. A payload could have been built
+  entirely from terms the vocabulary itself flags as unsettled and this tool
+  would have said nothing. Terms are covered in whichever role they appear:
+  as a class on `@type`, as a property key, or as a concept a scheme-bound
+  property points at.
+
+  The finding states the declaration and stops. Nothing in the four vendored
+  files defines what `vs:unstable` obliges a publisher to do, so the message
+  does not say the term will be withdrawn, that the Registry will reject it,
+  or that the payload should change. `test_the_finding_does_not_say_what_unstable_means`
+  holds the claim to that size.
+
+  Measured against the 1,200 published Registry documents of the 2026-08-21
+  survey, re-validated offline from that run's cache: 1,540 findings added
+  across 710 documents, none removed, and ERROR and WARNING counts unchanged
+  at 159 and 42. Two thirds of published documents use at least one term the
+  vocabulary marks unstable, which is the reason this was worth reading.
+
+  Those three roles reach 461 of the 478 unstable terms, and the README's rule
+  table row says so rather than leaving 478 to be inferred. The other 17 are
+  `skos:ConceptScheme` declarations (`ceterms:LifeCycleStatus`,
+  `ceterms:SupportServiceCategory`, fifteen more), and a payload never names a
+  scheme directly, so no document can trip them.
+
+  Landing this found a decorative test. `test_expansion_plan.py`'s term-status
+  probe was built from `ceterms:audienceLevelType` and
+  `audLevel:BeginnerLevel`, neither of which the vendored encoding declares
+  `vs:unstable`, so it could never have produced the finding it stood for.
+  Nothing noticed, because a probe for a row claiming zero is only ever
+  asserted *not* to fire: a payload that cannot fire and one the validator
+  correctly ignores look identical. The probe now uses `ceterms:Collection`
+  and `ceterms:lifeCycleStatusType`, and a new test reads the snapshot to
+  confirm both are still declared unstable, so a re-vendoring that stabilises
+  either fails loudly instead of quietly returning the probe to decoration.
+
+
 - Check 8, language-map shape: `LANGUAGE_MAP_EXPECTED` (WARNING). The vendored
   contexts declare 80 terms with `{"@container": "@language"}`, 67 of which the
   schema encodings also declare as properties. The validator already read that

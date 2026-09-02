@@ -454,6 +454,20 @@ TRIPWIRES: dict[str, Tripwire] = {
             }
         ),
     ),
+    # -- check 9, term status --------------------------------------------------
+    "TERM_UNSTABLE": Tripwire(
+        Severity.INFO,
+        # ceterms:Collection is declared vs:term_status vs:unstable in the
+        # published encoding. Disclosed as a fact about the vocabulary, not a
+        # defect in the document.
+        _entity(
+            **{
+                "@id": ORGANIZATION,
+                "@type": "ceterms:Collection",
+                "ceterms:ctid": "ce-79298677-d0e4-4799-853a-a633d9071826",
+            }
+        ),
+    ),
 }
 
 

@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from ctdl_validate import validate_document
+from ctdl_validate.schema import load_schema
 
 ROOT = Path(__file__).resolve().parent.parent
 PLAN = ROOT / "docs" / "EXPANSION-PLAN.md"
@@ -67,16 +68,31 @@ LANGUAGE_PROBE = {
     ]
 }
 
+#: The class and property TERM_STATUS_PROBE is built from. Named here so
+#: ``test_the_term_status_probe_names_terms_the_snapshot_calls_unstable`` can
+#: hold them to the snapshot: a probe whose terms have since been stabilised
+#: would stop exercising the declaration and say nothing about it.
+#:
+#: The probe this replaced named ``ceterms:audienceLevelType`` and
+#: ``audLevel:BeginnerLevel``, neither of which the vendored snapshot declares
+#: unstable. It could never have produced a term-status finding. That went
+#: unnoticed because the row it probes claimed zero, and a probe for a
+#: zero row is only ever asserted *not* to fire.
+UNSTABLE_CLASS = "ceterms:Collection"
+UNSTABLE_PROPERTY = "ceterms:lifeCycleStatusType"
+
 TERM_STATUS_PROBE = {
     "@graph": [
         {
             "@id": "https://credentialengineregistry.org/resources/"
             "ce-11111111-1111-4111-8111-111111111111",
-            "@type": "ceterms:Credential",
-            # ceterms:audienceLevelType is declared vs:unstable.
-            "ceterms:audienceLevelType": {
+            # Both of these are declared vs:term_status vs:unstable in the
+            # vendored encoding; the class check and the property check are
+            # separate paths, so the probe uses one of each.
+            "@type": UNSTABLE_CLASS,
+            UNSTABLE_PROPERTY: {
                 "@type": "ceterms:CredentialAlignmentObject",
-                "ceterms:targetNode": "audLevel:BeginnerLevel",
+                "ceterms:targetNode": "lifeCycle:Active",
             },
         }
     ]
@@ -321,6 +337,23 @@ def test_the_read_column_says_what_the_validator_actually_does() -> None:
                 f"{marker}. Either the check went away or the row claims work that "
                 "is not there."
             )
+
+
+def test_the_term_status_probe_names_terms_the_snapshot_calls_unstable() -> None:
+    """A probe built on a term that is not unstable proves nothing about check 9.
+
+    The probes for the rows still claiming zero are only ever asserted *not*
+    to fire, so a payload that could never have fired looks identical to one
+    the validator correctly ignores. This is the direct check: the two terms
+    the probe is built from are the ones the vendored encoding declares
+    ``vs:unstable``, read from the index rather than trusted.
+    """
+    unstable = load_schema().unstable
+    for term in (UNSTABLE_CLASS, UNSTABLE_PROPERTY):
+        assert term in unstable, (
+            f"TERM_STATUS_PROBE is built from {term}, which the vendored encoding does "
+            "not declare vs:unstable. The probe would exercise nothing."
+        )
 
 
 def test_every_row_of_the_table_has_a_probe() -> None:

@@ -33,11 +33,12 @@ plan and the section below it.
 
 ## The measured gap
 
-Seven checks read the vendored encodings today. They read
+Eight checks read the vendored encodings today. They read
 `schema:domainIncludes`, `schema:rangeIncludes`, `rdfs:subClassOf`,
-`owl:inverseOf`, `meta:targetScheme`, `skos:inScheme`, and the contexts'
-`{"@type": "@id"}` coercions and `{"@container": "@language"}` declarations.
-Counted from the same four files, this is what they do and do not read:
+`owl:inverseOf`, `meta:targetScheme`, `skos:inScheme`, `vs:term_status`, and
+the contexts' `{"@type": "@id"}` coercions and `{"@container": "@language"}`
+declarations. Counted from the same four files, this is what they do and do
+not read:
 
 | Declaration | Published | Read by a check today |
 |---|---|---|
@@ -46,7 +47,7 @@ Counted from the same four files, this is what they do and do not read:
 | Concepts declaring `skos:inScheme` | 456 | 456 |
 | Context datatype coercions | 87 | 0 |
 | Context `{"@container": "@language"}` declarations | 80 | 67 |
-| Terms declaring `vs:term_status` | 1153 | 0 |
+| Terms declaring `vs:term_status` | 1153 | 1153 |
 
 `tests/test_expansion_plan.py` recomputes every number in that table from the
 vendored files and fails the build if the table drifts from them. The counts
@@ -65,6 +66,15 @@ of those three numbers means, precisely, because "read" is easy to overclaim:
 - 456 of 456 concepts: every concept the encodings declare is reachable as a
   `schema.concepts` lookup, and every one of them is declared in a scheme some
   scheme-bound property names, so none is unreachable.
+- 1153 of 1153 `vs:term_status` declarations: check 9 classifies every one of
+  them at index time, which is how it knows the 675 stable ones are stable. It
+  *discloses* only the 478 unstable, and of those it can reach 461 -- the 54
+  classes, 140 properties and 267 concepts a payload can name. The remaining
+  17 are `skos:ConceptScheme` declarations (`ceterms:LifeCycleStatus`,
+  `ceterms:SupportServiceCategory` and fifteen more), and a payload never
+  names a scheme directly, so no document can trip them. That is a ceiling of
+  the check, not a gap in the reading, and the README's rule table row states
+  the three roles rather than implying all 478.
 - 67 of 80 language-map declarations: check 8 tests
   `SchemaIndex.properties[...].language_map`, which is set only for a term the
   *schema* encodings also declare as a property. Thirteen of the 80 are
@@ -238,7 +248,10 @@ maintainer action at a network connection.
 
 ### Phase 4: term status, disclosed
 
-**Delivers.** Check 8. A payload using a term the vendored encoding declares
+**Landed** as check 9 (`TERM_UNSTABLE`). It is numbered 9, not the 8 written
+here, because Phase 1 shipped as check 6 in between.
+
+**Delivers.** A payload using a term the vendored encoding declares
 `vs:unstable` is disclosed, at the severity the tool reserves for a signal
 that is not a defect.
 

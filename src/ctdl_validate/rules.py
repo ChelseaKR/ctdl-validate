@@ -137,6 +137,28 @@ ISCHILDOF_RANGE_CONFLICT = Rule(
 )
 
 
+def term_status_rule(term: str) -> Rule:
+    """A term the encoding marks unstable, cited against the declaration itself.
+
+    Deliberately says only that the declaration exists. The encodings carry
+    ``vs:term_status`` with no prose anywhere in the vendored files defining
+    what ``vs:unstable`` obliges a publisher to do, and this tool does not
+    have the vocabulary-status specification vendored. Saying the term will be
+    withdrawn, or that the Registry will reject it, or that the payload should
+    change, would each be a rule encoded from memory.
+    """
+    return Rule(
+        citation=(
+            f"CTDL schema encoding: {term} is declared vs:term_status vs:unstable. This "
+            "tool reports that declaration and does not interpret it. The vendored files "
+            "do not say what an unstable term obliges a publisher to do, so neither does "
+            "this finding."
+        ),
+        url=_vocab_schema_url(term),
+        retrieved=RETRIEVED,
+    )
+
+
 def language_map_shape_rule(prop: str) -> Rule:
     """A property the context declares a language map, cited against the context.
 
