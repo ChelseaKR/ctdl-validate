@@ -84,6 +84,47 @@ def test_giving_two_entities_one_identifier_is_caught(clean_payload: Any) -> Non
     assert merged[0].severity is Severity.INFO
 
 
+# -- three rules that fired against nothing until 2026-08-28 --------------------
+#
+# CTID_MALFORMED, REF_BARE_CTID and REF_NOT_IRI were emitted by the source,
+# named in the README's rule table, and asserted by no test in this suite.
+# Each of them could have been deleted without turning a single gate red.
+# tests/test_every_rule_fires.py is the structural guard against that
+# recurring; these are the corruptions in this file's own idiom.
+
+
+def test_a_ctid_that_is_not_a_uuid_at_all_is_caught(clean_payload: Any) -> None:
+    # Not a bare UUID either: nothing about this value is UUID-shaped, so it
+    # takes the malformed branch rather than the missing-prefix one.
+    clean_payload["@graph"][1]["ceterms:ctid"] = "ce-not-a-uuid"
+    findings = validate_document(clean_payload)
+    assert any(f.code == "CTID_MALFORMED" and f.severity is Severity.ERROR for f in findings)
+
+
+def test_a_non_string_ctid_is_caught(clean_payload: Any) -> None:
+    # A JSON number where the published grammar describes a 39-character
+    # string. Reported rather than skipped for not being a string.
+    clean_payload["@graph"][1]["ceterms:ctid"] = 177
+    findings = validate_document(clean_payload)
+    assert any(f.code == "CTID_MALFORMED" and f.severity is Severity.ERROR for f in findings)
+
+
+def test_a_bare_ctid_where_an_iri_belongs_is_caught(clean_payload: Any) -> None:
+    # Right identifier kind, wrong form: the competency names its framework by
+    # CTID instead of by the CTID-based URI.
+    clean_payload["@graph"][2]["ceasn:isPartOf"] = "ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+    findings = validate_document(clean_payload)
+    assert any(f.code == "REF_BARE_CTID" and f.severity is Severity.WARNING for f in findings)
+
+
+def test_a_name_where_an_identifier_belongs_is_caught(clean_payload: Any) -> None:
+    # The shape an extractor produces when it maps a label to a property that
+    # takes an IRI: neither an IRI nor a blank node identifier.
+    clean_payload["@graph"][2]["ceasn:isPartOf"] = "Example Widgetry Competency Framework"
+    findings = validate_document(clean_payload)
+    assert any(f.code == "REF_NOT_IRI" and f.severity is Severity.WARNING for f in findings)
+
+
 def test_a_concept_from_the_wrong_scheme_is_caught(clean_payload: Any) -> None:
     # The framework gains a cost profile whose directCostType names a real
     # CTDL concept from ceterms:CredentialStatus instead of ceterms:CostType.

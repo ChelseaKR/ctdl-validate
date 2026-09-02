@@ -16,30 +16,36 @@ The README states the scope this plan expands, under
 >
 > - Required-property checking (the Registry's Minimum Data and Currency
 >   Policy). v0 checks what is present, not what is missing.
-> - Concept scheme membership (`meta:targetScheme` declarations exist for 45
->   properties and would support a real check; cut for scope).
+> - Concept scheme membership for any term the vendored snapshot does not
+>   declare. [...]
 > - Literal datatype validation beyond the CTID (dates, durations, language
 >   map shapes).
 > - Vocabularies beyond CTDL and CTDL-ASN (QData and other profiles).
 
-Three of those four are the subject of Phases 2, 3 and 6. "Cut for scope" is a
-deferral with a reason that has since expired; it is not a refusal, and it is
-the difference between this plan and the section below it.
+Three of those four are the subject of Phases 2, 3 and 6. When this plan was
+written the second read "Concept scheme membership (`meta:targetScheme`
+declarations exist for 45 properties and would support a real check; cut for
+scope)". Phase 2 has landed, and that line was not deleted: it was narrowed to
+the half of the subject the vendored bytes still cannot decide. "Cut for
+scope" was a deferral with a capacity reason that had expired; what stands in
+its place is a limitation of the source, which is the difference between this
+plan and the section below it.
 
 ## The measured gap
 
-Five checks read the vendored encodings today. They read
+Seven checks read the vendored encodings today. They read
 `schema:domainIncludes`, `schema:rangeIncludes`, `rdfs:subClassOf`,
-`owl:inverseOf`, and the contexts' `{"@type": "@id"}` coercions. Counted from
-the same four files, this is what they do not read:
+`owl:inverseOf`, `meta:targetScheme`, `skos:inScheme`, and the contexts'
+`{"@type": "@id"}` coercions and `{"@container": "@language"}` declarations.
+Counted from the same four files, this is what they do and do not read:
 
 | Declaration | Published | Read by a check today |
 |---|---|---|
-| Properties declaring `meta:targetScheme` | 48 | 0 |
-| Concept schemes | 36 | 0 |
-| Concepts declaring `skos:inScheme` | 456 | 0 |
+| Properties declaring `meta:targetScheme` | 48 | 48 |
+| Concept schemes | 36 | 36 |
+| Concepts declaring `skos:inScheme` | 456 | 456 |
 | Context datatype coercions | 87 | 0 |
-| Context `{"@container": "@language"}` declarations | 80 | 0 |
+| Context `{"@container": "@language"}` declarations | 80 | 67 |
 | Terms declaring `vs:term_status` | 1153 | 0 |
 
 `tests/test_expansion_plan.py` recomputes every number in that table from the
@@ -47,17 +53,49 @@ vendored files and fails the build if the table drifts from them. The counts
 are of declarations, not of defects: a declaration nothing reads is an
 opportunity, not a bug, and none of these six rows says a payload is wrong.
 
-The README's scope section says 45 where this table says 48, and the README is
-right about what it counts. CTDL declares `meta:targetScheme` on 45
+The first three rows moved off zero when Phase 2 landed as check 7. What each
+of those three numbers means, precisely, because "read" is easy to overclaim:
+
+- 48 of 48 properties: `checks/concept_scheme.py` looks up the declared scheme
+  of whatever scheme-bound property a payload uses, from the index rather than
+  from a written list, and
+  `test_the_check_covers_every_scheme_bound_property_not_a_written_list`
+  validates a payload on each of the 48 and asserts each one reaches the
+  check.
+- 456 of 456 concepts: every concept the encodings declare is reachable as a
+  `schema.concepts` lookup, and every one of them is declared in a scheme some
+  scheme-bound property names, so none is unreachable.
+- 67 of 80 language-map declarations: check 8 tests
+  `SchemaIndex.properties[...].language_map`, which is set only for a term the
+  *schema* encodings also declare as a property. Thirteen of the 80 are
+  declared in a context and nowhere else -- `dct:description`,
+  `meta:objectText`, `rdfs:comment`, `rdfs:label`, `skos:historyNote`,
+  `vann:usageNote` and the seven `qdata:` terms -- and a bare literal on one
+  of those is not reported. Six are outside the `ceterms:`/`ceasn:` scope this
+  tool claims and seven are QData, which the README's scope list already
+  excludes; none of the thirteen is silently passed off as checked.
+- 36 of 36 concept schemes: every scheme the encodings declare is named by at
+  least one of the 48 properties, so the check can compare against all of
+  them. It reads scheme *identifiers* -- the `meta:targetScheme` values on
+  properties and the `skos:inScheme` values on concepts -- and not the
+  `skos:ConceptScheme` declaration nodes' own labels or definitions, which
+  nothing reads. The 48 properties between them name 40 schemes, four of which
+  the snapshot never declares as a `skos:ConceptScheme` at all:
+  `ceterms:IndustryClassification`,
+  `ceterms:InstructionalProgramClassification`,
+  `ceterms:OccupationClassification` and `qdata:CollectionMethod`. Those four
+  are exactly the external-framework properties, and a value drawn from any of
+  them cannot be more than `CONCEPT_OUTSIDE_SNAPSHOT` here.
+
+On the 48 against the README's 45: CTDL declares `meta:targetScheme` on 45
 properties; CTDL-ASN declares it on 6; three of those 6 --
 `ceterms:industryType`, `ceterms:instructionalProgramType` and
 `ceterms:occupationType` -- are re-declarations of the same `ceterms:`
 properties, and both encodings name the same scheme for each. So the union is
-48 distinct properties carried by 51 declaration nodes, and no phase here
-needs to correct the README. The three re-declarations agreeing exactly is
-worth stating because Phase 2 has to load both encodings and must not treat a
-property declared twice as a conflict when the two declarations say the same
-thing.
+48 distinct properties carried by 51 declaration nodes. The three
+re-declarations agreeing exactly is worth stating because Phase 2 had to load
+both encodings and must not treat a property declared twice as a conflict when
+the two declarations say the same thing.
 
 ### What that surface looks like in published documents
 
@@ -95,6 +133,9 @@ thing blocking each is named rather than scheduled.
 
 ### Phase 1: one `@id`, one entity
 
+**Landed** as check 6 (`ID_DECLARED_MORE_THAN_ONCE`); see
+[ADR-0005](adr/0005-one-identifier-one-entity.md).
+
 **Delivers.** A payload that declares the same `@id` on more than one node is
 reported, and the report does not depend on which one the parser saw first.
 
@@ -117,9 +158,14 @@ was the defect.
 
 ### Phase 2: concept scheme membership
 
-**Delivers.** Check 6. For each of the 48 properties declaring
-`meta:targetScheme`, a value naming a concept the snapshot declares is checked
-against the scheme the property names.
+**Landed** as check 7 (`CONCEPT_OUTSIDE_SCHEME`, `CONCEPT_OUTSIDE_SNAPSHOT`,
+`CONCEPT_NOT_IDENTIFIED`); see
+[ADR-0006](adr/0006-concept-scheme-membership-is-a-warning.md). It is numbered
+7, not the 6 written here, because Phase 1 shipped as check 6 in between.
+
+**Delivers.** For each of the 48 properties declaring `meta:targetScheme`, a
+value naming a concept the snapshot declares is checked against the scheme the
+property names.
 
 **The decision this phase turns on.** What to say about the 1,194 published
 values naming an external framework. The honest reading of the evidence is that
@@ -147,6 +193,9 @@ it is what showed the difference, and the plan is corrected here rather than
 left as written.
 
 #### Phase 3a: language-map shape. Buildable.
+
+**Landed** as check 8 (`LANGUAGE_MAP_EXPECTED`), covering 67 of the 80
+declarations; see the row-by-row note under the gap table for the other 13.
 
 **Delivers.** A check over the 80 `{"@container": "@language"}` declarations
 in the contexts, 67 of which the schema encodings also declare as properties:
