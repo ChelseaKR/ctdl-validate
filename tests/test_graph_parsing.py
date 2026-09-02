@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from ctdl_validate import Severity, validate_document
-from ctdl_validate.graph import DocumentError
+from ctdl_validate.graph import DocumentError, NestedRef, parse_document
 from ctdl_validate.schema import load_schema
 
 
@@ -58,3 +58,56 @@ def test_schema_index_loads_the_vendored_vocabularies() -> None:
     assert schema.properties["ceterms:ctid"].id_coerced is False
     assert schema.properties["ceterms:ownedBy"].id_coerced is True
     assert "ceterms:Organization" in schema.ancestors_of("ceterms:CredentialOrganization")
+
+
+def test_an_embedded_copy_and_its_top_level_declaration_are_one_node() -> None:
+    """``by_path`` and ``by_id`` reach the same node for an embedded copy.
+
+    ``Graph.resolve`` prefers a ``NestedRef``'s ``target_id`` over its path,
+    and its docstring explains that preference as what stops a reference
+    reached through an embedded copy from landing on a thinner duplicate.
+    Since ADR-0005 (#37) that is no longer what does the work: the builder
+    merges a second declaration of an identifier into the first and registers
+    the nested path against the *merged* node, so the path fallback reaches
+    exactly the same object.
+
+    This pins that, because the two are only interchangeable while the merge
+    holds. If a change ever brings back a separate node per declaration, the
+    identity preference in ``resolve`` becomes load-bearing again, and a
+    reader deserves to find out here rather than from a false
+    ``INVERSE_MISMATCH``.
+    """
+    framework = (
+        "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+    )
+    competency = (
+        "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f"
+    )
+    graph = parse_document(
+        {
+            "@graph": [
+                {
+                    "@id": framework,
+                    "@type": "ceasn:CompetencyFramework",
+                    "ceterms:ctid": "ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+                },
+                {
+                    "@id": competency,
+                    "@type": "ceasn:Competency",
+                    "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                    # The same framework again, embedded rather than cited.
+                    "ceasn:isPartOf": {
+                        "@id": framework,
+                        "@type": "ceasn:CompetencyFramework",
+                        "ceasn:name": {"en-US": "an embedded copy"},
+                    },
+                },
+            ]
+        },
+        load_schema(),
+    )
+    nested = graph.by_id[competency].props["ceasn:isPartOf"][0]
+    assert isinstance(nested, NestedRef)
+    assert nested.target_id == framework
+    assert graph.by_path[nested.target_path] is graph.by_id[framework]
+    assert graph.resolve(nested) is graph.by_id[framework]
