@@ -158,6 +158,18 @@ and this project adheres to
   and 42. `CONCEPT_OUTSIDE_SCHEME` fires zero times on the published corpus.
   See [ADR-0006](docs/adr/0006-concept-scheme-membership-is-a-warning.md).
 
+  The README's "not covered in v0" list did not lose its concept-scheme line;
+  it was narrowed to the half the vendored bytes cannot decide. Membership is
+  decided for the 456 concepts the encodings declare and for nothing else, and
+  four of the 40 schemes those 48 properties name are not declared as a
+  `skos:ConceptScheme` anywhere in the snapshot
+  (`ceterms:IndustryClassification`,
+  `ceterms:InstructionalProgramClassification`,
+  `ceterms:OccupationClassification`, `qdata:CollectionMethod`), so a value
+  drawn from one of them can never be more than unverifiable here.
+  `docs/EXPANSION-PLAN.md` moves its first three "read by a check today" rows
+  off zero and says what each of those numbers does and does not cover.
+
 - `ID_DECLARED_MORE_THAN_ONCE` (INFO) and check 6, identity. Node objects that
   declare the same `@id` are now read as one entity -- the union of their
   `@type` values and of their properties -- and the merge is reported with

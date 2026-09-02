@@ -391,6 +391,55 @@ TRIPWIRES: dict[str, Tripwire] = {
             ]
         },
     ),
+    # -- check 7, concept scheme membership ------------------------------------
+    "CONCEPT_OUTSIDE_SCHEME": Tripwire(
+        Severity.WARNING,
+        # credentialStat:Active is a real CTDL concept the snapshot declares,
+        # in ceterms:CredentialStatus. ceterms:directCostType draws from
+        # ceterms:CostType. Both declarations are vendored, so this is a term
+        # from the wrong vocabulary rather than a term the tool cannot place.
+        _entity(
+            **{
+                "@id": ORGANIZATION,
+                "@type": "ceterms:CostProfile",
+                "ceterms:directCostType": {
+                    "@type": "ceterms:CredentialAlignmentObject",
+                    "ceterms:targetNode": "credentialStat:Active",
+                },
+            }
+        ),
+    ),
+    "CONCEPT_OUTSIDE_SNAPSHOT": Tripwire(
+        Severity.UNVERIFIABLE,
+        # The common shape in published documents: a scheme-bound property
+        # naming an external framework the tool has not vendored. UNVERIFIABLE
+        # because the tool did not check it, not because it is wrong.
+        _entity(
+            **{
+                "@id": ORGANIZATION,
+                "@type": "ceterms:Occupation",
+                "ceterms:occupationType": {
+                    "@type": "ceterms:CredentialAlignmentObject",
+                    "ceterms:targetNode": "https://www.onetonline.org/link/summary/15-1244.00",
+                },
+            }
+        ),
+    ),
+    "CONCEPT_NOT_IDENTIFIED": Tripwire(
+        Severity.UNVERIFIABLE,
+        # An alignment object that names its term in words and carries no
+        # ceterms:targetNode, so there is no identifier to place in a scheme.
+        _entity(
+            **{
+                "@id": ORGANIZATION,
+                "@type": "ceterms:CostProfile",
+                "ceterms:directCostType": {
+                    "@type": "ceterms:CredentialAlignmentObject",
+                    "ceterms:targetNodeName": {"en-US": "Tuition"},
+                },
+            }
+        ),
+    ),
 }
 
 
