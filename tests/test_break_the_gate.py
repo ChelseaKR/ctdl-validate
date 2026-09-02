@@ -123,3 +123,22 @@ def test_a_name_where_an_identifier_belongs_is_caught(clean_payload: Any) -> Non
     clean_payload["@graph"][2]["ceasn:isPartOf"] = "Example Widgetry Competency Framework"
     findings = validate_document(clean_payload)
     assert any(f.code == "REF_NOT_IRI" and f.severity is Severity.WARNING for f in findings)
+
+
+def test_a_concept_from_the_wrong_scheme_is_caught(clean_payload: Any) -> None:
+    # The framework gains a cost profile whose directCostType names a real
+    # CTDL concept from ceterms:CredentialStatus instead of ceterms:CostType.
+    clean_payload["@graph"].append(
+        {
+            "@id": "_:cost",
+            "@type": "ceterms:CostProfile",
+            "ceterms:directCostType": {
+                "@type": "ceterms:CredentialAlignmentObject",
+                "ceterms:targetNode": "credentialStat:Active",
+            },
+        }
+    )
+    findings = validate_document(clean_payload)
+    assert any(
+        f.code == "CONCEPT_OUTSIDE_SCHEME" and f.severity is Severity.WARNING for f in findings
+    )

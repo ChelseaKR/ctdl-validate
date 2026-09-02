@@ -406,6 +406,7 @@ different fix and re-running it would erase that.
 | 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT`, `CONCEPT_RANGE_CONFLICT`, `VERSION_RANGE_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
 | 5 | Inverse consistency for pairs the schema declares with `owl:inverseOf`; both directions present must agree, one direction alone is INFO | `INVERSE_MISMATCH`, `INVERSE_ONE_DIRECTION` | schema encodings, `owl:inverseOf` declarations |
 | 6 | Identity: node objects sharing an `@id` are read as one entity, union of `@type` and properties, and the merge is reported | `ID_DECLARED_MORE_THAN_ONCE` | tool policy (below), [ADR-0005](docs/adr/0005-one-identifier-one-entity.md) |
+| 7 | Concept scheme membership: a value on a property declaring `meta:targetScheme`, against the scheme it names; a term from another scheme is a WARNING, a term the snapshot does not declare is UNVERIFIABLE | `CONCEPT_OUTSIDE_SCHEME`, `CONCEPT_OUTSIDE_SNAPSHOT`, `CONCEPT_NOT_IDENTIFIED` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json) `meta:targetScheme` and `skos:inScheme` declarations, [ADR-0006](docs/adr/0006-concept-scheme-membership-is-a-warning.md) |
 
 Every finding carries its rule citation, source URL, and retrieval date in
 the output itself, in both text and JSON formats.
@@ -489,8 +490,19 @@ Not covered in v0, deliberately:
 
 - Required-property checking (the Registry's Minimum Data and Currency
   Policy). v0 checks what is present, not what is missing.
-- Concept scheme membership (`meta:targetScheme` declarations exist for 45
-  properties and would support a real check; cut for scope).
+- Concept scheme membership for any term the vendored snapshot does not
+  declare. Check 7 decides membership for the 456 concepts the encodings
+  declare and for nothing else. Published documents put external framework
+  identifiers -- O\*NET occupation pages, IPEDS CIP codes, Census NAICS codes
+  -- on those same properties, by design; 1,194 of the 4,161 scheme-bound
+  values in the 2026-08-21 survey were of that kind. Those are reported
+  `CONCEPT_OUTSIDE_SNAPSHOT` (UNVERIFIABLE), which says the tool did not check
+  the value, not that the value is wrong. Four of the 40 schemes those
+  properties name are not themselves declared as `skos:ConceptScheme` anywhere
+  in the snapshot (`ceterms:IndustryClassification`,
+  `ceterms:InstructionalProgramClassification`,
+  `ceterms:OccupationClassification`, `qdata:CollectionMethod`), so no value
+  drawn from them can ever be more than unverifiable here.
 - Literal datatype validation beyond the CTID (dates, durations, language
   map shapes).
 - Vocabularies beyond CTDL and CTDL-ASN (QData and other profiles).

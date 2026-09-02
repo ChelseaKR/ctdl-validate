@@ -136,6 +136,40 @@ and this project adheres to
   or `src`, on a description containing a word like "official", "endorsed" or
   "conformance", and on a description containing a figure.
 
+- Check 7, concept scheme membership: `CONCEPT_OUTSIDE_SCHEME` (WARNING),
+  `CONCEPT_OUTSIDE_SNAPSHOT` (UNVERIFIABLE) and `CONCEPT_NOT_IDENTIFIED`
+  (UNVERIFIABLE). 48 properties across the two encodings declare
+  `meta:targetScheme`, and 456 concepts declare `skos:inScheme`; both halves
+  were already vendored and neither was read. A value on a scheme-bound
+  property is now classified against the scheme the property names, and every
+  outcome is reported rather than skipped.
+
+  A term the snapshot declares in another scheme is a WARNING, not an ERROR:
+  no published Credential Engine document says the Registry enforces
+  `meta:targetScheme` on ingest. A term the snapshot does not declare is
+  UNVERIFIABLE, because roughly a quarter of the values published on these
+  properties point at O*NET, CIP and NAICS by design, and this tool has not
+  vendored those frameworks and fetches nothing.
+
+  Measured against the 1,200 published Registry documents of the 2026-08-21
+  survey, re-validated offline from that run's cache: 1,190
+  `CONCEPT_OUTSIDE_SNAPSHOT` and 30 `CONCEPT_NOT_IDENTIFIED` added across 504
+  documents, no finding removed, and ERROR and WARNING counts unchanged at 159
+  and 42. `CONCEPT_OUTSIDE_SCHEME` fires zero times on the published corpus.
+  See [ADR-0006](docs/adr/0006-concept-scheme-membership-is-a-warning.md).
+
+  The README's "not covered in v0" list did not lose its concept-scheme line;
+  it was narrowed to the half the vendored bytes cannot decide. Membership is
+  decided for the 456 concepts the encodings declare and for nothing else, and
+  four of the 40 schemes those 48 properties name are not declared as a
+  `skos:ConceptScheme` anywhere in the snapshot
+  (`ceterms:IndustryClassification`,
+  `ceterms:InstructionalProgramClassification`,
+  `ceterms:OccupationClassification`, `qdata:CollectionMethod`), so a value
+  drawn from one of them can never be more than unverifiable here.
+  `docs/EXPANSION-PLAN.md` moves its first three "read by a check today" rows
+  off zero and says what each of those numbers does and does not cover.
+
 - `ID_DECLARED_MORE_THAN_ONCE` (INFO) and check 6, identity. Node objects that
   declare the same `@id` are now read as one entity -- the union of their
   `@type` values and of their properties -- and the merge is reported with
