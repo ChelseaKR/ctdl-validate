@@ -11,13 +11,67 @@
       the tods-validate playground, this one installs no published package, so
       what runs in the browser is always the code at this commit.
       'wasm-unsafe-eval' is required for Pyodide's WebAssembly execution;
-      'unsafe-inline' for the inline <script> and <style> below.
+      'unsafe-inline' for the inline <script> and <style> below. worker-src
+      blob: is what lets the runtime live on a worker thread instead of
+      freezing the page for the length of its boot; see the comment on
+      startWorker(). Note what is still absent: 'unsafe-eval'. The worker is
+      built from bytes this page fetched and hashed itself, not from a string
+      handed to eval or new Function.
     -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; worker-src blob:; child-src blob:;"
     />
-    <title>ctdl-validate playground</title>
+    <title>ctdl-validate playground: check CTDL JSON-LD in your browser</title>
+    <!--
+      The description and the Open Graph block below say what the lede says,
+      and nothing the lede does not. In particular no rule count, no
+      conformance level, and no coverage claim: this tool checks the things a
+      publisher can get wrong silently, the README says which ones, and a
+      number repeated here would be a copy nothing derives. It also does not
+      suggest that Credential Engine has anything to do with it. web/a11y/
+      audit.mjs fails on any of that.
+
+      Every absolute URL carries /ctdl-validate/. GitHub Pages serves this
+      page at a path under chelseakr.github.io, which five sibling projects
+      also publish under, and https://chelseakr.github.io/ is itself a 404, so
+      a canonical naming the bare origin would tell a crawler that six
+      unrelated projects are one page. A root-relative href would be the same
+      mistake pointing the other way: it would resolve to another project or
+      to nothing.
+    -->
+    <meta
+      name="description"
+      content="Structural validation for CTDL JSON-LD, run before you publish to the Credential Registry. Nothing is uploaded: the validator runs in your browser via WebAssembly."
+    />
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity
+         The rule asks for a Subresource Integrity hash on a subresource the
+         browser fetches and executes, a script or a stylesheet from a host
+         that could serve different bytes than the ones anyone reviewed. This
+         tag is not one. rel="canonical" states which URL this page is, for a
+         crawler to read; the browser fetches nothing from it, and integrity
+         is not defined on it, so there is no hash SRI would accept. Measured
+         rather than assumed: on a probe page carrying four link tags at four
+         paths on a local server, Chrome requested the stylesheet and preload
+         hrefs and never requested the canonical or alternate ones. The rule
+         matches every link whose href has a scheme, whatever its rel, and
+         already carves out preconnect for the same reason this tag needs
+         carving out. Suppressed here rather than repo-wide, so the rule still
+         fires on the next tag that does load something. -->
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -->
+    <link rel="canonical" href="https://chelseakr.github.io/ctdl-validate/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ctdl-validate" />
+    <meta property="og:url" content="https://chelseakr.github.io/ctdl-validate/" />
+    <meta
+      property="og:title"
+      content="ctdl-validate playground: check CTDL JSON-LD in your browser"
+    />
+    <meta
+      property="og:description"
+      content="Structural validation for CTDL JSON-LD, run before you publish to the Credential Registry. Nothing is uploaded: the validator runs in your browser via WebAssembly."
+    />
+    <meta name="twitter:card" content="summary" />
     <!-- Inline, because without it every visitor's browser requests
          /favicon.ico, gets a 404, and logs a console error. A tool whose
          argument is that it tells the truth about itself can afford not to
@@ -76,6 +130,8 @@
         padding: 1rem;
         margin: 1rem 0;
       }
+      .panel > h2 { margin-top: 0; }
+      .hint { color: var(--muted); margin-top: 0; }
       textarea {
         width: 100%;
         min-height: 14rem;
@@ -87,43 +143,94 @@
         padding: 0.75rem;
         resize: vertical;
       }
+      textarea.short { min-height: 7rem; }
       button {
         font: inherit;
         padding: 0.5rem 1rem;
         border-radius: 6px;
-        border: 1px solid #888;
+        border: 1px solid var(--border);
         background: var(--surface);
         color: inherit;
         cursor: pointer;
       }
-      button:disabled { opacity: 0.65; cursor: progress; }
+      button.primary {
+        /* Inverting the two body tokens rather than introducing a brand
+           colour: whatever contrast the body text has, this button has, in
+           both colour schemes, and there is no fifth palette entry to keep
+           in step with the four severity colours. */
+        background: var(--foreground);
+        color: var(--background);
+        border-color: var(--foreground);
+        font-weight: 600;
+      }
+      button[aria-disabled="true"] { opacity: 0.7; cursor: progress; }
       .samples { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }
       .samples button { font-size: 0.9rem; padding: 0.35rem 0.7rem; }
       .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.75rem; }
       :focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
       #status { color: var(--muted); margin: 0.75rem 0 0; }
-      .finding {
+      #action-status, #catalogue-status { color: var(--muted); }
+      /* The file control keeps the native input: a styled <label> wrapping a
+         visually hidden input is the usual trick and it costs the keyboard
+         affordance the native control already has. ::file-selector-button is
+         the part that looked unfinished, so that is the part that is
+         styled. */
+      input[type="file"] {
+        font: inherit;
+        color: var(--muted);
+        max-width: 100%;
+      }
+      input[type="file"]::file-selector-button {
+        font: inherit;
+        padding: 0.5rem 1rem;
+        margin-right: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--foreground);
+        cursor: pointer;
+      }
+      progress { width: 100%; max-width: 24rem; height: 0.6rem; display: block; margin: 0.5rem 0 0; }
+      .share { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+      .share[hidden] { display: none; }
+      .share input {
+        font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+        flex: 1 1 18rem;
+        min-width: 0;
+        max-width: 100%;
+        color: var(--foreground);
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.4rem 0.5rem;
+      }
+      .startup[hidden] { display: none; }
+      details { margin-top: 1rem; }
+      summary { cursor: pointer; padding: 0.25rem 0; }
+      .finding, .rulecard {
         border: 1px solid var(--border);
         border-left-width: 5px;
         border-radius: 6px;
         padding: 0.75rem 1rem;
         margin: 0.75rem 0;
       }
-      .finding.ERROR { border-left-color: var(--error); }
-      .finding.WARNING { border-left-color: var(--warning); }
-      .finding.INFO { border-left-color: var(--info); }
-      .finding.UNVERIFIABLE { border-left-color: var(--unverifiable); }
+      .finding.ERROR, .rulecard.ERROR { border-left-color: var(--error); }
+      .finding.WARNING, .rulecard.WARNING { border-left-color: var(--warning); }
+      .finding.INFO, .rulecard.INFO { border-left-color: var(--info); }
+      .finding.UNVERIFIABLE, .rulecard.UNVERIFIABLE { border-left-color: var(--unverifiable); }
       .sev { font-weight: 700; letter-spacing: 0.02em; }
       .sev.ERROR { color: var(--error); }
       .sev.WARNING { color: var(--warning); }
       .sev.INFO { color: var(--info); }
       .sev.UNVERIFIABLE { color: var(--unverifiable); }
-      .finding h3 { font-size: 1rem; margin: 0 0 0.4rem; }
+      .finding h3, .rulecard h3 { font-size: 1rem; margin: 0 0 0.4rem; }
       .finding dl { margin: 0.4rem 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.75rem; }
       .finding dt { color: var(--muted); }
       .finding dd { margin: 0; }
       .rule { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); font-size: 0.9rem; color: var(--muted); }
       .rule a { color: inherit; }
+      .rulecard .example { margin: 0.6rem 0 0; }
+      .rulecard .example button { font-size: 0.9rem; padding: 0.35rem 0.7rem; }
       /* Every finding carries a Registry URI and a rule source URL, and both
          are long unbroken strings. Without this the report pushed the page to
          366 CSS px at a 320 px viewport, which is SC 1.4.10 (reflow): a
@@ -131,15 +238,21 @@
          edge. Measured at 320x256 in headless Chrome; the empty page passed,
          so only the state a visitor actually reaches was ever broken.
          `anywhere` rather than `break-word` because a 39-character CTID has no
-         break opportunity in it at all. */
+         break opportunity in it at all. The rule catalogue carries the same
+         two long-string shapes, so it is held to the same rule. */
       .finding dd,
       .finding h3,
+      .rulecard h3,
+      .rulecard p,
       .rule,
       .rule a { overflow-wrap: anywhere; }
       code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface); padding: 0 0.25rem; border-radius: 3px; }
       .clean { border: 1px solid var(--border); border-left: 5px solid var(--info); border-radius: 6px; padding: 1rem; }
+      .tally { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; padding: 0; margin: 0.75rem 0; list-style: none; }
+      .tally li { color: var(--muted); }
       footer { margin-top: 2rem; color: var(--muted); font-size: 0.9rem; }
       footer a { color: inherit; }
+      a { color: inherit; }
     </style>
   </head>
   <body>
@@ -152,10 +265,39 @@
         and competency data never leaves your machine.
       </p>
 
-      <div class="panel">
-        <h2 id="input-heading" style="margin-top: 0">Payload</h2>
-        <p style="margin-top: 0; color: var(--muted)">
-          Load a sample, paste your own JSON-LD, or choose a <code>.json</code> file.
+      <section class="panel" aria-labelledby="about-heading">
+        <h2 id="about-heading">New here?</h2>
+        <p class="hint">
+          CTDL, the Credential Transparency Description Language, is the
+          JSON-LD vocabulary the
+          <a href="https://credreg.net/ctdl/handbook" rel="noreferrer noopener">Credential
+          Registry</a> uses to describe credentials, competencies, and the
+          organizations behind them. A payload can be well-formed JSON, parse
+          as JSON-LD, and still be wrong in ways nothing tells you about until
+          much later: an identifier in the wrong form, a reference that points
+          at nothing, a property attached to a class that never declared it.
+        </p>
+        <p class="hint">
+          This page checks those things and shows you, for every finding, the
+          published sentence the check rests on and the date that document was
+          retrieved. Severities mean what
+          <a href="https://github.com/ChelseaKR/ctdl-validate#severities-honestly-defined" rel="noreferrer noopener">the
+          README says they mean</a>: <span class="sev ERROR">ERROR</span> is a
+          cited rule broken, <span class="sev WARNING">WARNING</span> is very
+          likely wrong, <span class="sev INFO">INFO</span> is worth a look, and
+          <span class="sev UNVERIFIABLE">UNVERIFIABLE</span> is the tool
+          refusing to guess about something it cannot see from the payload
+          alone. This project is not affiliated with or endorsed by Credential
+          Engine.
+        </p>
+      </section>
+
+      <section class="panel" aria-labelledby="input-heading">
+        <h2 id="input-heading">Payload</h2>
+        <p class="hint">
+          Load a sample, paste your own JSON-LD, or choose a <code>.json</code>
+          file. Or open the rule list below and load the payload that trips any
+          rule you want to see.
         </p>
         <div class="samples">
           <button type="button" data-sample="clean">Clean certification</button>
@@ -164,17 +306,59 @@
         </div>
         <label for="payload"><strong>CTDL JSON-LD</strong></label>
         <textarea id="payload" spellcheck="false" aria-describedby="status"></textarea>
+        <details id="resolve-details">
+          <summary>Resolve references against another document (optional)</summary>
+          <p class="hint">
+            The same thing the command line calls <code>--resolve</code>. A
+            reference this document can see is checked against the property's
+            declared range; one it cannot see stays
+            <span class="sev UNVERIFIABLE">UNVERIFIABLE</span>. It is read, not
+            fetched, and it is never validated itself.
+          </p>
+          <label for="resolve"><strong>Supplied document</strong></label>
+          <textarea id="resolve" class="short" spellcheck="false"></textarea>
+        </details>
         <div class="actions">
-          <input type="file" id="file" accept=".json,application/json,application/ld+json" aria-label="Choose a JSON file" />
-          <button id="run" disabled>Validate</button>
+          <label for="file">Or a file:</label>
+          <input type="file" id="file" accept=".json,application/json,application/ld+json" />
+          <button id="run" type="button" class="primary">Validate</button>
         </div>
-        <p id="status" role="status">Loading Python (this takes a few seconds the first time)…</p>
-      </div>
+        <p id="status" role="status">Starting the validator&hellip;</p>
+        <div class="startup" id="startup">
+          <progress id="boot-progress" max="4" value="0" aria-label="Validator startup progress"></progress>
+        </div>
+      </section>
 
-      <h2 id="report-heading" tabindex="-1">Findings</h2>
-      <div id="report">
-        <p style="color: var(--muted)">Results will appear here after you validate a payload.</p>
-      </div>
+      <section class="panel" aria-labelledby="report-heading">
+        <h2 id="report-heading" tabindex="-1">Findings</h2>
+        <div class="actions" id="report-actions" hidden>
+          <button type="button" id="copy-text">Copy the report</button>
+          <button type="button" id="download-json">Download the JSON report</button>
+          <button type="button" id="copy-link">Copy a link that carries this payload</button>
+        </div>
+        <p id="action-status" role="status"></p>
+        <p class="share" id="share-row" hidden>
+          <label for="share-link">Link carrying this payload</label>
+          <input type="text" id="share-link" readonly spellcheck="false" />
+        </p>
+        <div id="report">
+          <p class="hint">Results will appear here after you validate a payload.</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="catalogue-heading">
+        <h2 id="catalogue-heading">Every rule this build can report</h2>
+        <p class="hint">
+          Not a list written by hand. Every entry below was produced by running
+          this build of the validator over a document that trips that rule, so
+          the severity, the wording and the citation are the ones you would get
+          in a report. The code list itself is read out of the check modules in
+          the wheel this page loaded, so a rule cannot be missing from it.
+        </p>
+        <p id="catalogue-status" role="status">The rule list appears once the validator has started.</p>
+        <ul class="tally" id="catalogue-tally"></ul>
+        <div id="catalogue"></div>
+      </section>
     </main>
 
     <footer>
@@ -187,45 +371,559 @@
       </p>
     </footer>
 
+    <!--
+      The documents behind the rule catalogue, and behind every "load the
+      payload that reports this" button. They are data, not markup and not
+      script: a <script type="application/json"> block is not executed, and
+      tests/test_playground_catalogue.py reads these exact bytes back out of
+      this file and asserts that each one still produces the code it is filed
+      under, at the severity the tool gives it. That is what keeps this from
+      being a hand-maintained copy of the rule set that can drift: nothing here
+      states what a rule says, only which document reaches it, and a document
+      that stops reaching its rule fails a gate.
+    -->
+    <script type="application/json" id="rule-corpus">
+      {
+        "CONCEPT_RANGE_CONFLICT": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "@type": "ceterms:Course",
+                "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "ceterms:creditValue": [
+                  {
+                    "@type": "ceterms:ValueProfile",
+                    "ceterms:creditUnitType": [
+                      {
+                        "@type": "ceterms:CredentialAlignmentObject",
+                        "ceterms:framework": "https://credreg.net/ctdl/terms/CreditUnit",
+                        "ceterms:targetNode": "creditUnit:SemesterHour"
+                      }
+                    ],
+                    "schema:value": 3.0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "CTID_BARE_UUID": {
+          "document": {
+            "@graph": [
+              {
+                "@type": "ceasn:CompetencyFramework",
+                "ceterms:ctid": "177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+              }
+            ]
+          }
+        },
+        "CTID_MALFORMED": {
+          "document": {
+            "@graph": [
+              {
+                "@type": "ceasn:CompetencyFramework",
+                "ceterms:ctid": "not-a-ctid"
+              }
+            ]
+          }
+        },
+        "CTID_NOT_UUIDV4": {
+          "document": {
+            "@graph": [
+              {
+                "@type": "ceterms:Certification",
+                "ceterms:ctid": "ce-59e8d15f-7895-1346-a5a8-7a0739a3d344"
+              }
+            ]
+          }
+        },
+        "CTID_UPPERCASE": {
+          "document": {
+            "@graph": [
+              {
+                "@type": "ceterms:Certification",
+                "ceterms:ctid": "ce-B55F88E3-DFD4-430B-AB47-3E5F9986E1E4"
+              }
+            ]
+          }
+        },
+        "CTID_URI_MISMATCH": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "@type": "ceterms:Course",
+                "ceterms:ctid": "ce-79298677-d0e4-4799-853a-a633d9071826"
+              }
+            ]
+          }
+        },
+        "DOMAIN_VIOLATION": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+                "@type": "ceasn:CompetencyFramework",
+                "ceasn:competencyText": {
+                  "en-US": "A framework is not a competency"
+                }
+              }
+            ]
+          }
+        },
+        "ID_DECLARED_MORE_THAN_ONCE": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f"
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency"
+              }
+            ]
+          }
+        },
+        "INVERSE_MISMATCH": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceasn:hasChild": [
+                  "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826"
+                ]
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826",
+                "@type": "ceasn:Competency",
+                "ceasn:isChildOf": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344"
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "@type": "ceasn:Competency"
+              }
+            ]
+          }
+        },
+        "INVERSE_ONE_DIRECTION": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceasn:hasChild": [
+                  "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826"
+                ]
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826",
+                "@type": "ceasn:Competency"
+              }
+            ]
+          }
+        },
+        "ISPARTOF_FRAMEWORK_MISMATCH": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+                "@type": "ceasn:CompetencyFramework"
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826"
+              }
+            ]
+          }
+        },
+        "RANGE_DOCS_CONFLICT": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+                "@type": "ceasn:CompetencyFramework"
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceasn:isChildOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+              }
+            ]
+          }
+        },
+        "RANGE_VIOLATION": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826"
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826",
+                "@type": "ceterms:Organization"
+              }
+            ]
+          }
+        },
+        "REF_BARE_CTID": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "ceasn:isPartOf": "ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+              }
+            ]
+          }
+        },
+        "REF_BARE_UUID": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "ceasn:isPartOf": "177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+              }
+            ]
+          }
+        },
+        "REF_NOT_IRI": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "ceasn:isPartOf": "Example Widgetry Competency Framework"
+              }
+            ]
+          }
+        },
+        "REF_OUTSIDE_PAYLOAD": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+              }
+            ]
+          }
+        },
+        "REF_RESOLVED_SUPPLIED": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "ceasn:isPartOf": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+              }
+            ]
+          },
+          "resolve": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+                "@type": "ceasn:CompetencyFramework",
+                "ceterms:ctid": "ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37"
+              }
+            ]
+          }
+        },
+        "REF_UNRESOLVED_BNODE": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "@type": "ceasn:Competency",
+                "ceterms:ctid": "ce-5e3de882-3b49-421b-b623-695c63587f4f",
+                "ceasn:isPartOf": "_:a-framework-this-payload-never-defines"
+              }
+            ]
+          }
+        },
+        "REGISTRY_URI_MALFORMED": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/not-a-ctid-at-all",
+                "@type": "ceasn:CompetencyFramework"
+              }
+            ]
+          }
+        },
+        "UNKNOWN_CLASS": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+                "@type": "ceterms:NotADeclaredClass"
+              }
+            ]
+          }
+        },
+        "UNKNOWN_PROPERTY": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37",
+                "@type": "ceasn:CompetencyFramework",
+                "ceterms:notADeclaredProperty": "anything"
+              }
+            ]
+          }
+        },
+        "VERSION_RANGE_CONFLICT": {
+          "document": {
+            "@graph": [
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "@type": "ceterms:TransferValueProfile",
+                "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "ceterms:previousVersion": [
+                  "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826"
+                ]
+              },
+              {
+                "@id": "https://credentialengineregistry.org/resources/ce-79298677-d0e4-4799-853a-a633d9071826",
+                "@type": "ceterms:TransferValueProfile",
+                "ceterms:ctid": "ce-79298677-d0e4-4799-853a-a633d9071826"
+              }
+            ]
+          }
+        }
+      }
+    </script>
+
+    <!--
+      The Python side, in one place, because two code paths run it: the worker
+      thread and, where a worker cannot be built, the main thread. Held in a
+      script block the browser does not execute (type="text/plain" is not a
+      JavaScript MIME type) rather than in a JS string, so it stays readable
+      and so no backtick in it has to be escaped past two levels of quoting.
+    -->
+    <script type="text/plain" id="py-bootstrap">
+import ast
+import json
+import pathlib
+
+import ctdl_validate
+from ctdl_validate import __version__, validate_document
+from ctdl_validate.findings import render_findings_json, render_findings_text
+from ctdl_validate.graph import DocumentError
+
+CHECKS = pathlib.Path(ctdl_validate.__file__).parent / "checks"
+
+
+def codes_in_source():
+    """Every finding code the check modules can construct, read out of the wheel.
+
+    This is the same scan tests/test_every_rule_fires.py runs, for the same
+    reason: a rule that is not in this list is a rule the page would not show,
+    and a hand-written list is exactly the thing that goes quietly stale. By
+    AST rather than by regex, because a `[A-Z_]+` scan omits CTID_NOT_UUIDV4 --
+    the code carries a digit -- which is how a rule goes missing from a list of
+    rules. A code that is not a literal string cannot be enumerated at all, so
+    it is counted and reported rather than skipped in silence.
+    """
+    codes = set()
+    unreadable = 0
+    for path in sorted(CHECKS.glob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if not isinstance(node, ast.keyword) or node.arg != "code":
+                continue
+            if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                codes.add(node.value.value)
+            else:
+                unreadable += 1
+    return codes, unreadable
+
+
+def _supplied(text, name):
+    """Write a --resolve document to the in-memory filesystem, or return None.
+
+    Pyodide's filesystem is the browser tab's own memory. Nothing is written to
+    disk and nothing is sent anywhere.
+    """
+    if not text or not text.strip():
+        return None
+    path = pathlib.Path(name)
+    path.write_text(text, encoding="utf-8")
+    return [path]
+
+
+def run(text, resolve_text):
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        return json.dumps({"error": f"That is not valid JSON: {exc}"})
+    if resolve_text and resolve_text.strip():
+        try:
+            json.loads(resolve_text)
+        except json.JSONDecodeError as exc:
+            return json.dumps({"error": f"The supplied document is not valid JSON: {exc}"})
+    try:
+        findings = validate_document(data, _supplied(resolve_text, "supplied.json"))
+    except DocumentError as exc:
+        return json.dumps({"error": f"ctdl-validate cannot read this document shape: {exc}"})
+    # text and json are the CLI's own renderers, so what the copy and download
+    # buttons hand over is byte for byte what `ctdl-validate` would have
+    # printed. A second formatter written in JavaScript would be a second
+    # thing to keep in step.
+    return json.dumps(
+        {
+            "version": __version__,
+            "findings": [f.to_dict() for f in findings],
+            "text": render_findings_text(findings),
+            "json": render_findings_json(findings, __version__),
+        }
+    )
+
+
+def catalogue(corpus_json):
+    """Derive the rule list by running the validator, never by describing it.
+
+    For each code the source can emit, the corpus supplies a document that
+    trips it; the row is that document's own finding. Severity, wording and
+    citation therefore come from this build, and a code whose document no
+    longer reaches it says so rather than being dropped.
+    """
+    corpus = json.loads(corpus_json)
+    codes, unreadable = codes_in_source()
+    rows = []
+    for code in sorted(codes):
+        entry = corpus.get(code)
+        if entry is None:
+            rows.append({"code": code, "example": False})
+            continue
+        resolve = None
+        if entry.get("resolve") is not None:
+            resolve = _supplied(json.dumps(entry["resolve"]), "catalogue_supplied.json")
+        hits = [f for f in validate_document(entry["document"], resolve) if f.code == code]
+        if not hits:
+            rows.append({"code": code, "example": False})
+            continue
+        row = hits[0].to_dict()
+        row["example"] = True
+        rows.append(row)
+    return json.dumps({"rows": rows, "unreadable": unreadable})
+</script>
+
+    <!--
+      The worker thread. Pyodide's boot is about eight seconds of WebAssembly
+      compilation and Python initialisation, and on the main thread that is
+      eight seconds in which the page cannot scroll, cannot take a keystroke,
+      and cannot repaint the status line it just changed. Measured before this
+      moved: Lighthouse total blocking time 7,710 ms, performance 0.70. The
+      download still starts on load -- deferring it behind the Validate button
+      would trade a visible wait for an invisible one -- but it now happens
+      somewhere that cannot freeze the page it is reporting to.
+
+      Not executed here: type="text/plain" is not a JavaScript MIME type, so
+      the browser treats this as data. startWorker() reads it as text and puts
+      it after the runtime loader bytes it has already hashed.
+    -->
+    <script type="text/plain" id="worker-glue">
+let py = null;
+let api = null;
+
+function post(message) {
+  self.postMessage(message);
+}
+
+async function boot(message) {
+  post({ type: "progress", step: 2 });
+  py = await loadPyodide({ indexURL: message.indexURL });
+  post({ type: "progress", step: 3 });
+  const manifest = await (await fetch(message.base + "wheel.json")).json();
+  const wheel = await (await fetch(message.base + manifest.wheel)).arrayBuffer();
+  // A wheel is a zip; unpacking it into the working directory (which is
+  // already on sys.path) imports it without micropip, and therefore without
+  // any call to PyPI.
+  await py.unpackArchive(wheel, "zip");
+  py.runPython(message.pySource);
+  api = { run: py.globals.get("run"), catalogue: py.globals.get("catalogue") };
+  post({ type: "ready", version: py.runPython("__import__('ctdl_validate').__version__") });
+}
+
+self.onmessage = async (event) => {
+  const message = event.data;
+  try {
+    if (message.type === "boot") {
+      await boot(message);
+    } else if (message.type === "validate") {
+      post({ type: "result", id: message.id, payload: api.run(message.text, message.resolveText) });
+    } else if (message.type === "catalogue") {
+      post({ type: "result", id: message.id, payload: api.catalogue(message.corpus) });
+    }
+  } catch (err) {
+    const detail = String((err && err.message) || err);
+    if (message.type === "boot") post({ type: "failed", message: detail });
+    else post({ type: "result", id: message.id, error: detail });
+  }
+};
+</script>
+
     <script>
       // Pyodide runtime. When bumping the version, regenerate the integrity
       // hash to match: `curl -sSL <url> | openssl dgst -sha384 -binary |
       // openssl base64 -A`, prefixed with `sha384-`.
       //
-      // Injected by boot() rather than written as a <script src> in the
-      // markup, so that the page makes no network request until someone
-      // actually wants the validator. That matters twice: ?a11y-static fetches
-      // nothing at all, which is what lets the accessibility gate run offline
-      // and deterministically, and a visitor who lands here and reads the page
+      // Nothing is requested until boot() runs, rather than a <script src> in
+      // the markup. That matters twice: ?a11y-static fetches nothing at all,
+      // which is what lets the accessibility gate run offline and
+      // deterministically, and a visitor who lands here and reads the page
       // without validating anything never touches a CDN either.
       const PYODIDE_VERSION = "v0.26.4";
       const PYODIDE_SRI =
         "sha384-i3R37b3tF+HWudsUf1VSEOY2YxwSNMqY8DQa9Z0O3xh+NkJ9o+yjcGyIi5huj+nB";
+      const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/`;
 
-      function loadPyodideRuntime() {
-        return new Promise((resolve, reject) => {
-          const tag = document.createElement("script");
-          tag.src = `https://cdn.jsdelivr.net/pyodide/${PYODIDE_VERSION}/full/pyodide.js`;
-          tag.integrity = PYODIDE_SRI;
-          tag.crossOrigin = "anonymous";
-          tag.onload = resolve;
-          tag.onerror = () =>
-            reject(new Error("the Pyodide runtime could not be loaded from cdn.jsdelivr.net"));
-          document.head.appendChild(tag);
-        });
-      }
+      // A shared link carries the payload in the fragment. Browsers do not
+      // send a fragment to a server, which is the only encoding that keeps
+      // this page's promise; but a link is still a copy of the payload, and
+      // the button says so. The ceiling is on the whole URL, because that is
+      // the thing that has to survive being pasted somewhere.
+      const MAX_LINK_LENGTH = 8000;
 
       const statusEl = document.getElementById("status");
+      const actionStatus = document.getElementById("action-status");
+      const catalogueStatus = document.getElementById("catalogue-status");
+      const catalogueEl = document.getElementById("catalogue");
+      const catalogueTally = document.getElementById("catalogue-tally");
       const runBtn = document.getElementById("run");
       const payload = document.getElementById("payload");
+      const resolveBox = document.getElementById("resolve");
+      const resolveDetails = document.getElementById("resolve-details");
       const fileInput = document.getElementById("file");
       const report = document.getElementById("report");
+      const reportActions = document.getElementById("report-actions");
+      const shareRow = document.getElementById("share-row");
+      const shareField = document.getElementById("share-link");
       const reportHeading = document.getElementById("report-heading");
       const footerVersion = document.getElementById("footer-version");
+      const startup = document.getElementById("startup");
+      const bootProgress = document.getElementById("boot-progress");
+
+      const CORPUS = JSON.parse(document.getElementById("rule-corpus").textContent);
+      const PY_SOURCE = document.getElementById("py-bootstrap").textContent;
+      const WORKER_GLUE = document.getElementById("worker-glue").textContent;
 
       // Kept verbatim from tests/fixtures/ so the samples stay honest: these
       // are the same documents the test suite asserts against, including the
-      // two bug classes found in real published data.
+      // two bug classes found in real published data. The other twenty-three
+      // samples on this page are the rule catalogue's own documents, which
+      // #rule-corpus holds and a test gates.
       const SAMPLES = {
         clean: {
           "@context": "https://credreg.net/ctdl/schema/context/json",
@@ -280,68 +978,28 @@
         },
       };
 
-      let pyodide;
-      let runValidation;
+      const SEVERITY_ORDER = ["ERROR", "WARNING", "INFO", "UNVERIFIABLE"];
 
-      for (const btn of document.querySelectorAll("[data-sample]")) {
-        btn.addEventListener("click", () => {
-          payload.value = JSON.stringify(SAMPLES[btn.dataset.sample], null, 2);
-          statusEl.textContent = "Sample loaded. Click Validate.";
-        });
-      }
+      let engine = null;
+      let lastResult = null;
+      let queuedRun = false;
 
-      fileInput.addEventListener("change", async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-        payload.value = await file.text();
-        statusEl.textContent = `Loaded ${file.name}. Click Validate.`;
-      });
-
-      async function boot() {
-        await loadPyodideRuntime();
-        pyodide = await loadPyodide();
-        // The wheel is built from this commit by the Pages workflow and served
-        // from this origin. The manifest carries its filename so a version bump
-        // never needs an edit here.
-        const manifest = await (await fetch("wheel.json")).json();
-        const wheel = await (await fetch(manifest.wheel)).arrayBuffer();
-        // A wheel is a zip; unpacking it into the working directory (which is
-        // already on sys.path) imports it without micropip, and therefore
-        // without any call to PyPI.
-        await pyodide.unpackArchive(wheel, "zip");
-        runValidation = pyodide.runPython(`
-import json
-from ctdl_validate import validate_document, __version__
-from ctdl_validate.graph import DocumentError
-
-
-def _run(text):
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError as exc:
-        return json.dumps({"error": f"That is not valid JSON: {exc}"})
-    try:
-        findings = validate_document(data)
-    except DocumentError as exc:
-        return json.dumps({"error": f"ctdl-validate cannot read this document shape: {exc}"})
-    return json.dumps(
-        {"version": __version__, "findings": [f.to_dict() for f in findings]}
-    )
-
-
-_run
-`);
-        const version = pyodide.runPython("__import__('ctdl_validate').__version__");
-        footerVersion.textContent = `ctdl-validate ${version} · Pyodide ${PYODIDE_VERSION} · running locally in your browser`;
-        statusEl.textContent = `Ready — validating with ctdl-validate ${version}. Load a sample or paste a payload.`;
-        runBtn.disabled = false;
-      }
+      // -- rendering ---------------------------------------------------------
 
       function escapeHtml(value) {
         return String(value).replace(
           /[&<>"']/g,
           (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch],
         );
+      }
+
+      function renderCitation(rule) {
+        return `
+            <p class="rule">
+              Rule: ${escapeHtml(rule.citation)}<br />
+              Source: <a href="${escapeHtml(rule.url)}" rel="noreferrer noopener">${escapeHtml(rule.url)}</a>
+              (retrieved ${escapeHtml(rule.retrieved)})
+            </p>`;
       }
 
       function renderFinding(f) {
@@ -355,15 +1013,57 @@ _run
               <dt>Property</dt><dd class="mono">${escapeHtml(f.property)}</dd>
               <dt>Value</dt><dd class="mono">${escapeHtml(f.value)}</dd>
             </dl>
-            <p class="rule">
-              Rule: ${escapeHtml(f.rule.citation)}<br />
-              Source: <a href="${escapeHtml(f.rule.url)}" rel="noreferrer noopener">${escapeHtml(f.rule.url)}</a>
-              (retrieved ${escapeHtml(f.rule.retrieved)})
+            ${renderCitation(f.rule)}
+          </div>`;
+      }
+
+      // A catalogue row and a finding are the same shape, because a catalogue
+      // row *is* a finding: the one this build produces when it is run over
+      // the document filed under that code.
+      function renderCatalogueRow(row) {
+        const code = escapeHtml(row.code);
+        if (!row.example) {
+          return `
+          <div class="rulecard">
+            <h3><span class="mono">${code}</span></h3>
+            <p>This build can report this rule, and no document in this page's
+            corpus reaches it, so there is nothing here derived from a run.
+            Reported rather than left out.</p>
+          </div>`;
+        }
+        const sev = escapeHtml(row.severity);
+        return `
+          <div class="rulecard ${sev}">
+            <h3><span class="sev ${sev}">${sev}</span> · <span class="mono">${code}</span></h3>
+            <p>${escapeHtml(row.message)}</p>
+            ${renderCitation(row.rule)}
+            <p class="example">
+              <button type="button" data-example="${code}">Load the payload that reports ${code}</button>
             </p>
           </div>`;
       }
 
+      function renderCatalogue(rows, unreadable) {
+        const shown = rows.filter((row) => row.example);
+        const counts = SEVERITY_ORDER.map((sev) => [
+          sev,
+          shown.filter((row) => row.severity === sev).length,
+        ]).filter(([, n]) => n > 0);
+        catalogueTally.innerHTML = counts
+          .map(([sev, n]) => `<li><span class="sev ${sev}">${sev}</span> ${n}</li>`)
+          .join("");
+        catalogueEl.innerHTML = rows.map(renderCatalogueRow).join("");
+        const missing = rows.length - shown.length;
+        catalogueStatus.textContent =
+          `${rows.length} rule${rows.length === 1 ? "" : "s"}, each shown as this build reports it.` +
+          (missing ? ` ${missing} of them has no example document on this page.` : "") +
+          (unreadable
+            ? ` ${unreadable} finding code in the source is not a plain string and could not be listed.`
+            : "");
+      }
+
       function renderReport(findings) {
+        reportActions.hidden = false;
         if (findings.length === 0) {
           report.innerHTML =
             '<div class="clean"><p style="margin:0"><strong>No findings.</strong> This payload passes every structural check.</p></div>';
@@ -371,15 +1071,187 @@ _run
         }
         const counts = {};
         for (const f of findings) counts[f.severity] = (counts[f.severity] || 0) + 1;
-        const summary = Object.entries(counts)
-          .map(([sev, n]) => `${n} ${sev.toLowerCase()}`)
+        const summary = SEVERITY_ORDER.filter((sev) => counts[sev])
+          .map((sev) => `${counts[sev]} ${sev.toLowerCase()}`)
           .join(", ");
         report.innerHTML =
           `<p>${findings.length} finding${findings.length === 1 ? "" : "s"}: ${escapeHtml(summary)}.</p>` +
           findings.map(renderFinding).join("");
       }
 
-      runBtn.addEventListener("click", () => {
+      // -- the runtime, on a worker where one can be built -------------------
+
+      function bytesToBase64(bytes) {
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += 0x8000) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+        }
+        return btoa(binary);
+      }
+
+      // The bytes are hashed here, by this page, before anything is built out
+      // of them. That is the same guarantee the integrity attribute gives, and
+      // it is the reason the worker can exist at all: SRI is not defined on a
+      // worker's script, so a worker that fetched its own runtime would be the
+      // one place on this page where nobody checked what arrived.
+      async function fetchVerifiedLoader() {
+        const response = await fetch(`${PYODIDE_BASE}pyodide.js`);
+        if (!response.ok) {
+          throw new Error(`cdn.jsdelivr.net answered ${response.status} for the Pyodide runtime`);
+        }
+        const bytes = await response.arrayBuffer();
+        const digest = `sha384-${bytesToBase64(new Uint8Array(await crypto.subtle.digest("SHA-384", bytes)))}`;
+        if (digest !== PYODIDE_SRI) {
+          throw new Error(
+            `the Pyodide runtime does not match its pinned hash (got ${digest}); nothing was run`,
+          );
+        }
+        return new TextDecoder().decode(bytes);
+      }
+
+      function startWorker(loaderSource) {
+        const blob = new Blob([loaderSource, "\n", WORKER_GLUE], { type: "text/javascript" });
+        const worker = new Worker(URL.createObjectURL(blob));
+        const pending = new Map();
+        let nextId = 1;
+        let onProgress = () => {};
+        const ready = new Promise((resolve, reject) => {
+          worker.onerror = (event) => reject(new Error(event.message || "the worker thread failed"));
+          worker.onmessage = (event) => {
+            const message = event.data;
+            if (message.type === "progress") onProgress(message.step);
+            else if (message.type === "ready") resolve(message.version);
+            else if (message.type === "failed") reject(new Error(message.message));
+            else if (message.type === "result") {
+              const waiting = pending.get(message.id);
+              pending.delete(message.id);
+              if (!waiting) return;
+              if (message.error) waiting.reject(new Error(message.error));
+              else waiting.resolve(message.payload);
+            }
+          };
+        });
+        const ask = (message) =>
+          new Promise((resolve, reject) => {
+            const id = nextId++;
+            pending.set(id, { resolve, reject });
+            worker.postMessage({ ...message, id });
+          });
+        return {
+          ready,
+          onProgress: (fn) => {
+            onProgress = fn;
+          },
+          start: () =>
+            worker.postMessage({
+              type: "boot",
+              indexURL: PYODIDE_BASE,
+              base: new URL(".", window.location.href).href,
+              pySource: PY_SOURCE,
+            }),
+          validate: (text, resolveText) => ask({ type: "validate", text, resolveText }),
+          catalogue: (corpus) => ask({ type: "catalogue", corpus }),
+        };
+      }
+
+      // The path taken when a worker cannot be built: crypto.subtle is absent
+      // outside a secure context, so a page served over plain http to another
+      // machine has no way to check the hash and no business building a worker
+      // out of unchecked bytes. Same runtime, same wheel, same Python; the
+      // page freezes during the boot, and says so rather than pretending.
+      function loadPyodideOnThisThread() {
+        return new Promise((resolve, reject) => {
+          const tag = document.createElement("script");
+          tag.src = `${PYODIDE_BASE}pyodide.js`;
+          tag.integrity = PYODIDE_SRI;
+          tag.crossOrigin = "anonymous";
+          tag.onload = resolve;
+          tag.onerror = () =>
+            reject(new Error("the Pyodide runtime could not be loaded from cdn.jsdelivr.net"));
+          document.head.appendChild(tag);
+        });
+      }
+
+      async function startOnMainThread(onProgress) {
+        await loadPyodideOnThisThread();
+        onProgress(2);
+        const py = await loadPyodide({ indexURL: PYODIDE_BASE });
+        onProgress(3);
+        const manifest = await (await fetch("wheel.json")).json();
+        const wheel = await (await fetch(manifest.wheel)).arrayBuffer();
+        await py.unpackArchive(wheel, "zip");
+        py.runPython(PY_SOURCE);
+        const run = py.globals.get("run");
+        const catalogue = py.globals.get("catalogue");
+        return {
+          version: py.runPython("__import__('ctdl_validate').__version__"),
+          validate: async (text, resolveText) => run(text, resolveText),
+          catalogue: async (corpus) => catalogue(corpus),
+        };
+      }
+
+      const STAGES = {
+        1: "Fetching the Python runtime from cdn.jsdelivr.net and checking it against its pinned hash.",
+        2: "Starting Python. About 5.6 MB of runtime downloads the first time; this page stays usable while it does.",
+        3: "Loading ctdl-validate, served from this site rather than from a package index.",
+        4: "Reading the rule set out of the validator.",
+      };
+
+      function setStage(step, override) {
+        bootProgress.value = step;
+        statusEl.textContent = override || STAGES[step] || "";
+      }
+
+      async function boot() {
+        setStage(1);
+        let onMainThread = false;
+        if (window.Worker && window.crypto && window.crypto.subtle) {
+          const loader = await fetchVerifiedLoader();
+          const worker = startWorker(loader);
+          worker.onProgress((step) => setStage(step));
+          worker.start();
+          const version = await worker.ready;
+          engine = { version, validate: worker.validate, catalogue: worker.catalogue };
+        } else {
+          onMainThread = true;
+          engine = await startOnMainThread((step) =>
+            setStage(
+              step,
+              `${STAGES[step]} (This origin is not a secure context, so the runtime is` +
+                ` running on the page's own thread and the page will not respond until it` +
+                ` finishes.)`,
+            ),
+          );
+        }
+        startup.hidden = true;
+        footerVersion.textContent =
+          `ctdl-validate ${engine.version} · Pyodide ${PYODIDE_VERSION} · running locally in your browser` +
+          (onMainThread ? " on the page's own thread" : " on a worker thread");
+        runBtn.removeAttribute("aria-disabled");
+        setStage(
+          4,
+          `Ready — validating with ctdl-validate ${engine.version}. Load a sample or paste a payload.`,
+        );
+        if (queuedRun) {
+          queuedRun = false;
+          validateNow();
+        }
+        loadCatalogue();
+      }
+
+      async function loadCatalogue() {
+        catalogueStatus.textContent = "Running the validator over one document per rule…";
+        try {
+          const derived = JSON.parse(await engine.catalogue(JSON.stringify(CORPUS)));
+          renderCatalogue(derived.rows, derived.unreadable);
+        } catch (err) {
+          catalogueStatus.textContent = `The rule list could not be derived: ${err.message}`;
+        }
+      }
+
+      // -- validating --------------------------------------------------------
+
+      async function validateNow() {
         const text = payload.value.trim();
         if (!text) {
           statusEl.textContent = "Paste a payload or load a sample first.";
@@ -388,39 +1260,212 @@ _run
         statusEl.textContent = "Validating…";
         let parsed;
         try {
-          parsed = JSON.parse(runValidation(text));
+          parsed = JSON.parse(await engine.validate(text, resolveBox.value));
         } catch (err) {
-          statusEl.textContent = "Validation error: " + err;
+          statusEl.textContent = "Validation error: " + err.message;
           return;
         }
         if (parsed.error) {
+          lastResult = null;
+          reportActions.hidden = true;
           report.innerHTML = `<div class="clean"><p style="margin:0">${escapeHtml(parsed.error)}</p></div>`;
           statusEl.textContent = "Could not validate.";
           reportHeading.focus();
           return;
         }
+        lastResult = parsed;
         renderReport(parsed.findings);
         statusEl.textContent = "Done.";
+        actionStatus.textContent = "";
+        shareRow.hidden = true;
         // Move focus to the report heading so keyboard and screen-reader users
         // land on the results they just asked for.
         reportHeading.focus();
+      }
+
+      runBtn.addEventListener("click", () => {
+        if (engine) {
+          validateNow();
+          return;
+        }
+        // Not ready yet. A disabled button is not focusable, so a keyboard
+        // user never meets it at all during the wait; this one takes the
+        // click and honours it the moment the validator exists.
+        queuedRun = true;
+        statusEl.textContent =
+          "Queued. This will validate as soon as the validator has finished loading.";
       });
 
-      // ?a11y-static renders the page in its post-run state without booting
-      // Pyodide, and it is what CI audits. Two reasons it exists.
+      for (const btn of document.querySelectorAll("[data-sample]")) {
+        btn.addEventListener("click", () => {
+          payload.value = JSON.stringify(SAMPLES[btn.dataset.sample], null, 2);
+          resolveBox.value = "";
+          statusEl.textContent = engine
+            ? "Sample loaded. Choose Validate."
+            : "Sample loaded. It will run as soon as the validator has finished loading.";
+        });
+      }
+
+      catalogueEl.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-example]");
+        if (!btn) return;
+        const entry = CORPUS[btn.dataset.example];
+        if (!entry) return;
+        payload.value = JSON.stringify(entry.document, null, 2);
+        resolveBox.value = entry.resolve ? JSON.stringify(entry.resolve, null, 2) : "";
+        resolveDetails.open = Boolean(entry.resolve);
+        if (engine) validateNow();
+        else {
+          queuedRun = true;
+          statusEl.textContent =
+            "Example loaded and queued; it will run as soon as the validator has finished loading.";
+        }
+      });
+
+      fileInput.addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        payload.value = await file.text();
+        statusEl.textContent = `Loaded ${file.name}. Choose Validate.`;
+      });
+
+      // -- taking the report away with you -----------------------------------
+
+      async function copyToClipboard(text, confirmation, options) {
+        try {
+          await navigator.clipboard.writeText(text);
+          actionStatus.textContent = confirmation;
+        } catch (err) {
+          actionStatus.textContent =
+            (options && options.onFailure) ||
+            `The clipboard is not available here (${err.message}). Use the download button, ` +
+              "or select the report and copy it by hand.";
+        }
+      }
+
+      document.getElementById("copy-text").addEventListener("click", () => {
+        if (!lastResult) return;
+        copyToClipboard(
+          lastResult.text,
+          "Report copied, in the same layout the command line prints.",
+        );
+      });
+
+      document.getElementById("download-json").addEventListener("click", () => {
+        if (!lastResult) return;
+        const blob = new Blob([lastResult.json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "ctdl-validate-report.json";
+        link.click();
+        URL.revokeObjectURL(url);
+        actionStatus.textContent =
+          "Downloaded ctdl-validate-report.json, identical to `ctdl-validate --format json`. " +
+          "It was built in this tab; nothing was uploaded to build it.";
+      });
+
+      function encodeFragment(bytes) {
+        return bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      }
+
+      function decodeFragment(text) {
+        const padded = text.replace(/-/g, "+").replace(/_/g, "/");
+        const binary = atob(padded);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+      }
+
+      async function squeeze(bytes, format) {
+        const stream = new (format === "deflate" ? CompressionStream : DecompressionStream)(
+          "deflate-raw",
+        );
+        const writer = stream.writable.getWriter();
+        writer.write(bytes);
+        writer.close();
+        return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+      }
+
+      // Built as its own function rather than inside the click handler so that
+      // the size ceiling is one branch with one number in it, and so a test
+      // can call it without a clipboard.
+      async function buildShareLink() {
+        const envelope = { p: payload.value };
+        if (resolveBox.value.trim()) envelope.r = resolveBox.value;
+        const raw = new TextEncoder().encode(JSON.stringify(envelope));
+        let key = "u";
+        let bytes = raw;
+        if (typeof CompressionStream === "function") {
+          key = "p";
+          bytes = await squeeze(raw, "deflate");
+        }
+        const base = window.location.href.split("#")[0];
+        return `${base}#${key}=${encodeFragment(bytes)}`;
+      }
+
+      document.getElementById("copy-link").addEventListener("click", async () => {
+        const link = await buildShareLink();
+        if (link.length > MAX_LINK_LENGTH) {
+          shareRow.hidden = true;
+          actionStatus.textContent =
+            `That payload makes a ${link.length}-character link and the ceiling here is ` +
+            `${MAX_LINK_LENGTH}, which is about where pasting a URL starts to fail. ` +
+            "Send the JSON file instead.";
+          return;
+        }
+        // Shown as well as copied. The clipboard needs a permission this page
+        // cannot count on, and a share button that silently does nothing when
+        // it is refused is worse than one that hands you the link to copy.
+        shareRow.hidden = false;
+        shareField.value = link;
+        shareField.select();
+        const warning =
+          `The payload is inside the # fragment, which browsers never send to a server — ` +
+          "but the link is a copy of the payload, so treat it exactly as you would treat " +
+          "the payload.";
+        copyToClipboard(link, `Link copied, ${link.length} characters. ${warning}`, {
+          onFailure: `The link is in the field below, ${link.length} characters, selected and ready to copy. ${warning}`,
+        });
+      });
+
+      async function readFragment() {
+        const match = /^#(p|u)=(.+)$/.exec(window.location.hash);
+        if (!match) return false;
+        try {
+          let bytes = decodeFragment(match[2]);
+          if (match[1] === "p") bytes = await squeeze(bytes, "inflate");
+          const envelope = JSON.parse(new TextDecoder().decode(bytes));
+          payload.value = envelope.p || "";
+          resolveBox.value = envelope.r || "";
+          resolveDetails.open = Boolean(envelope.r);
+          return true;
+        } catch (err) {
+          statusEl.textContent = `The payload in this link could not be read: ${err.message}`;
+          return false;
+        }
+      }
+
+      // -- the static states the accessibility gate audits --------------------
       //
-      // The findings list is where nearly all of this page's markup lives and
-      // it is the only place the four severity colours appear, so a scanner
-      // that only ever sees the empty page has audited the least interesting
-      // half. One finding of each severity is rendered here, through the same
-      // renderFinding() the real run uses, so the colours and the dl/dt/dd
-      // structure are the ones a visitor gets.
+      // ?a11y-static renders the page in a state a visitor reaches, without
+      // booting Pyodide, and it is what CI audits. Two reasons it exists.
       //
-      // It also makes the audit deterministic and offline. Booting Pyodide
-      // means a 5.6 MB download from a CDN, so gating on the live page would
-      // make a merge depend on jsDelivr being up. The startup path is
-      // therefore checked by a human, not by this gate: see
-      // docs/RESPONSIBLE-TECH-AUDITS.md.
+      // The findings list and the rule catalogue are where nearly all of this
+      // page's markup lives and the only places the four severity colours
+      // appear, so a scanner that only ever sees the empty page has audited
+      // the least interesting half. One finding of each severity is rendered
+      // here, through the same renderFinding() and renderCatalogueRow() a real
+      // run uses, so the colours and the dl/dt/dd structure are the ones a
+      // visitor gets.
+      //
+      // ?a11y-static=loading renders the other state a visitor meets, and the
+      // one docs/RESPONSIBLE-TECH-AUDITS.md section H recorded as unscanned:
+      // the startup, with its progress element and its status line.
+      //
+      // Both make the audit deterministic and offline. Booting Pyodide means a
+      // 5.6 MB download from a CDN, so gating on the live page would make a
+      // merge depend on jsDelivr being up.
       const A11Y_SAMPLE = [
         {
           severity: "ERROR",
@@ -479,16 +1524,42 @@ _run
         },
       ];
 
-      if (new URLSearchParams(window.location.search).has("a11y-static")) {
+      const staticMode = new URLSearchParams(window.location.search).get("a11y-static");
+
+      if (staticMode === "loading") {
         payload.value = JSON.stringify(SAMPLES.framework, null, 2);
+        setStage(2);
+        runBtn.setAttribute("aria-disabled", "true");
+        footerVersion.textContent =
+          "Static accessibility audit mode · the validator is not loaded on this page.";
+      } else if (staticMode !== null) {
+        payload.value = JSON.stringify(SAMPLES.framework, null, 2);
+        startup.hidden = true;
         renderReport(A11Y_SAMPLE);
+        // The same four rows the report is built from, through the catalogue's
+        // own renderer: one card per severity, each with its example button.
+        renderCatalogue(
+          A11Y_SAMPLE.map((f) => ({ ...f, example: true })),
+          0,
+        );
+        catalogueStatus.textContent =
+          "Static accessibility audit mode: these four rules are examples, not the derived list.";
+        shareRow.hidden = false;
+        shareField.value = `${window.location.href.split("?")[0]}#p=example-share-link-not-a-real-payload`;
         statusEl.textContent =
           "Static accessibility audit mode: the validator is not loaded and these findings are examples.";
         footerVersion.textContent =
           "Static accessibility audit mode · the validator is not loaded on this page.";
       } else {
-        boot().catch((err) => {
-          statusEl.textContent = "Failed to load the validator: " + err;
+        runBtn.setAttribute("aria-disabled", "true");
+        readFragment().then((fromLink) => {
+          if (fromLink) queuedRun = true;
+          boot().catch((err) => {
+            startup.hidden = true;
+            statusEl.textContent = "Failed to load the validator: " + err.message;
+            catalogueStatus.textContent =
+              "The rule list is derived by running the validator, which did not load.";
+          });
         });
       }
     </script>

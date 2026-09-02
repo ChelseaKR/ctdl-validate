@@ -1,6 +1,7 @@
 # ctdl-validate
 
-Deterministic structural validation for [CTDL](https://credreg.net/ctdl/handbook)
+Deterministic structural validation for
+[CTDL (Credential Transparency Description Language)](https://credreg.net/ctdl/handbook)
 JSON-LD payloads, meant to run before publication to the Credential Registry.
 Point it at the document you are about to publish; it checks the things a
 publisher can get wrong silently: identifier kinds, reference targets, and
@@ -26,11 +27,24 @@ own front page misreports its version has the defect it exists to catch.
 Nothing here has been published to the Credential Registry, and this project
 is not affiliated with or endorsed by Credential Engine.
 
+**Measured against the Registry:** this tool has been run over published
+Credential Registry documents three times: a 120-document survey, that
+survey's offline revalidation after a rule fix, and a 1,200-document run
+drawn uniformly at random from the 395,847 documents in the `ce-registry`
+community, with every referenced document the sample named supplied back to
+it. What came back, including the 108 defects in this validator the
+1,200-document run surfaced (hand-checked against the cached bytes and fixed
+before publication) and the conflicts found in the published spec itself, is
+in [Pointed at the Registry](#pointed-at-the-registry) and under
+[`docs/findings/`](docs/findings/).
+
 **Try it without installing anything:**
 [chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
 runs the validator in your browser via WebAssembly. Nothing is uploaded, which
 matters here: payloads usually need checking while they are still unpublished.
-See [`web/README.md`](web/README.md) for how it is built.
+The page also lists every rule this build can report, with a payload behind
+each one, derived by running the validator rather than written down beside it.
+See [`web/README.md`](web/README.md) for how it is built and gated.
 
 ```
 $ ctdl-validate my-framework.json
@@ -389,13 +403,21 @@ different fix and re-running it would erase that.
 | 1 | CTID grammar on `ceterms:ctid`, on `@id`, and on the tail of every Registry resource/graph URI; `ctid` must match the `@id` tail | `CTID_BARE_UUID`, `CTID_MALFORMED`, `CTID_UPPERCASE`, `CTID_NOT_UUIDV4`, `REGISTRY_URI_MALFORMED`, `CTID_URI_MISMATCH` | [About the CTID](https://credreg.net/ctdl/ctid), sections "CTID Structure" and "CTID-Based URI Structure" |
 | 2 | Identifier kind: properties the CTDL context declares as `{"@type": "@id"}` with entity ranges must carry IRIs or blank node ids, not bare UUIDs or bare CTIDs | `REF_BARE_UUID`, `REF_BARE_CTID`, `REF_NOT_IRI` | [CTDL context](https://credreg.net/ctdl/schema/context/json), [CTDL-ASN context](https://credreg.net/ctdlasn/schema/context/json) |
 | 3 | Reference resolution across what the run can see; undefined blank nodes are errors, IRIs resolved from a `--resolve` document are INFO, IRIs resolved nowhere are UNVERIFIABLE | `REF_UNRESOLVED_BNODE`, `REF_RESOLVED_SUPPLIED`, `REF_OUTSIDE_PAYLOAD` | Handbook, "Blank Node Identifier"; tool policy (below), [ADR-0004](docs/adr/0004-resolution-is-additive.md) |
-| 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT`, `CONCEPT_RANGE_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
+| 4 | Domain and range per `schema:domainIncludes` / `schema:rangeIncludes`, with `rdfs:subClassOf` closure, plus the wrong-framework `isPartOf` pattern | `DOMAIN_VIOLATION`, `RANGE_VIOLATION`, `ISPARTOF_FRAMEWORK_MISMATCH`, `UNKNOWN_CLASS`, `UNKNOWN_PROPERTY`, `RANGE_DOCS_CONFLICT`, `CONCEPT_RANGE_CONFLICT`, `VERSION_RANGE_CONFLICT` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json), [CTDL-ASN schema encoding](https://credreg.net/ctdlasn/schema/encoding/json) |
 | 5 | Inverse consistency for pairs the schema declares with `owl:inverseOf`; both directions present must agree, one direction alone is INFO | `INVERSE_MISMATCH`, `INVERSE_ONE_DIRECTION` | schema encodings, `owl:inverseOf` declarations |
 | 6 | Identity: node objects sharing an `@id` are read as one entity, union of `@type` and properties, and the merge is reported | `ID_DECLARED_MORE_THAN_ONCE` | tool policy (below), [ADR-0005](docs/adr/0005-one-identifier-one-entity.md) |
 | 7 | Concept scheme membership: a value on a property declaring `meta:targetScheme`, against the scheme it names; a term from another scheme is a WARNING, a term the snapshot does not declare is UNVERIFIABLE | `CONCEPT_OUTSIDE_SCHEME`, `CONCEPT_OUTSIDE_SNAPSHOT`, `CONCEPT_NOT_IDENTIFIED` | [CTDL schema encoding](https://credreg.net/ctdl/schema/encoding/json) `meta:targetScheme` and `skos:inScheme` declarations, [ADR-0006](docs/adr/0006-concept-scheme-membership-is-a-warning.md) |
 
 Every finding carries its rule citation, source URL, and retrieval date in
 the output itself, in both text and JSON formats.
+
+This table is not the only place the rule set is written down, and it is the
+only place it is written down *by hand*. `tests/test_every_rule_fires.py`
+fails if a code here is not emitted by the source or a code the source emits
+is not here, and the
+[playground](https://chelseakr.github.io/ctdl-validate/) shows the same set
+derived at run time: one document per code, validated in the browser, each row
+being that run's own output.
 
 ## Methodology
 
@@ -584,13 +606,13 @@ apply; the enforcement ledger with targets and owners is
 | Security & Supply-Chain | Applies | [SECURITY.md](SECURITY.md); SHA-pinned Actions; Semgrep and full-history TruffleHog in CI; pip-audit in `make verify`; Dependabot; gitleaks in pre-commit. |
 | CI/CD | Applies | `ci.yml` runs the same `make verify` gate as local development; trusted-main release workflow (signed tag, re-verified at the tagged commit) wired ahead of the first tag. |
 | Observability | N/A (single-shot CLI; no service, no telemetry, nothing reported anywhere; the report on stdout is the entire observable surface, and `extract` puts its whole transport story in that report) | Exit-code contract and JSON output are tested in `tests/test_cli.py` and `tests/test_extract_cli.py`. |
-| Accessibility | Applies — the browser playground is a published human-facing page, so it is in scope on its own; the CLI's own surface is plain-text terminal output plus `--format json`. | [`.github/workflows/accessibility.yml`](.github/workflows/accessibility.yml) runs axe-core against the page in both colour schemes at `wcag2a,wcag2aa,wcag22aa` plus axe's `best-practice` rules (heading order, one `<main>` and one `<h1>`, content inside landmarks), checks reflow at 320 CSS px, and Lighthouse must score 1.00. Measured 2026-08-21: 0 violations and 39 rules passed in each scheme; Lighthouse 1.00 on the published page (2026-08-15). What is not gated, and why, is written in that workflow's header. |
+| Accessibility | Applies — the browser playground is a published human-facing page, so it is in scope on its own; the CLI's own surface is plain-text terminal output plus `--format json`. | [`.github/workflows/accessibility.yml`](.github/workflows/accessibility.yml) runs axe-core against the page in both colour schemes at `wcag2a,wcag2aa,wcag22aa` plus axe's `best-practice` rules (heading order, one `<main>` and one `<h1>`, content inside landmarks), checks reflow at 320 CSS px, and Lighthouse must score 1.00. Since 2026-08-29 it audits two states: the post-run report and rule catalogue, and the startup. Measured 2026-08-29: 0 violations, 42 rules passed in the post-run state and 39 in the startup state, in each scheme; Lighthouse 1.00 in each. What is not gated, and why, is written in that workflow's header. |
 | Internationalization | N/A (findings quote English-language spec prose verbatim; see [docs/I18N.md](docs/I18N.md) for the reason and the flip-to-applies trigger) | Multilingual payload *data* validates identically; the declaration covers operator-facing strings only. |
 | AI Evaluation | N/A (deterministic rule engine and a deterministic extractor; no model, prompt, retrieval, embedding, or LLM call anywhere, including in `extract`; AI-assisted authoring is disclosed under [Disclosure](#disclosure)) | Zero runtime dependencies makes the no-model claim mechanically checkable; the extractor's refusals are tested in `tests/test_extract_break_the_gate.py`. |
 | Documentation | Applies | This README, [CHANGELOG.md](CHANGELOG.md), ADRs in [docs/adr/](docs/adr/), [CITATION.cff](CITATION.cff), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md). |
 | Quality & Metrics | Applies | [docs/ROADMAP.md](docs/ROADMAP.md) names every gate as AUTO, REVIEW, or a reasoned exception; nothing is silently skipped. |
 | Release & Versioning | Applies | SemVer; `CHANGELOG.md` kept current; trusted-main signed-tag release workflow. Three signed tags (`v0.1.0` 2026-08-08; `v0.2.0` and `v0.2.1` 2026-08-16), each a GitHub Release with the wheel and sdist attached and on PyPI as `ctdl-validate`. `tests/test_release_state.py` pins this README, `CITATION.cff`, and the `uses:` examples to `pyproject.toml`'s version and to the CHANGELOG's dated heading for it. |
-| Performance | Applies — and one control is **not met**. The playground downloads a 5.6 MB WebAssembly Python runtime, because the alternative to running the validator in the visitor's browser is uploading unpublished credential data to a server. | Measured against the published page 2026-08-15: Lighthouse performance **0.42** against a budget of >= 0.90, script transfer **248,147 B** against a budget of < 204,800 B, LCP 29.2 s, accessibility 1.00, CLS 0. `PERF-02` cannot be met without giving up local execution; the trade is stated in [docs/ROADMAP.md](docs/ROADMAP.md) rather than waived quietly, and no advisory-mode gate is wired for a budget that is not met. |
+| Performance | Applies — the score control is now met; the **byte budget is not**. The playground downloads a 5.6 MB WebAssembly Python runtime, because the alternative to running the validator in the visitor's browser is uploading unpublished credential data to a server. | Measured 2026-08-29, one machine, minutes apart: the published page scored performance **0.70** with **8,020 ms** of total blocking time, because the runtime booted on the main thread; moving it to a worker gives **1.00** and **0 ms**. The byte control is unchanged and still not met: **248,286 B** of JavaScript against a budget of < 204,800 B, counted by hand from the request list because Lighthouse's "script" resource type now excludes what a worker requested, and reporting the smaller figure would be a lie of classification. The trade is stated in [docs/ROADMAP.md](docs/ROADMAP.md) rather than waived quietly, and no advisory-mode gate is wired for a budget that is not met. |
 | AI Development Measurement | Applies — this tool was built with AI assistance and reviewed by a human, disclosed under [Disclosure](#disclosure). What is measured is delivery outcomes, not tool-usage counters: sessions, tokens, and percent-AI-generated are not tracked here, and would not gate anything if they were. | [docs/ROADMAP.md](docs/ROADMAP.md) § Delivery health carries the DORA signals with an explicit note that a single release supports a fact, not a rate; the rows that cannot be computed yet say so instead of carrying invented zeroes. |
 | Incident Response | Applies — private vulnerability reporting with a 72-hour acknowledgement target, and a definition of what counts as a vulnerability here that names a false clean report as a first-class integrity bug rather than a cosmetic one. | [SECURITY.md](SECURITY.md). No incident has been recorded for this repo, so there is no `docs/incidents/` directory; a real one would ship a dated postmortem alongside the fix. |
 | Data Governance | Applies — the validator reads a local file and writes a report; it stores nothing, sends nothing, and has no telemetry. `extract` is the one subcommand that opens a network connection, and it fetches only the page it was given after checking `robots.txt` at every hop. | Vendored schema snapshots carry their retrieval date and SHA-256 in `src/ctdl_validate/vendor/SOURCES.md`, and `tests/test_vendor_integrity.py` fails if one is altered. Payload data stays on the operator's machine; the playground runs the validator in the visitor's browser for the same reason. |
