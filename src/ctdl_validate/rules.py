@@ -137,6 +137,31 @@ ISCHILDOF_RANGE_CONFLICT = Rule(
 )
 
 
+def language_map_shape_rule(prop: str) -> Rule:
+    """A property the context declares a language map, cited against the context.
+
+    Distinct from ``language_map_rule`` below, which the extractor uses to
+    explain why it emitted an untagged literal from a page that declared no
+    language. This one is the validator saying a payload wrote a bare literal
+    where the context declares a map; the situations differ and so does the
+    sentence a reader needs.
+
+    The vendored contexts declare 80 terms with ``{"@container": "@language"}``.
+    The validator already reads that declaration -- ``graph.py`` keeps such a
+    value as the map it is rather than walking it as a nested node -- so this
+    check is that same reading, reported instead of only relied upon.
+    """
+    return Rule(
+        citation=(
+            f'CTDL JSON-LD context: {prop} is declared {{"@container": "@language"}}, so its '
+            "values are keyed by language tag. A bare literal in that position carries no "
+            "language, which is the one thing the declaration exists to record."
+        ),
+        url=_vocab_context_url(prop),
+        retrieved=RETRIEVED,
+    )
+
+
 def concept_scheme_rule(prop: str, scheme: frozenset[str]) -> Rule:
     """A property's meta:targetScheme, cited against the snapshot it comes from.
 

@@ -33,11 +33,11 @@ plan and the section below it.
 
 ## The measured gap
 
-Six checks read the vendored encodings today. They read
+Seven checks read the vendored encodings today. They read
 `schema:domainIncludes`, `schema:rangeIncludes`, `rdfs:subClassOf`,
 `owl:inverseOf`, `meta:targetScheme`, `skos:inScheme`, and the contexts'
-`{"@type": "@id"}` coercions. Counted from the same four files, this is what
-they do and do not read:
+`{"@type": "@id"}` coercions and `{"@container": "@language"}` declarations.
+Counted from the same four files, this is what they do and do not read:
 
 | Declaration | Published | Read by a check today |
 |---|---|---|
@@ -45,7 +45,7 @@ they do and do not read:
 | Concept schemes | 36 | 36 |
 | Concepts declaring `skos:inScheme` | 456 | 456 |
 | Context datatype coercions | 87 | 0 |
-| Context `{"@container": "@language"}` declarations | 80 | 0 |
+| Context `{"@container": "@language"}` declarations | 80 | 67 |
 | Terms declaring `vs:term_status` | 1153 | 0 |
 
 `tests/test_expansion_plan.py` recomputes every number in that table from the
@@ -65,6 +65,15 @@ of those three numbers means, precisely, because "read" is easy to overclaim:
 - 456 of 456 concepts: every concept the encodings declare is reachable as a
   `schema.concepts` lookup, and every one of them is declared in a scheme some
   scheme-bound property names, so none is unreachable.
+- 67 of 80 language-map declarations: check 8 tests
+  `SchemaIndex.properties[...].language_map`, which is set only for a term the
+  *schema* encodings also declare as a property. Thirteen of the 80 are
+  declared in a context and nowhere else -- `dct:description`,
+  `meta:objectText`, `rdfs:comment`, `rdfs:label`, `skos:historyNote`,
+  `vann:usageNote` and the seven `qdata:` terms -- and a bare literal on one
+  of those is not reported. Six are outside the `ceterms:`/`ceasn:` scope this
+  tool claims and seven are QData, which the README's scope list already
+  excludes; none of the thirteen is silently passed off as checked.
 - 36 of 36 concept schemes: every scheme the encodings declare is named by at
   least one of the 48 properties, so the check can compare against all of
   them. It reads scheme *identifiers* -- the `meta:targetScheme` values on
@@ -184,6 +193,9 @@ it is what showed the difference, and the plan is corrected here rather than
 left as written.
 
 #### Phase 3a: language-map shape. Buildable.
+
+**Landed** as check 8 (`LANGUAGE_MAP_EXPECTED`), covering 67 of the 80
+declarations; see the row-by-row note under the gap table for the other 13.
 
 **Delivers.** A check over the 80 `{"@container": "@language"}` declarations
 in the contexts, 67 of which the schema encodings also declare as properties:

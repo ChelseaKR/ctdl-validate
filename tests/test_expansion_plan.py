@@ -231,17 +231,38 @@ def test_the_two_contexts_do_not_disagree() -> None:
     )
 
 
-def test_nothing_in_the_gap_table_is_read_by_a_check_yet() -> None:
-    """The table's second column claims zero. Hold it to the source tree.
+#: Row label -> the key a check would have to name in its own source to read
+#: that declaration. Only consulted for a row whose "Read by a check today"
+#: column still claims zero; a row that has moved off zero is held to the
+#: behavioural probe below instead, which is the stronger instrument.
+SOURCE_KEYS: dict[str, str] = {
+    "Concepts declaring `skos:inScheme`": "skos:inScheme",
+    "Terms declaring `vs:term_status`": "vs:term_status",
+    'Context `{"@container": "@language"}` declarations': "@container",
+}
+
+
+def test_nothing_the_gap_table_still_claims_is_unread_is_read_by_a_check() -> None:
+    """A row still claiming zero, held to the source tree.
 
     Each declaration the plan counts is named by the key a check would have to
-    look up. When a phase lands and starts reading one, this test fails, which
-    is the reminder to move that row's "Read by a check today" to a real
-    number rather than leaving the plan claiming a gap it closed.
+    look up. While a row claims nothing reads it, no check module may name its
+    key; the assertion turns itself off for a row that has moved off zero, so
+    a landed phase does not have to delete a guard to go green.
+
+    This is deliberately the weaker of the two guards on this column. A check
+    can read every ``skos:inScheme`` declaration in the snapshot without the
+    string appearing anywhere in it -- check 7 does exactly that -- so a row
+    passing here proves little. ``test_the_read_column_says_what_the_validator
+    _actually_does`` is what actually holds the number, in both directions.
     """
     checks = ROOT / "src" / "ctdl_validate" / "checks"
     source = "\n".join(path.read_text(encoding="utf-8") for path in sorted(checks.glob("*.py")))
-    for key in ("skos:inScheme", "vs:term_status", "@container"):
+    read = _read_column()
+    for label, key in SOURCE_KEYS.items():
+        assert label in read, f"the plan's table has no row for {label}"
+        if read[label]:
+            continue
         assert key not in source, f"a check now reads {key}; update the expansion plan's gap table"
 
 

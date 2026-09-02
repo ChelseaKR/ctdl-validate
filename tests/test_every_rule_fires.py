@@ -440,6 +440,20 @@ TRIPWIRES: dict[str, Tripwire] = {
             }
         ),
     ),
+    # -- check 8, language-map shape -------------------------------------------
+    "LANGUAGE_MAP_EXPECTED": Tripwire(
+        Severity.WARNING,
+        # ceterms:name is declared {"@container": "@language"} in the vendored
+        # context, and this value is a bare literal, so it states no language.
+        _entity(
+            **{
+                "@id": COURSE,
+                "@type": "ceterms:Course",
+                "ceterms:ctid": "ce-59e8d15f-7895-4346-a5a8-7a0739a3d344",
+                "ceterms:name": "Introduction to Widgetry",
+            }
+        ),
+    ),
 }
 
 

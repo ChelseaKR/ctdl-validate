@@ -142,3 +142,14 @@ def test_a_concept_from_the_wrong_scheme_is_caught(clean_payload: Any) -> None:
     assert any(
         f.code == "CONCEPT_OUTSIDE_SCHEME" and f.severity is Severity.WARNING for f in findings
     )
+
+
+def test_untagging_a_language_map_is_caught(clean_payload: Any) -> None:
+    # The framework's name loses its language map and becomes a bare string.
+    node = clean_payload["@graph"][0]
+    name = node["ceasn:name"]
+    node["ceasn:name"] = next(iter(name.values())) if isinstance(name, dict) else "untagged"
+    findings = validate_document(clean_payload)
+    assert any(
+        f.code == "LANGUAGE_MAP_EXPECTED" and f.severity is Severity.WARNING for f in findings
+    )
