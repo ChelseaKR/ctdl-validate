@@ -87,4 +87,11 @@ def test_inverse_written_as_a_nested_object_still_counts_as_pointing_back() -> N
             },
         ]
     }
-    assert validate_document(payload) == []
+    # Asserted against the inverse codes this test was written for, not against
+    # every finding. Course A is declared twice -- once at the top level and
+    # once as the embedded copy -- which check 6 (ID_DECLARED_MORE_THAN_ONCE,
+    # added later, in #37) correctly discloses as a merge. That disclosure is
+    # the point of ADR-0005 and must not be suppressed to keep this assertion
+    # convenient; what this test is about is that neither inverse code fires.
+    findings = validate_document(payload)
+    assert [f for f in findings if f.code.startswith("INVERSE_")] == []

@@ -14,3 +14,9 @@ build/
 # counts, never anybody's data. Never commit this. One directory per run.
 .registry-cache/
 .registry-cache-*/
+
+# Created by the local-run and local-audit instructions in web/README.md:
+# `site/` is the assembled playground, `node_modules/` is the pinned audit
+# tooling CI installs with --no-save.
+site/
+node_modules/

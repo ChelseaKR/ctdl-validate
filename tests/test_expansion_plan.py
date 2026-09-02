@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from ctdl_validate import validate_document
+from ctdl_validate.schema import load_schema
 
 ROOT = Path(__file__).resolve().parent.parent
 PLAN = ROOT / "docs" / "EXPANSION-PLAN.md"
@@ -67,16 +68,31 @@ LANGUAGE_PROBE = {
     ]
 }
 
+#: The class and property TERM_STATUS_PROBE is built from. Named here so
+#: ``test_the_term_status_probe_names_terms_the_snapshot_calls_unstable`` can
+#: hold them to the snapshot: a probe whose terms have since been stabilised
+#: would stop exercising the declaration and say nothing about it.
+#:
+#: The probe this replaced named ``ceterms:audienceLevelType`` and
+#: ``audLevel:BeginnerLevel``, neither of which the vendored snapshot declares
+#: unstable. It could never have produced a term-status finding. That went
+#: unnoticed because the row it probes claimed zero, and a probe for a
+#: zero row is only ever asserted *not* to fire.
+UNSTABLE_CLASS = "ceterms:Collection"
+UNSTABLE_PROPERTY = "ceterms:lifeCycleStatusType"
+
 TERM_STATUS_PROBE = {
     "@graph": [
         {
             "@id": "https://credentialengineregistry.org/resources/"
             "ce-11111111-1111-4111-8111-111111111111",
-            "@type": "ceterms:Credential",
-            # ceterms:audienceLevelType is declared vs:unstable.
-            "ceterms:audienceLevelType": {
+            # Both of these are declared vs:term_status vs:unstable in the
+            # vendored encoding; the class check and the property check are
+            # separate paths, so the probe uses one of each.
+            "@type": UNSTABLE_CLASS,
+            UNSTABLE_PROPERTY: {
                 "@type": "ceterms:CredentialAlignmentObject",
-                "ceterms:targetNode": "audLevel:BeginnerLevel",
+                "ceterms:targetNode": "lifeCycle:Active",
             },
         }
     ]
@@ -231,17 +247,38 @@ def test_the_two_contexts_do_not_disagree() -> None:
     )
 
 
-def test_nothing_in_the_gap_table_is_read_by_a_check_yet() -> None:
-    """The table's second column claims zero. Hold it to the source tree.
+#: Row label -> the key a check would have to name in its own source to read
+#: that declaration. Only consulted for a row whose "Read by a check today"
+#: column still claims zero; a row that has moved off zero is held to the
+#: behavioural probe below instead, which is the stronger instrument.
+SOURCE_KEYS: dict[str, str] = {
+    "Concepts declaring `skos:inScheme`": "skos:inScheme",
+    "Terms declaring `vs:term_status`": "vs:term_status",
+    'Context `{"@container": "@language"}` declarations': "@container",
+}
+
+
+def test_nothing_the_gap_table_still_claims_is_unread_is_read_by_a_check() -> None:
+    """A row still claiming zero, held to the source tree.
 
     Each declaration the plan counts is named by the key a check would have to
-    look up. When a phase lands and starts reading one, this test fails, which
-    is the reminder to move that row's "Read by a check today" to a real
-    number rather than leaving the plan claiming a gap it closed.
+    look up. While a row claims nothing reads it, no check module may name its
+    key; the assertion turns itself off for a row that has moved off zero, so
+    a landed phase does not have to delete a guard to go green.
+
+    This is deliberately the weaker of the two guards on this column. A check
+    can read every ``skos:inScheme`` declaration in the snapshot without the
+    string appearing anywhere in it -- check 7 does exactly that -- so a row
+    passing here proves little. ``test_the_read_column_says_what_the_validator
+    _actually_does`` is what actually holds the number, in both directions.
     """
     checks = ROOT / "src" / "ctdl_validate" / "checks"
     source = "\n".join(path.read_text(encoding="utf-8") for path in sorted(checks.glob("*.py")))
-    for key in ("skos:inScheme", "vs:term_status", "@container"):
+    read = _read_column()
+    for label, key in SOURCE_KEYS.items():
+        assert label in read, f"the plan's table has no row for {label}"
+        if read[label]:
+            continue
         assert key not in source, f"a check now reads {key}; update the expansion plan's gap table"
 
 
@@ -300,6 +337,23 @@ def test_the_read_column_says_what_the_validator_actually_does() -> None:
                 f"{marker}. Either the check went away or the row claims work that "
                 "is not there."
             )
+
+
+def test_the_term_status_probe_names_terms_the_snapshot_calls_unstable() -> None:
+    """A probe built on a term that is not unstable proves nothing about check 9.
+
+    The probes for the rows still claiming zero are only ever asserted *not*
+    to fire, so a payload that could never have fired looks identical to one
+    the validator correctly ignores. This is the direct check: the two terms
+    the probe is built from are the ones the vendored encoding declares
+    ``vs:unstable``, read from the index rather than trusted.
+    """
+    unstable = load_schema().unstable
+    for term in (UNSTABLE_CLASS, UNSTABLE_PROPERTY):
+        assert term in unstable, (
+            f"TERM_STATUS_PROBE is built from {term}, which the vendored encoding does "
+            "not declare vs:unstable. The probe would exercise nothing."
+        )
 
 
 def test_every_row_of_the_table_has_a_probe() -> None:

@@ -33,9 +33,10 @@ def _vocab_context_url(term: str) -> str:
 CTID_STRUCTURE = Rule(
     citation=(
         'About the CTID, section "CTID Structure": "Each CTID is made up of a standard '
-        'UUID v4 prefixed with ce-" for "a total of 39 characters (34 hexadecimal '
-        'characters and 5 hyphens)", in the form ce- plus 8-4-4-4-12 hexadecimal digits. '
-        "Example given: ce-e8a41a52-6ff6-48f0-9872-889c87b093b7."
+        'UUID v4 prefixed with ce-", and with the prefix "there are a total of 34 '
+        'hexadecimal characters and 5 hyphens for a total of 39 characters", in the '
+        "form ce- plus 8-4-4-4-12 hexadecimal digits. Example given: "
+        "ce-e8a41a52-6ff6-48f0-9872-889c87b093b7."
     ),
     url=ABOUT_CTID_URL,
     retrieved=RETRIEVED,

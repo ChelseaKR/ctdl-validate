@@ -22,10 +22,13 @@ name: Accessibility
 #   whose floor is 0.90; the page measured 1.00 on 2026-08-15 and the standard
 #   says a repository that clears a higher bar enforces the higher one.
 #
-# Both audit `?a11y-static`, which renders the page in its post-run state
-# without booting Pyodide: see the comment on that branch in web/index.html
-# for why the rendered report is the half worth auditing and why gating on the
-# live boot would make a merge depend on a CDN.
+# Both audit the page's two static states. `?a11y-static` renders the post-run
+# state, the findings report and the derived rule catalogue, and
+# `?a11y-static=loading` renders the startup, with its progress element and the
+# status line that has to account for a 5.6 MB download. Neither boots Pyodide:
+# see the comment on that branch in web/index.html for why the rendered states
+# are the half worth auditing and why gating on the live boot would make a
+# merge depend on a CDN.
 #
 # What is NOT gated here, said plainly rather than left to look covered:
 # A11Y-03 (pa11y-ci) is not wired, because pa11y 8 bundles axe-core 4.8, which
@@ -36,6 +39,15 @@ name: Accessibility
 # here. A11Y-06 target-size and A11Y-08 reduced motion are covered by axe and
 # by the page having no animation at all; A11Y-07's keyboard walkthrough is a
 # human gate, recorded in docs/RESPONSIBLE-TECH-AUDITS.md.
+#
+# What web/a11y/audit.mjs checks beyond axe, and why each is written down
+# rather than trusted: that the report rendered at all four severities, that
+# the rule catalogue did, that every control the post-run state adds is on the
+# page and visible, and that the startup state shows a named progress element,
+# a non-empty status line, and a Validate button that says it is not ready yet.
+# Every one of those is there because UI a gate cannot see is UI a gate does
+# not audit, and this page grew a rule catalogue, a share field and a startup
+# indicator in one change.
 
 on:
   pull_request:
@@ -93,28 +105,50 @@ jobs:
             exit 1
           }
 
-      - name: axe-core and reflow, light and dark
+      # Two states, because the page has two that a visitor meets and only one
+      # of them used to be scanned. `?a11y-static` is the post-run state: the
+      # findings report and the derived rule catalogue. `?a11y-static=loading`
+      # is the startup, which docs/RESPONSIBLE-TECH-AUDITS.md section H
+      # recorded as unscanned residual risk while the page spends tens of
+      # seconds in it. Neither boots Pyodide, so neither fetches anything.
+      - name: axe-core and reflow, light and dark, in both static states
         env:
           CHROME_PATH: /usr/bin/google-chrome
-        run: node web/a11y/audit.mjs "http://127.0.0.1:8931/index.html?a11y-static"
-
-      - name: Lighthouse accessibility
         run: |
+          set -euo pipefail
+          for state in "?a11y-static" "?a11y-static=loading"; do
+            echo "::group::$state"
+            node web/a11y/audit.mjs "http://127.0.0.1:8931/index.html$state"
+            echo "::endgroup::"
+          done
+
+      - name: Lighthouse accessibility, in both static states
+        run: |
+          set -euo pipefail
           npx --yes lighthouse@12 "http://127.0.0.1:8931/index.html?a11y-static" \
-            --output=json --output-path=/tmp/lh.json --quiet \
+            --output=json --output-path=/tmp/lh-report.json --quiet \
+            --chrome-flags="--headless" --only-categories=accessibility
+          npx --yes lighthouse@12 "http://127.0.0.1:8931/index.html?a11y-static=loading" \
+            --output=json --output-path=/tmp/lh-loading.json --quiet \
             --chrome-flags="--headless" --only-categories=accessibility
 
       - name: Require 1.00 on accessibility
         run: |
           python3 - <<'PY'
           import json, sys
-          report = json.load(open("/tmp/lh.json"))
-          category = report["categories"].get("accessibility")
-          # A missing category is a failed audit, not a pass. Defaulting it to
-          # 1.0 would turn a broken run into a green check.
-          score = None if category is None else category.get("score")
-          print(f"lighthouse accessibility: {score}")
-          if score != 1:
-              print("::error title=Accessibility score::expected 1.00, got %s" % score)
-              sys.exit(1)
+          failed = False
+          for state, path in (
+              ("post-run", "/tmp/lh-report.json"),
+              ("startup", "/tmp/lh-loading.json"),
+          ):
+              report = json.load(open(path))
+              category = report["categories"].get("accessibility")
+              # A missing category is a failed audit, not a pass. Defaulting it
+              # to 1.0 would turn a broken run into a green check.
+              score = None if category is None else category.get("score")
+              print(f"lighthouse accessibility ({state}): {score}")
+              if score != 1:
+                  print(f"::error title=Accessibility score::{state}: expected 1.00, got {score}")
+                  failed = True
+          sys.exit(1 if failed else 0)
           PY
