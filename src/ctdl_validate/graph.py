@@ -75,6 +75,15 @@ class Graph:
         to the path only covers a nested object with no ``@id`` at all (a
         genuinely anonymous/blank node), or one whose ``@id`` this payload
         never declares elsewhere.
+
+        Since ADR-0005 the identity preference is belt and braces rather than
+        the thing that makes this work: ``_node_for`` merges a repeated
+        identifier into the node that already holds it and registers the new
+        path against that merged node, so the path fallback now reaches the
+        same object in every case. Kept because it is the direct statement of
+        the rule, and pinned by
+        ``test_an_embedded_copy_and_its_top_level_declaration_are_one_node``,
+        which fails if the two ever stop agreeing.
         """
         if isinstance(value, NestedRef):
             if value.target_id is not None and value.target_id in self.by_id:

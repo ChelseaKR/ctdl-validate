@@ -105,6 +105,26 @@ and this project adheres to
 
 ### Fixed
 
+- The half of the check 5 fix in [#35](https://github.com/ChelseaKR/ctdl-validate/pull/35)
+  that no test held. `_asserts_back` accepts an inverse written as a nested
+  object because of the identifier the object carries -- and replacing that
+  comparison with "any nested object will do" left the entire suite green.
+  Both directions of the same defect were therefore live: the false positive
+  [#32](https://github.com/ChelseaKR/ctdl-validate/issues/32) reported was
+  fixed, and the false negative that the obvious over-correction produces was
+  ungated. Two cases now pin it -- a nested back-reference naming a different
+  entity, and one carrying no `@id` at all -- and both fail against that
+  mutation and pass against the code as written. Behaviour is unchanged; what
+  changed is that the behaviour can no longer be removed silently.
+
+- `Graph.resolve`'s docstring described its identity preference as what keeps
+  a reference reached through an embedded copy off a thinner duplicate node.
+  Since ADR-0005 that is no longer true: the builder merges the declarations
+  and registers the nested path against the merged node, so the path fallback
+  reaches the same object. The docstring now says so, and
+  `test_an_embedded_copy_and_its_top_level_declaration_are_one_node` fails if
+  the two ever stop agreeing.
+
 - The `CTID_STRUCTURE` citation and the `ctid.py` module docstring put
   quotation marks around words the cited page does not say in that order.
   Both quoted "a total of 39 characters (34 hexadecimal characters and 5
