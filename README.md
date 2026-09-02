@@ -42,7 +42,9 @@ in [Pointed at the Registry](#pointed-at-the-registry) and under
 [chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
 runs the validator in your browser via WebAssembly. Nothing is uploaded, which
 matters here: payloads usually need checking while they are still unpublished.
-See [`web/README.md`](web/README.md) for how it is built.
+The page also lists every rule this build can report, with a payload behind
+each one, derived by running the validator rather than written down beside it.
+See [`web/README.md`](web/README.md) for how it is built and gated.
 
 ```
 $ ctdl-validate my-framework.json
@@ -408,6 +410,14 @@ different fix and re-running it would erase that.
 Every finding carries its rule citation, source URL, and retrieval date in
 the output itself, in both text and JSON formats.
 
+This table is not the only place the rule set is written down, and it is the
+only place it is written down *by hand*. `tests/test_every_rule_fires.py`
+fails if a code here is not emitted by the source or a code the source emits
+is not here, and the
+[playground](https://chelseakr.github.io/ctdl-validate/) shows the same set
+derived at run time: one document per code, validated in the browser, each row
+being that run's own output.
+
 ## Methodology
 
 ### Severities, honestly defined
@@ -597,13 +607,13 @@ apply; the enforcement ledger with targets and owners is
 | Security & Supply-Chain | Applies | [SECURITY.md](SECURITY.md); SHA-pinned Actions; Semgrep and full-history TruffleHog in CI; pip-audit in `make verify`; Dependabot; gitleaks in pre-commit. |
 | CI/CD | Applies | `ci.yml` runs the same `make verify` gate as local development; trusted-main release workflow (signed tag, re-verified at the tagged commit) wired ahead of the first tag. |
 | Observability | N/A (single-shot CLI; no service, no telemetry, nothing reported anywhere; the report on stdout is the entire observable surface, and `extract` puts its whole transport story in that report) | Exit-code contract and JSON output are tested in `tests/test_cli.py` and `tests/test_extract_cli.py`. |
-| Accessibility | Applies — the browser playground is a published human-facing page, so it is in scope on its own; the CLI's own surface is plain-text terminal output plus `--format json`. | [`.github/workflows/accessibility.yml`](.github/workflows/accessibility.yml) runs axe-core against the page in both colour schemes at `wcag2a,wcag2aa,wcag22aa` plus axe's `best-practice` rules (heading order, one `<main>` and one `<h1>`, content inside landmarks), checks reflow at 320 CSS px, and Lighthouse must score 1.00. Measured 2026-08-21: 0 violations and 39 rules passed in each scheme; Lighthouse 1.00 on the published page (2026-08-15). What is not gated, and why, is written in that workflow's header. |
+| Accessibility | Applies — the browser playground is a published human-facing page, so it is in scope on its own; the CLI's own surface is plain-text terminal output plus `--format json`. | [`.github/workflows/accessibility.yml`](.github/workflows/accessibility.yml) runs axe-core against the page in both colour schemes at `wcag2a,wcag2aa,wcag22aa` plus axe's `best-practice` rules (heading order, one `<main>` and one `<h1>`, content inside landmarks), checks reflow at 320 CSS px, and Lighthouse must score 1.00. Since 2026-08-29 it audits two states: the post-run report and rule catalogue, and the startup. Measured 2026-08-29: 0 violations, 42 rules passed in the post-run state and 39 in the startup state, in each scheme; Lighthouse 1.00 in each. What is not gated, and why, is written in that workflow's header. |
 | Internationalization | N/A (findings quote English-language spec prose verbatim; see [docs/I18N.md](docs/I18N.md) for the reason and the flip-to-applies trigger) | Multilingual payload *data* validates identically; the declaration covers operator-facing strings only. |
 | AI Evaluation | N/A (deterministic rule engine and a deterministic extractor; no model, prompt, retrieval, embedding, or LLM call anywhere, including in `extract`; AI-assisted authoring is disclosed under [Disclosure](#disclosure)) | Zero runtime dependencies makes the no-model claim mechanically checkable; the extractor's refusals are tested in `tests/test_extract_break_the_gate.py`. |
 | Documentation | Applies | This README, [CHANGELOG.md](CHANGELOG.md), ADRs in [docs/adr/](docs/adr/), [CITATION.cff](CITATION.cff), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md). |
 | Quality & Metrics | Applies | [docs/ROADMAP.md](docs/ROADMAP.md) names every gate as AUTO, REVIEW, or a reasoned exception; nothing is silently skipped. |
 | Release & Versioning | Applies | SemVer; `CHANGELOG.md` kept current; trusted-main signed-tag release workflow. Three signed tags (`v0.1.0` 2026-08-08; `v0.2.0` and `v0.2.1` 2026-08-16), each a GitHub Release with the wheel and sdist attached and on PyPI as `ctdl-validate`. `tests/test_release_state.py` pins this README, `CITATION.cff`, and the `uses:` examples to `pyproject.toml`'s version and to the CHANGELOG's dated heading for it. |
-| Performance | Applies — and one control is **not met**. The playground downloads a 5.6 MB WebAssembly Python runtime, because the alternative to running the validator in the visitor's browser is uploading unpublished credential data to a server. | Measured against the published page 2026-08-15: Lighthouse performance **0.42** against a budget of >= 0.90, script transfer **248,147 B** against a budget of < 204,800 B, LCP 29.2 s, accessibility 1.00, CLS 0. `PERF-02` cannot be met without giving up local execution; the trade is stated in [docs/ROADMAP.md](docs/ROADMAP.md) rather than waived quietly, and no advisory-mode gate is wired for a budget that is not met. |
+| Performance | Applies — the score control is now met; the **byte budget is not**. The playground downloads a 5.6 MB WebAssembly Python runtime, because the alternative to running the validator in the visitor's browser is uploading unpublished credential data to a server. | Measured 2026-08-29, one machine, minutes apart: the published page scored performance **0.70** with **8,020 ms** of total blocking time, because the runtime booted on the main thread; moving it to a worker gives **1.00** and **0 ms**. The byte control is unchanged and still not met: **248,286 B** of JavaScript against a budget of < 204,800 B, counted by hand from the request list because Lighthouse's "script" resource type now excludes what a worker requested, and reporting the smaller figure would be a lie of classification. The trade is stated in [docs/ROADMAP.md](docs/ROADMAP.md) rather than waived quietly, and no advisory-mode gate is wired for a budget that is not met. |
 | AI Development Measurement | Applies — this tool was built with AI assistance and reviewed by a human, disclosed under [Disclosure](#disclosure). What is measured is delivery outcomes, not tool-usage counters: sessions, tokens, and percent-AI-generated are not tracked here, and would not gate anything if they were. | [docs/ROADMAP.md](docs/ROADMAP.md) § Delivery health carries the DORA signals with an explicit note that a single release supports a fact, not a rate; the rows that cannot be computed yet say so instead of carrying invented zeroes. |
 | Incident Response | Applies — private vulnerability reporting with a 72-hour acknowledgement target, and a definition of what counts as a vulnerability here that names a false clean report as a first-class integrity bug rather than a cosmetic one. | [SECURITY.md](SECURITY.md). No incident has been recorded for this repo, so there is no `docs/incidents/` directory; a real one would ship a dated postmortem alongside the fix. |
 | Data Governance | Applies — the validator reads a local file and writes a report; it stores nothing, sends nothing, and has no telemetry. `extract` is the one subcommand that opens a network connection, and it fetches only the page it was given after checking `robots.txt` at every hop. | Vendored schema snapshots carry their retrieval date and SHA-256 in `src/ctdl_validate/vendor/SOURCES.md`, and `tests/test_vendor_integrity.py` fails if one is altered. Payload data stays on the operator's machine; the playground runs the validator in the visitor's browser for the same reason. |
