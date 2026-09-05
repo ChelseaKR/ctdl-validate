@@ -92,7 +92,9 @@ CPython. On the main thread that is eight seconds in which the page cannot
 scroll, cannot take a keystroke, and cannot repaint the status line it just
 changed; Lighthouse measured 8,020 ms of total blocking time on the published
 page and scored performance 0.70. It now boots on a worker: 0 ms blocking,
-1.00.
+1.00. `.github/workflows/performance.yml` holds that: it scores this page with
+the boot included and fails below 0.90, and forcing the boot back onto the main
+thread was watched scoring 0.70 against it.
 
 The download still starts on load. Deferring it behind the Validate button
 would clear the score too, and would replace a wait you were told about with a
