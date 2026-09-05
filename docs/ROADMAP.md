@@ -109,10 +109,11 @@ file published before.
   counted by hand on 2026-08-29. That is the first independent confirmation
   that the hand count was right, and the mechanism that will show a slide
   rather than leave one to be noticed.
-- The numbers above are local measurements against a local server. The
-  published page has to be re-measured after this deploys; the blocking-time
-  figure should carry over, since it is main-thread work rather than latency,
-  and the paint figures will not.
+- The numbers above are local measurements against a local server, except the
+  runner row, which is the gate's own first run. The published page still has
+  to be re-measured after this deploys; the blocking-time figure should carry
+  over, since it is main-thread work rather than latency, and the paint figures
+  will not.
 
 ### The score is gated now, and the threshold is measured rather than assumed
 
@@ -124,6 +125,7 @@ by measurement rather than by argument, on 2026-09-05, one machine, one Chrome:
 |---|---|---|
 | Unmodified, five runs | 1.00 every time | 0 ms every time |
 | Boot forced back onto the main thread | **0.70** | **10,210 ms** |
+| Unmodified, on the GitHub runner | 1.00 | 20 ms |
 
 - **The gate catches the regression it exists for.** The second row is one edit
   (`if (false && window.Worker && ...)`) and nothing else, and it is the
@@ -138,10 +140,13 @@ by measurement rather than by argument, on 2026-09-05, one machine, one Chrome:
   same every time. Performance is a weighted function of continuous timings
   measured on a shared runner, so a 1.00 floor means any single audit slipping
   out of its perfect band fails the merge — and on a page that compiles 10 MB
-  of WebAssembly, blocking time is exactly the audit that will. A sixth run,
-  against a build of this page differing only by four `<meta>` tags in the head,
-  scored 0.99 on 105 ms of blocking time. A tenth of a second, on an idle
-  ten-core laptop; runners are neither.
+  of WebAssembly, blocking time is exactly the audit that will. Two figures say
+  so rather than one assertion: a sixth local run, against a build of this page
+  differing only by four `<meta>` tags in the head, scored 0.99 on 105 ms of
+  blocking time; and the third row above is the gate's own first run on a
+  GitHub runner, which read 20 ms where an idle ten-core laptop read 0 ms
+  five times in a row. Both scored 1.00. Neither would have been safe under a
+  ceiling tight enough to be worth setting.
 - **The timing audits are printed, not gated,** for the same reason and one
   more. Blocking time read 0 ms five times and 105 ms once, against a
   regression mode of 10,210 ms: a tight ceiling would fail for reasons that
