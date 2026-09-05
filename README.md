@@ -7,6 +7,11 @@ Point it at the document you are about to publish; it checks the things a
 publisher can get wrong silently: identifier kinds, reference targets, and
 class pairings.
 
+**[Try it in your browser](https://chelseakr.github.io/ctdl-validate/)**, with
+nothing installed: the validator runs on your own machine via WebAssembly, so an
+unpublished payload stays in the tab. To run it on the command line instead,
+`pip install ctdl-validate`. Both are described in full below.
+
 No network calls at validation time. No model calls, ever. Same input, same
 output, byte for byte. Every finding cites the published rule it came from.
 
@@ -85,9 +90,18 @@ repository; nothing is copied from any upstream repository or issue tracker.
 Python 3.12+, no runtime dependencies.
 
 ```
-pip install .
+pip install ctdl-validate
 ctdl-validate <file.json>
 ctdl-validate <file.json> --format json
+```
+
+That installs the release on PyPI. To run the code in this checkout instead —
+which is what you want when `main` is ahead of the last tag, and what
+`CONTRIBUTING.md` assumes — install it from the working tree:
+
+```
+uv sync --locked        # the pinned development environment
+pip install -e .        # or, without uv, an editable install
 ```
 
 Input can be a JSON-LD object with `@graph`, a single entity object, or an

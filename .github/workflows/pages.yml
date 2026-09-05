@@ -70,6 +70,10 @@ jobs:
           version="$(uv version --short 2>/dev/null || python -c 'import tomllib;print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
           mkdir -p site
           cp web/index.html site/
+          # The card the head's og:image names. It is published from the same
+          # origin as the page, so a link preview that cannot reach it is a
+          # missing file here rather than a third party being down.
+          cp web/social-card.png site/
           cp "${wheels[0]}" site/
           printf '{"wheel": "%s", "version": "%s"}\n' "$wheel" "$version" > site/wheel.json
           echo "publishing $wheel (version $version)"
@@ -91,6 +95,14 @@ jobs:
           }
           grep -q 'fetch("wheel.json")' site/index.html || {
             echo "::error::index.html no longer fetches wheel.json on the main-thread fallback"; exit 1;
+          }
+          # Same failure mode, one head tag over: og:image naming a file the
+          # artifact does not carry is a broken preview everywhere the page is
+          # shared, and nothing about the page itself looks wrong.
+          card="$(grep -o 'https://chelseakr\.github\.io/ctdl-validate/[A-Za-z0-9._-]*\.png' site/index.html | head -n 1)"
+          test -n "$card" || { echo "::error::index.html declares no og:image"; exit 1; }
+          test -f "site/$(basename "$card")" || {
+            echo "::error::og:image names $card but $(basename "$card") is not in site/"; exit 1;
           }
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

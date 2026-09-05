@@ -49,6 +49,13 @@ from tests.test_every_rule_fires import codes_in_source
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "web" / "index.html"
 
+#: Where GitHub Pages serves this page, and the card published beside it.
+#: Written out rather than parsed back out of the page, for the same reason the
+#: allowed origins below are: an expectation read out of the thing under test
+#: moves with the mistake and stays green.
+PUBLISHED_AT = "https://chelseakr.github.io/ctdl-validate/"
+CARD_FILENAME = "social-card.png"
+
 #: The two network origins the page is allowed to name, and the reason each is
 #: there. Written out rather than parsed back out of the page, which is the
 #: whole point: an expectation read out of the thing under test moves with the
@@ -74,6 +81,20 @@ FORBIDDEN_APIS = (
 
 def page_source() -> str:
     return PAGE.read_text(encoding="utf-8")
+
+
+def png_dimensions(data: bytes) -> tuple[int, int]:
+    """Width and height out of a PNG's IHDR, so no image library is needed to read them.
+
+    The signature is eight bytes, then a length and the chunk type ``IHDR``,
+    then width and height as big-endian 32-bit integers.
+    """
+    assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
+    assert data[12:16] == b"IHDR", "the first chunk of a PNG is IHDR"
+    return (
+        int.from_bytes(data[16:20], "big"),
+        int.from_bytes(data[20:24], "big"),
+    )
 
 
 def script_block(element_id: str) -> str:
@@ -279,4 +300,63 @@ def test_the_runtime_is_pinned_to_a_hash_the_page_checks_itself() -> None:
     assert "tag.integrity = PYODIDE_SRI" in html, (
         "the fallback path loads the runtime with a <script> tag and has to pin it with "
         "the integrity attribute"
+    )
+
+
+# -- the head names a card that is actually published --------------------------
+
+
+def head_meta(name: str) -> str | None:
+    """The ``content`` of one meta tag in the page's head, by property or name."""
+    match = re.search(
+        rf'(?:property|name)="{re.escape(name)}"\s*\n?\s*content="([^"]*)"', page_source()
+    )
+    if match is None:
+        # The attribute order is not fixed by anything, so try the other one.
+        match = re.search(
+            rf'content="([^"]*)"\s*\n?\s*(?:property|name)="{re.escape(name)}"', page_source()
+        )
+    return match.group(1) if match else None
+
+
+def test_the_head_declares_a_card_and_the_card_is_in_the_repository() -> None:
+    """og:image naming a file nothing publishes is a blank rectangle wherever this is shared.
+
+    ``web/a11y/audit.mjs`` checks the same tags in a browser and
+    ``.github/workflows/pages.yml`` checks the file is in the artifact it
+    uploads, but both need a runner. This is the one that runs in ``make
+    verify``, so a card deleted in an editor fails before it is pushed.
+    """
+    for tag in ("og:image", "twitter:image"):
+        value = head_meta(tag)
+        assert value == f"{PUBLISHED_AT}{CARD_FILENAME}", (
+            f"{tag} is {value!r}. It has to be the absolute address of the card this "
+            f"repository publishes: a crawler reads this head from an origin that is not "
+            f"this one, so a relative path resolves against the wrong site or nothing."
+        )
+    assert (ROOT / "web" / CARD_FILENAME).is_file(), (
+        f"the head names web/{CARD_FILENAME} and the file is not there"
+    )
+
+
+def test_the_card_is_the_size_the_head_says_it_is() -> None:
+    """Declared dimensions let a crawler lay the preview out before it fetches the image."""
+    width, height = png_dimensions((ROOT / "web" / CARD_FILENAME).read_bytes())
+    assert (width, height) == (1200, 630), (
+        f"web/{CARD_FILENAME} is {width}x{height}. 1200x630 is the size the head declares "
+        f"and the size every preview crops to."
+    )
+    assert head_meta("og:image:width") == str(width), "og:image:width disagrees with the file"
+    assert head_meta("og:image:height") == str(height), "og:image:height disagrees with the file"
+
+
+def test_the_card_is_described_for_a_reader_who_cannot_see_it() -> None:
+    alt = head_meta("og:image:alt")
+    assert alt and alt.strip(), (
+        "og:image:alt is absent. In a preview the card carries the page's only words, and "
+        "a reader who cannot see it gets none of them."
+    )
+    assert head_meta("twitter:card") == "summary_large_image", (
+        "the card is 1200x630, which is the large-image layout; declaring 'summary' crops "
+        "it to a square thumbnail"
     )

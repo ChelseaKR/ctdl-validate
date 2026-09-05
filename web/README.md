@@ -117,6 +117,15 @@ it next to `index.html`, and writes `wheel.json` naming the file. The page
 fetches the manifest first, so bumping the version in `pyproject.toml` changes
 the wheel's filename and the page follows it with no edit here.
 
+`social-card.png` is copied alongside them. It is the 1200x630 image the head's
+`og:image` names, and it is served from this origin rather than linked from
+somewhere else so that a link preview breaks only when this deploy breaks. The
+workflow fails if the head names a card the artifact does not carry, and
+`tests/test_playground_catalogue.py` fails, without a runner, if the head and
+the file disagree about the address, the dimensions or the alt text. The card
+says the title and the description already in the head and nothing more: no
+rule count, no conformance claim, nothing about Credential Engine.
+
 Because the wheel is served from the same origin, the page's
 Content-Security-Policy allows exactly two network origins: `cdn.jsdelivr.net`
 for the Pyodide runtime, and `'self'` for the wheel. There is no PyPI call at
@@ -132,7 +141,7 @@ One-time repository setup: **Settings → Pages → Source: "GitHub Actions"**.
 
 ```sh
 uv build --wheel --out-dir dist
-mkdir -p site && cp web/index.html site/ && cp dist/*.whl site/
+mkdir -p site && cp web/index.html web/social-card.png site/ && cp dist/*.whl site/
 printf '{"wheel": "%s", "version": "%s"}\n' "$(basename dist/*.whl)" "$(uv version --short)" > site/wheel.json
 python -m http.server -d site 8899
 ```

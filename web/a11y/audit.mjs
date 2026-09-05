@@ -111,6 +111,7 @@ const REQUIRED_IN_LOADING_STATE = ["boot-progress", "status", "run"];
 // expectation read out of the thing under test moves with the mistake and
 // stays green.
 const PUBLISHED_AT = "https://chelseakr.github.io/ctdl-validate/";
+const CARD_AT = "https://chelseakr.github.io/ctdl-validate/social-card.png";
 
 // Words that would make the description claim something the page does not.
 // This is a validator for a published specification it does not speak for, so
@@ -145,6 +146,11 @@ async function requireTheHeadNamesThisPage(page) {
       ogType: meta('meta[property="og:type"]'),
       ogSiteName: meta('meta[property="og:site_name"]'),
       twitterCard: meta('meta[name="twitter:card"]'),
+      ogImage: meta('meta[property="og:image"]'),
+      ogImageAlt: meta('meta[property="og:image:alt"]'),
+      ogImageWidth: meta('meta[property="og:image:width"]'),
+      ogImageHeight: meta('meta[property="og:image:height"]'),
+      twitterImage: meta('meta[name="twitter:image"]'),
       // Root-relative only. A protocol-relative //host/x is a different thing
       // and is not this mistake.
       rooted: [...document.querySelectorAll("[href], [src]")]
@@ -178,8 +184,33 @@ async function requireTheHeadNamesThisPage(page) {
   }
   if (head.ogType !== "website") fail(`og:type is ${JSON.stringify(head.ogType)}, expected "website"`);
   if (!head.ogSiteName) fail("og:site_name is absent");
-  if (head.twitterCard !== "summary") {
-    fail(`twitter:card is ${JSON.stringify(head.twitterCard)}, expected "summary"`);
+  if (head.twitterCard !== "summary_large_image") {
+    fail(`twitter:card is ${JSON.stringify(head.twitterCard)}, expected "summary_large_image"`);
+  }
+  // A card declared large with no image is worse than no card: the platform
+  // renders a blank rectangle where the page's own words would have been.
+  for (const [name, value] of [
+    ["og:image", head.ogImage],
+    ["twitter:image", head.twitterImage],
+  ]) {
+    if (value !== CARD_AT) {
+      fail(
+        `${name} is ${value === null ? "absent" : JSON.stringify(value)}; expected ` +
+          `${JSON.stringify(CARD_AT)}. The card is published beside this page by ` +
+          `pages.yml, and an address without /ctdl-validate/ names another project ` +
+          `or nothing.`,
+      );
+    }
+  }
+  if (!head.ogImageAlt || !head.ogImageAlt.trim()) {
+    fail("og:image:alt is absent: the card carries the page's only words in a preview, and a reader who cannot see it gets none of them");
+  }
+  if (head.ogImageWidth !== "1200" || head.ogImageHeight !== "630") {
+    fail(
+      `og:image:width/height are ${JSON.stringify(head.ogImageWidth)}x` +
+        `${JSON.stringify(head.ogImageHeight)}, expected 1200x630. They are what lets a ` +
+        `crawler lay the card out before it has fetched it.`,
+    );
   }
   // The card and the page are two statements about one thing, so they are held
   // equal rather than each checked for being non-empty.
