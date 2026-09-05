@@ -36,8 +36,8 @@ README's "Scope, honestly" section.
 | AI evaluation / GenAI telemetry | N/A: deterministic rule engine and deterministic extractor; no model, prompt, retrieval, embedding, or AI ranking path in either command | Dependency and import scan (zero runtime deps) | N/A | Maintainer |
 | Accessibility of the playground | 0 axe-core violations of critical/serious/moderate at `wcag2a,wcag2aa,wcag22aa` and `best-practice` (heading order, landmarks, duplicate ids), in both colour schemes and in both static states; no horizontal scroll at 320 CSS px; Lighthouse accessibility 1.00 in each | `.github/workflows/accessibility.yml` (axe-core 4.13 via `web/a11y/audit.mjs`, plus Lighthouse) against `web/index.html?a11y-static` and `?a11y-static=loading` | AUTO | Maintainer |
 | Keyboard and screen-reader walkthrough of the playground | Every primary task completable by keyboard; the Pyodide startup state is announced | Human walkthrough, recorded in `docs/RESPONSIBLE-TECH-AUDITS.md` section H. Still open. The startup state is now announced in four stages instead of once, carries a `<progress>` element with an accessible name, and the Validate button stays focusable and says it is not ready rather than being `disabled` and therefore untabbable; a machine can check that those exist and cannot judge whether they are an adequate account of a thirty-second wait | REVIEW | Maintainer |
-| Playground performance score | Lighthouse performance >= 0.90 against the page a visitor actually gets, Pyodide boot included. Measured 1.00 on 2026-08-29 (up from 0.70), and 0.99 / 1.00 on two runs of the gate itself on 2026-09-05 | `.github/workflows/performance.yml` builds the site the way `pages.yml` does, serves it, and runs Lighthouse against `index.html` with no `?a11y-static`, because the boot is the whole subject and a static page would score 1.00 whatever the boot does | AUTO | Maintainer |
-| Playground JavaScript byte budget | N/A: 248,289 B of JavaScript against a < 204,800 B budget, and the overage is the product rather than a defect. The page runs the validator in the visitor's browser through Pyodide, a 5.6 MB WebAssembly Python runtime, because the alternative to running locally is uploading unpublished credential data to a server. No tuning brings that inside the budget and none has been attempted; per `PERFORMANCE-STANDARD` section 3 this is declared rather than run with a threshold nobody intends to meet | Not gated, deliberately. `.github/workflows/performance.yml` prints the figure on every run, counted across every resource type rather than Lighthouse's "script" type alone, so the declared overage stays visible and a further slide is legible in the log | N/A | Maintainer |
+| Playground performance score | Lighthouse performance >= 0.90 against the page a visitor actually gets, Pyodide boot included. Measured 1.00 on 2026-08-29 (up from 0.70), and 1.00 with 0 ms of blocking time on five runs of the gate itself on 2026-09-05 | `.github/workflows/performance.yml` builds the site the way `pages.yml` does, serves it, and runs Lighthouse against `index.html` with no `?a11y-static`, because the boot is the whole subject and a static page would score 1.00 whatever the boot does | AUTO | Maintainer |
+| Playground JavaScript byte budget | N/A: 248,285 B of JavaScript against a < 204,800 B budget, and the overage is the product rather than a defect. The page runs the validator in the visitor's browser through Pyodide, a 5.6 MB WebAssembly Python runtime, because the alternative to running locally is uploading unpublished credential data to a server. No tuning brings that inside the budget and none has been attempted; per `PERFORMANCE-STANDARD` section 3 this is declared rather than run with a threshold nobody intends to meet | Not gated, deliberately. `.github/workflows/performance.yml` prints the figure on every run, counted across every resource type rather than Lighthouse's "script" type alone, so the declared overage stays visible and a further slide is legible in the log | N/A | Maintainer |
 
 ### Why the byte budget is not met, and what the score was actually failing on
 
@@ -105,9 +105,10 @@ file published before.
 - The figure is not left to a hand count either. `performance.yml` prints it
   on every run, summed over every resource type rather than Lighthouse's
   "script" type alone. Run against the assembled site on 2026-09-05 it printed
-  **248,289 B**, three bytes from the 248,286 B counted by hand on 2026-08-29,
-  which is the first independent confirmation that the hand count was right
-  and the mechanism that will show a slide rather than leave one to be noticed.
+  **248,285 B** and **248,277 B** on two runs, within nine bytes of the 248,286 B
+  counted by hand on 2026-08-29. That is the first independent confirmation
+  that the hand count was right, and the mechanism that will show a slide
+  rather than leave one to be noticed.
 - The numbers above are local measurements against a local server. The
   published page has to be re-measured after this deploys; the blocking-time
   figure should carry over, since it is main-thread work rather than latency,
@@ -121,23 +122,32 @@ by measurement rather than by argument, on 2026-09-05, one machine, one Chrome:
 
 | Build | Performance | Total blocking time |
 |---|---|---|
-| Unmodified, run 1 | 0.99 | 105.5 ms |
-| Unmodified, run 2 | 1.00 | 5.5 ms |
-| Boot forced back onto the main thread | **0.70** | **11,659 ms** |
+| Unmodified, five runs | 1.00 every time | 0 ms every time |
+| Boot forced back onto the main thread | **0.70** | **10,210 ms** |
 
-- **The gate catches the regression it exists for.** The third row is one edit
+- **The gate catches the regression it exists for.** The second row is one edit
   (`if (false && window.Worker && ...)`) and nothing else, and it is the
-  failure this whole section is about. It fails a 0.90 floor by a wide margin.
-- **The threshold stays at the standard's 0.90 rather than the observed 1.00.**
-  The accessibility ledger row enforces the higher bar it clears, on the
-  principle that a repository clearing a higher bar should hold it. That
-  principle does not transfer here: the two unmodified runs above disagree with
-  each other, so a 1.00 floor would fail on noise.
-- **The timing audits are printed, not gated,** for the same reason. Blocking
-  time varies by a factor of twenty between two clean runs and by a factor of
-  a hundred when the defect returns; the category score already collapses when
-  blocking time does, so gating the score and reporting the components is the
-  split that fails for real reasons only.
+  failure this whole section is about. It fails a 0.90 floor by a wide margin,
+  and it was watched failing before the gate was trusted to pass.
+- **The threshold stays at the standard's 0.90 rather than the 1.00 those five
+  runs clear.** The accessibility row enforces the higher bar it clears, on the
+  principle that a repository clearing a higher bar should hold it, and that
+  principle does not transfer — not because this page is worse, but because the
+  two scores are different kinds of number. Lighthouse's accessibility score is
+  a discrete rule set: 1.00 means no rule failed, and the same page scores the
+  same every time. Performance is a weighted function of continuous timings
+  measured on a shared runner, so a 1.00 floor means any single audit slipping
+  out of its perfect band fails the merge — and on a page that compiles 10 MB
+  of WebAssembly, blocking time is exactly the audit that will. A sixth run,
+  against a build of this page differing only by four `<meta>` tags in the head,
+  scored 0.99 on 105 ms of blocking time. A tenth of a second, on an idle
+  ten-core laptop; runners are neither.
+- **The timing audits are printed, not gated,** for the same reason and one
+  more. Blocking time read 0 ms five times and 105 ms once, against a
+  regression mode of 10,210 ms: a tight ceiling would fail for reasons that
+  have nothing to do with the page, and a loose one would say nothing the score
+  does not, since the score collapses to 0.70 exactly when blocking time blows
+  up.
 - **This job depends on cdn.jsdelivr.net, and `accessibility.yml` deliberately
   does not.** The static states exist so that an accessibility merge does not
   wait on a CDN, and the boot adds no markup a scanner has not seen. For

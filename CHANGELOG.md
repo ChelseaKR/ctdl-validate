@@ -66,13 +66,20 @@ and this project adheres to
   boots nothing would score 1.00 however the boot behaves -- and fails below
   0.90.
 
-  The threshold was measured rather than assumed. Two unmodified runs on
-  2026-09-05 scored 0.99 and 1.00; forcing the boot back onto the main thread
-  with a single edit scored **0.70 with 11,659 ms of blocking time**, so the
-  gate was watched failing for the reason it exists before it was trusted to
-  pass. The floor stays at the standard's 0.90 rather than the observed 1.00
-  because the two clean runs disagree with each other, and the timing audits
-  are printed rather than gated for the same reason.
+  The threshold was measured rather than assumed. Five unmodified runs on
+  2026-09-05 scored 1.00 with 0 ms of blocking time; forcing the boot back onto
+  the main thread with a single edit scored **0.70 with 10,210 ms**, so the gate
+  was watched failing for the reason it exists before it was trusted to pass.
+
+  The floor stays at the standard's 0.90 rather than the 1.00 those runs clear,
+  which is the one place this departs from the accessibility gate. That one
+  enforces the 1.00 it measures because Lighthouse's accessibility score is a
+  discrete rule set — 1.00 means no rule failed, and the same page scores the
+  same every time. Performance is a weighted function of continuous timings on
+  a shared runner, so a 1.00 floor would fail the merge on any audit slipping
+  out of its perfect band, and on a page compiling 10 MB of WebAssembly that
+  audit is blocking time. The timing audits are printed rather than gated for
+  the same reason.
 
   This job depends on cdn.jsdelivr.net, where `accessibility.yml` deliberately
   does not, and pays for it openly: a preflight reaches for the runtime first

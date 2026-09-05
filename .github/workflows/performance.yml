@@ -13,9 +13,23 @@ name: Performance
 # the portfolio performance standard sets. That threshold is not a guess about
 # what would catch the regression, it is measured. Forcing the boot back onto
 # the main thread (`if (false && window.Worker && ...)`, one edit, everything
-# else identical) scored 0.70 with 11,659 ms of blocking time on the same
-# machine and the same Chrome that scored 0.99 and 1.00 unmodified. A 0.90
-# floor separates those two by a wide margin in the direction that matters.
+# else identical) scored 0.70 with 10,210 ms of blocking time on the same
+# machine and the same Chrome that scored 1.00 with 0 ms on five unmodified
+# runs. A 0.90 floor separates those by a wide margin in the direction that
+# matters.
+#
+# The floor stays at the standard's 0.90 rather than the 1.00 those five runs
+# clear, and this is the one place this file departs from what accessibility.yml
+# does. That gate enforces the 1.00 it measures, on the principle that a
+# repository clearing a higher bar holds it, and it can: Lighthouse's
+# accessibility score is a discrete rule set, where 1.00 means no rule failed
+# and the same page scores the same every time. Performance is a weighted
+# function of continuous timings on a shared runner. A 1.00 floor there means
+# any single audit slipping out of its perfect band fails the merge, and
+# blocking time on a page that compiles 10 MB of WebAssembly is exactly the
+# audit that will. One run on a near-identical build of this page scored 0.99
+# on 105 ms of blocking time -- a tenth of a second on a ten-core laptop, and
+# runners are neither ten-core nor idle.
 #
 # NOT gated: the JavaScript byte budget, and not because it is inconvenient.
 # The page downloads a 5.6 MB WebAssembly Python runtime, which is the entire
@@ -28,13 +42,13 @@ name: Performance
 # pretend to check it. The byte figures are still PRINTED below, because a
 # declared N/A that nobody ever looks at is how a number quietly triples.
 #
-# NOT gated either: the individual timing audits. Two unmodified runs minutes
-# apart on one machine gave 1.00 / 5.5 ms and 0.99 / 105.5 ms of blocking time.
-# That spread is measurement noise on a metric whose regression mode is three
-# orders of magnitude larger, so a tight blocking-time ceiling would fail for
-# reasons that have nothing to do with the page. The category score already
-# collapses when blocking time does; gating the score and reporting the rest is
-# the honest split.
+# NOT gated either: the individual timing audits. Blocking time read 0 ms on
+# five unmodified runs here and 105 ms on a sixth against a near-identical
+# build -- noise, on a metric whose regression mode is 10,210 ms. A tight
+# blocking-time ceiling would fail for reasons that have nothing to do with the
+# page, and a loose one would add nothing the score does not already say, since
+# the category score collapses to 0.70 exactly when blocking time blows up.
+# Gating the score and printing the components is the honest split.
 #
 # WHY THIS AUDITS THE REAL PAGE AND accessibility.yml DOES NOT.
 #
@@ -119,9 +133,13 @@ jobs:
           version="$(python -c 'import tomllib;print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
           mkdir -p site
           cp web/index.html site/
-          cp web/social-card.png site/
           cp "${wheels[0]}" site/
           printf '{"wheel": "%s", "version": "%s"}\n' "$wheel" "$version" > site/wheel.json
+          # Deliberately not everything pages.yml publishes. An og:image is a
+          # meta tag: no browser fetches it while rendering, so it cannot enter
+          # a performance measurement, and copying assets this job does not
+          # measure would only give it more ways to fail for nothing.
+          ls -l site/
 
       # Reached before Lighthouse so that an unreachable CDN is reported as an
       # unreachable CDN. Without this the same outage arrives as a low score
@@ -213,7 +231,7 @@ jobs:
                   "::error title=Playground performance score::"
                   f"expected >= {BUDGET}, got {score}. The regression this gate exists for is "
                   "the Pyodide boot moving back onto the main thread, which measured 0.70 with "
-                  "11,659 ms of total blocking time; check the blocking-time figure above first."
+                  "10,210 ms of total blocking time; check the blocking-time figure above first."
               )
               sys.exit(1)
           PY
