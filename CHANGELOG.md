@@ -56,6 +56,29 @@ and this project adheres to
   loading state as unscanned residual risk while the page spends tens of
   seconds in it.
 
+- **Something now catches the playground's performance score regressing.**
+  Moving the Pyodide boot to a worker took the score from 0.70 to 1.00 and
+  total blocking time from 8,020 ms to 0 ms, and nothing held the result:
+  `docs/ROADMAP.md` said so itself, and the row stayed REVIEW because a score
+  that is met is not a score something would catch sliding back.
+  `.github/workflows/performance.yml` runs Lighthouse against the real page --
+  no `?a11y-static`, because the boot is the whole subject and a page that
+  boots nothing would score 1.00 however the boot behaves -- and fails below
+  0.90.
+
+  The threshold was measured rather than assumed. Two unmodified runs on
+  2026-09-05 scored 0.99 and 1.00; forcing the boot back onto the main thread
+  with a single edit scored **0.70 with 11,659 ms of blocking time**, so the
+  gate was watched failing for the reason it exists before it was trusted to
+  pass. The floor stays at the standard's 0.90 rather than the observed 1.00
+  because the two clean runs disagree with each other, and the timing audits
+  are printed rather than gated for the same reason.
+
+  This job depends on cdn.jsdelivr.net, where `accessibility.yml` deliberately
+  does not, and pays for it openly: a preflight reaches for the runtime first
+  and fails naming the CDN, so an outage is never read as the page having got
+  slower.
+
 ### Changed
 
 - **The Pyodide runtime boots on a worker thread.** It used to boot on the

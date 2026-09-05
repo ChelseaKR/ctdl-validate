@@ -262,4 +262,8 @@ eight seconds the page could not scroll, could not take a keystroke, and could
 not repaint the status line it had just changed. Every announcement this
 section argues about was being made by a thread that was not going to respond
 for another eight seconds. The runtime now boots on a worker; Lighthouse total
-blocking time went from 8,020 ms to 0. See `docs/ROADMAP.md`.
+blocking time went from 8,020 ms to 0. Since 2026-09-05 that result is held by
+`.github/workflows/performance.yml`, which scores the real page and fails below
+0.90 -- relevant here because the regression it guards against is not primarily
+a speed defect, it is the page going unresponsive to a keyboard for eight
+seconds while telling a screen reader it is busy. See `docs/ROADMAP.md`.

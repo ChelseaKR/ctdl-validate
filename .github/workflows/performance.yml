@@ -1,0 +1,219 @@
+name: Performance
+
+# The playground's performance score was 0.70 with 8,020 ms of total blocking
+# time, because Pyodide compiled 10 MB of WebAssembly and started CPython on
+# the main thread. Moving that boot to a worker made it 1.00 and 0 ms. Nothing
+# held the result: docs/ROADMAP.md said so plainly -- "a score that is now met
+# is not the same as a score something would catch regressing" -- and this
+# workflow is that sentence answered.
+#
+# WHAT IS GATED HERE, AND WHAT IS NOT.
+#
+# Gated: Lighthouse's performance category score, against the >= 0.90 budget
+# the portfolio performance standard sets. That threshold is not a guess about
+# what would catch the regression, it is measured. Forcing the boot back onto
+# the main thread (`if (false && window.Worker && ...)`, one edit, everything
+# else identical) scored 0.70 with 11,659 ms of blocking time on the same
+# machine and the same Chrome that scored 0.99 and 1.00 unmodified. A 0.90
+# floor separates those two by a wide margin in the direction that matters.
+#
+# NOT gated: the JavaScript byte budget, and not because it is inconvenient.
+# The page downloads a 5.6 MB WebAssembly Python runtime, which is the entire
+# reason the page exists -- CTDL payloads most need checking while they are
+# still unpublished, and the alternative is asking people to upload unreleased
+# credential data to somebody's server. No tuning brings that inside 204,800 B
+# and none has been attempted. PERFORMANCE-STANDARD section 3 says a gate that
+# cannot pass is declared N/A-with-reason rather than run with a threshold
+# nobody intends to meet, so docs/ROADMAP.md declares it and this file does not
+# pretend to check it. The byte figures are still PRINTED below, because a
+# declared N/A that nobody ever looks at is how a number quietly triples.
+#
+# NOT gated either: the individual timing audits. Two unmodified runs minutes
+# apart on one machine gave 1.00 / 5.5 ms and 0.99 / 105.5 ms of blocking time.
+# That spread is measurement noise on a metric whose regression mode is three
+# orders of magnitude larger, so a tight blocking-time ceiling would fail for
+# reasons that have nothing to do with the page. The category score already
+# collapses when blocking time does; gating the score and reporting the rest is
+# the honest split.
+#
+# WHY THIS AUDITS THE REAL PAGE AND accessibility.yml DOES NOT.
+#
+# The accessibility gate deliberately runs against `?a11y-static`, which boots
+# nothing, so that a merge does not depend on a CDN being up. That reasoning
+# does not transfer. For accessibility the boot adds no markup a scanner has
+# not already seen; for performance the boot IS the subject. `?a11y-static`
+# fetches nothing and would score 1.00 whatever the boot does, so a performance
+# gate pointed at it would be a green check that cannot fail -- the exact
+# failure this repository files under REVIEW rather than AUTO. So this job
+# loads the real page, and the real page fetches Pyodide from cdn.jsdelivr.net.
+#
+# The cost of that is a CI job that depends on a third party. It is paid
+# openly: the preflight below reaches for the runtime first and, if jsDelivr
+# does not answer, fails with a message that says so, so that "the CDN was
+# down" is never mistaken for "the page got slower". No `continue-on-error`,
+# because a performance gate that cannot fail is the thing being fixed.
+
+on:
+  pull_request:
+    paths:
+      - "web/**"
+      - "src/**"
+      - "pyproject.toml"
+      - ".github/workflows/performance.yml"
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "src/**"
+      - "pyproject.toml"
+      - ".github/workflows/performance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: score the playground
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      UV_PYTHON: "3.12"
+      UV_PYTHON_DOWNLOADS: never
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      # The same assembly pages.yml performs, for the same reason: the page
+      # fetches a wheel named by wheel.json, and a page whose boot 404s at
+      # stage 3 is not the page whose score this is supposed to be measuring.
+      - name: Build the wheel this page will run
+        run: uv build --wheel --out-dir dist
+
+      - name: Assemble the site
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "::error title=unexpected build output::expected exactly one wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          wheel="$(basename "${wheels[0]}")"
+          version="$(python -c 'import tomllib;print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
+          mkdir -p site
+          cp web/index.html site/
+          cp web/social-card.png site/
+          cp "${wheels[0]}" site/
+          printf '{"wheel": "%s", "version": "%s"}\n' "$wheel" "$version" > site/wheel.json
+
+      # Reached before Lighthouse so that an unreachable CDN is reported as an
+      # unreachable CDN. Without this the same outage arrives as a low score
+      # with no explanation, and the natural reading of a red performance gate
+      # is that somebody made the page slower.
+      - name: Preflight the runtime the page will fetch
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"
+          if ! curl -sfI --max-time 30 "$url" >/dev/null; then
+            echo "::error title=The runtime CDN did not answer::$url is unreachable from this runner. This is an infrastructure failure, not a performance regression: the page could not boot, so nothing about its score was measured. Re-run when jsDelivr answers."
+            exit 1
+          fi
+          echo "cdn.jsdelivr.net answered for $url"
+
+      - name: Serve the site
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8932 --directory site &
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8932/index.html >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8932/index.html >/dev/null || {
+            echo "::error title=Server never came up::nothing was measured"
+            exit 1
+          }
+
+      # No `?a11y-static`. This is the page a visitor gets: it boots Pyodide,
+      # on a worker thread, from the CDN, and that boot is what the score is
+      # about.
+      - name: Lighthouse performance against the real page
+        run: |
+          set -euo pipefail
+          npx --yes lighthouse@12 "http://127.0.0.1:8932/index.html" \
+            --output=json --output-path=/tmp/lh-performance.json --quiet \
+            --chrome-flags="--headless" --only-categories=performance
+
+      - name: Require >= 0.90 on performance
+        run: |
+          python3 - <<'PY'
+          import json, sys
+
+          BUDGET = 0.90
+          report = json.load(open("/tmp/lh-performance.json"))
+
+          category = report["categories"].get("performance")
+          # A missing category is a failed audit, not a pass. Defaulting it to
+          # 1.0 would turn a broken run into a green check.
+          score = None if category is None else category.get("score")
+          print(f"lighthouse performance: {score} (budget >= {BUDGET})")
+
+          # Reported, not gated: these are the numbers the score is made of, and
+          # printing them is how a slide shows up in the log before it shows up
+          # in the score. Total blocking time is the one that moved: 8,020 ms
+          # when the runtime booted on the main thread, single-digit to low
+          # hundreds of ms on a worker.
+          for audit_id, label in (
+              ("total-blocking-time", "total blocking time"),
+              ("interactive", "time to interactive"),
+              ("first-contentful-paint", "first contentful paint"),
+              ("cumulative-layout-shift", "cumulative layout shift"),
+          ):
+              audit = report["audits"].get(audit_id, {})
+              print(f"  {label}: {audit.get('displayValue', 'not reported')}")
+
+          # The byte budget is declared N/A in docs/ROADMAP.md and is not gated
+          # here. It is printed because an N/A nobody reads is how 248 kB
+          # becomes 700 kB without anyone deciding that. Counted across every
+          # resource type, not Lighthouse's "script" type alone: since the boot
+          # moved to a worker, most of the runtime lands under a different type,
+          # and quoting the smaller number would be a lie of classification.
+          requests = report["audits"].get("network-requests", {})
+          items = (requests.get("details") or {}).get("items") or []
+          js_bytes = sum(
+              (item.get("transferSize") or 0)
+              for item in items
+              if str(item.get("url", "")).split("?")[0].endswith((".js", ".mjs"))
+          )
+          total_bytes = sum((item.get("transferSize") or 0) for item in items)
+          print(f"  javascript over the network: {js_bytes:,} B "
+                f"(budget < 204,800 B -- declared N/A, see docs/ROADMAP.md)")
+          print(f"  everything over the network: {total_bytes:,} B across {len(items)} requests")
+
+          if score is None or score < BUDGET:
+              print(
+                  "::error title=Playground performance score::"
+                  f"expected >= {BUDGET}, got {score}. The regression this gate exists for is "
+                  "the Pyodide boot moving back onto the main thread, which measured 0.70 with "
+                  "11,659 ms of total blocking time; check the blocking-time figure above first."
+              )
+              sys.exit(1)
+          PY
