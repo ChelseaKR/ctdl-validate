@@ -135,6 +135,47 @@ and this project adheres to
 
 ### Fixed
 
+- **Four places said CTDL ranges `ceterms:isSimilarTo` on `rdfs:Resource`
+  alone. It declares 83 range terms.**
+  ([#60](https://github.com/ChelseaKR/ctdl-validate/issues/60)) The README's
+  conflict 6, the `[Unreleased]` "Changed" entry for the universal-range fix,
+  `schema.py`'s `UNIVERSAL_RANGE_TERMS` comment and the 2026-08-21 survey
+  finding all stated that `ceterms:hasMember`, `ceterms:isSimilarTo` and
+  `owl:sameAs` declare `rdfs:Resource` as their **whole** range. That is true
+  of two of them. `ceterms:isSimilarTo` declares 84 `schema:rangeIncludes`
+  entries -- 83 distinct, CTDL listing `ceterms:CredentialType` twice -- of
+  which `rdfs:Resource` is one and the other **82 are real classes** (76
+  `ceterms:`, 3 `ceasn:`, plus `qdata:Metric`, `skos:ConceptScheme` and
+  `xsd:anyURI`). All four statements are corrected, in place and dated.
+
+  The consequence is real: `range_is_universal` tests whether `rdfs:Resource`
+  appears *anywhere* in a range, and `checks/domain_range.py` consumes that as
+  an unconditional early return, so `isSimilarTo` is exempted too and CTDL's
+  published 82-term union is never enforced. All four dispositions
+  `_range_findings` can reach sit after that return.
+
+  **Whether that is right is left open, deliberately, as the maintainer's
+  call.** Both readings are defensible -- a `schema:rangeIncludes` union
+  containing "the class of everything" arguably admits everything, or the
+  "only `rdfs:Resource`" rule the docs describe is the intended one. What is
+  not mechanical is the consequence of flipping it: enforcing the 82 terms
+  would raise `RANGE_VIOLATION`, an ERROR worded as a publisher's mistake, on
+  the strength of an ambiguity inside CTDL's own encoding -- and that union
+  reads arbitrarily from inside, admitting `ceasn:CompetencyFramework`,
+  `ceasn:Rubric` and `ceasn:RubricCriterion` while excluding
+  `ceasn:Competency`. This project's standing finding is that its ERRORs trace
+  to the schema encoding rather than to publishers, so no check was changed
+  and no finding count moved.
+
+  What did change is that the choice can no longer move unnoticed. The string
+  `isSimilarTo` appeared in no test file, and the suite passed identically
+  under both candidate rules -- a gate that could not fail. Three tests now
+  pin it: that exactly two properties range on `rdfs:Resource` alone and
+  exactly three mention it; that `isSimilarTo` has 83 range terms with the
+  `ceasn:Competency` asymmetry spelled out; and a characterisation test,
+  explicitly not an endorsement, that fails if the disposition changes. The
+  last was watched fail under the flipped rule.
+
 - **A nested item that was not a property value was dropped from the extract
   with no note.** ([#57](https://github.com/ChelseaKR/ctdl-validate/issues/57))
   `microdata._top_level_elements` appended an item and stopped walking there,
@@ -527,6 +568,14 @@ and this project adheres to
   This affected `ceterms:hasMember`, `ceterms:isSimilarTo` and `owl:sameAs`;
   in the 1,200-document survey it produced 47 spurious range errors against a
   single published collection that listed 47 licences.
+
+  *Correction, 2026-09-06 ([#60](https://github.com/ChelseaKR/ctdl-validate/issues/60)):
+  "a declared range naming only `rdfs:Resource`" describes `ceterms:hasMember`
+  and `owl:sameAs`, which name it alone, but not `ceterms:isSimilarTo`, which
+  names it among 82 other real classes (84 entries, 83 distinct). The shipped
+  test is membership rather than "only", so `isSimilarTo` was exempted as
+  well; the corpus evidence quoted above was entirely `hasMember`. Whether
+  `isSimilarTo`'s 82 terms should be enforced is open and unsettled.*
 
 - `tools/registry_survey.py` no longer publishes counts a resumed run can
   lose. The request tally is banked to `provenance.json` after every request

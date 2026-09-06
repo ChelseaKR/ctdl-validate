@@ -379,12 +379,105 @@ def test_the_universal_range_the_fix_rests_on_is_still_in_the_snapshot() -> None
     The fix is not "hasMember is exempt"; it is that a range naming only
     rdfs:Resource excludes nothing, so matching against it would reject every
     entity rather than accept every entity. Both halves are asserted here.
+
+    This holds for hasMember and owl:sameAs. It does NOT describe
+    ceterms:isSimilarTo -- see the three tests below, and issue #60.
     """
     schema = load_schema()
     assert schema.properties["ceterms:hasMember"].range == frozenset({"rdfs:Resource"})
     assert schema.properties["ceterms:hasMember"].range_is_universal
     assert "rdfs:Resource" not in schema.classes
     assert not [c for c in schema.classes if "rdfs:Resource" in schema.ancestors_of(c)]
+
+
+# -- ceterms:isSimilarTo is not a third rdfs:Resource-alone property (#60) ------
+#
+# Four places in this repo said CTDL declares rdfs:Resource as the *whole*
+# range of hasMember, isSimilarTo and sameAs. That is measurably false of
+# isSimilarTo, and nothing pinned it: the string "isSimilarTo" appeared in no
+# test file, and the suite was green under BOTH candidate rules -- a gate that
+# could not fail. These three tests close that.
+
+
+def test_only_two_properties_range_on_rdfs_resource_alone() -> None:
+    """The premise the exemption was argued from, pinned to the snapshot."""
+    schema = load_schema()
+    alone = sorted(
+        term
+        for term, prop in schema.properties.items()
+        if prop.range == frozenset({"rdfs:Resource"})
+    )
+    assert alone == ["ceterms:hasMember", "owl:sameAs"]
+
+    mentions = sorted(
+        term for term, prop in schema.properties.items() if "rdfs:Resource" in prop.range
+    )
+    assert mentions == ["ceterms:hasMember", "ceterms:isSimilarTo", "owl:sameAs"]
+
+
+def test_is_similar_to_declares_82_real_range_terms_beside_rdfs_resource() -> None:
+    """The snapshot fact the four documented claims got wrong.
+
+    Pinned the way the repo pins 456 concepts, 478 unstable terms and 20
+    scheme-bound properties: if CTDL restates this range, this fails and the
+    disposition gets looked at again.
+    """
+    prop = load_schema().properties["ceterms:isSimilarTo"]
+    assert len(prop.range) == 83
+    assert "rdfs:Resource" in prop.range
+
+    others = prop.range - {"rdfs:Resource"}
+    assert len(others) == 82, "82 real classes, not a range of rdfs:Resource alone"
+    assert sorted(t.split(":")[0] for t in {t.split(":")[0]: t for t in others}.values()) == [
+        "ceasn",
+        "ceterms",
+        "qdata",
+        "skos",
+        "xsd",
+    ]
+    # The union reads arbitrarily from inside: three of the four ceasn classes
+    # are admitted and Competency is not. That asymmetry is the reason
+    # enforcing these 82 terms is a judgment about CTDL's encoding rather than
+    # a mechanical fix -- see issue #60.
+    assert {"ceasn:CompetencyFramework", "ceasn:Rubric", "ceasn:RubricCriterion"} <= others
+    assert "ceasn:Competency" not in others
+
+
+def test_the_is_similar_to_disposition_is_pinned_so_it_cannot_change_quietly() -> None:
+    """Characterisation, not endorsement. See issue #60.
+
+    ``range_is_universal`` tests membership, so isSimilarTo is exempted and its
+    82 real range terms are never enforced: a reference to a class the range
+    excludes raises nothing. That may be right -- a schema:rangeIncludes union
+    containing "the class of everything" arguably admits everything -- or the
+    "only rdfs:Resource" rule the docs describe may be right. It is unsettled
+    on purpose, because enforcing it would word a RANGE_VIOLATION as a
+    publisher's mistake on the strength of an ambiguity inside CTDL's own
+    encoding.
+
+    What must not happen is the disposition changing without anyone noticing,
+    which is what the suite allowed before: it passed identically under both
+    rules. If this test fails, the behaviour moved -- decide #60 deliberately
+    and update this test with the decision.
+    """
+    schema = load_schema()
+    prop = schema.properties["ceterms:isSimilarTo"]
+    assert prop.range_is_universal, "membership rule: exempt"
+    assert prop.range != frozenset({"rdfs:Resource"}), "the 'only' rule would NOT exempt it"
+
+    # End to end: a reference to a class the declared range excludes, while
+    # three of its siblings are admitted. Nothing is raised today.
+    payload = {
+        "@graph": [
+            {
+                "@id": "https://example.org/cert/1",
+                "@type": "ceterms:Certification",
+                "ceterms:isSimilarTo": "https://example.org/comp/1",
+            },
+            {"@id": "https://example.org/comp/1", "@type": "ceasn:Competency"},
+        ]
+    }
+    assert [f for f in validate_document(payload) if f.code == "RANGE_VIOLATION"] == []
 
 
 # -- a version property whose range drops a class its own domain admits ---------

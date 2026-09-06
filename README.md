@@ -598,13 +598,33 @@ the declarations rather than the count, which is still one publisher:
    frequency argument: only two publishers in the surveyed corpus use these
    properties at all, which the survey states plainly.
 
-6. `ceterms:hasMember`, `ceterms:isSimilarTo` and `owl:sameAs` declare
-   `rdfs:Resource` as their whole range. RDF Schema 1.1 section 3.1 makes that
-   "the class of everything", so it excludes nothing — but no CTDL class
-   reaches it by `rdfs:subClassOf`, so a naive subclass match rejects every
-   entity instead of accepting every one. Not a conflict in CTDL so much as a
-   trap in reading it, and one this tool fell into: a declared range naming
-   only `rdfs:Resource` is now treated as unconstraining and raises nothing.
+6. `ceterms:hasMember` and `owl:sameAs` declare `rdfs:Resource` as their whole
+   range. RDF Schema 1.1 section 3.1 makes that "the class of everything", so
+   it excludes nothing — but no CTDL class reaches it by `rdfs:subClassOf`, so
+   a naive subclass match rejects every entity instead of accepting every one.
+   Not a conflict in CTDL so much as a trap in reading it, and one this tool
+   fell into: a declared range naming only `rdfs:Resource` is now treated as
+   unconstraining and raises nothing.
+
+   `ceterms:isSimilarTo` is **not** a third case of that, though this README
+   said it was until 2026-09-06. It declares 84 `schema:rangeIncludes` entries,
+   83 distinct — CTDL lists `ceterms:CredentialType` twice — of which
+   `rdfs:Resource` is one and the other 82 are real classes. The tool's
+   exemption tests for `rdfs:Resource` *anywhere* in a range, so `isSimilarTo`
+   is exempted too and CTDL's published 82-term union is never enforced.
+
+   Whether it should be is an open question, recorded at
+   [#60](https://github.com/ChelseaKR/ctdl-validate/issues/60) and deliberately
+   unsettled. It is a real conflict inside the encoding: if `rdfs:Resource`
+   belongs in the union, the other 82 terms constrain nothing; if the 82 terms
+   are the constraint, `rdfs:Resource` does not belong. Enforcing them would
+   raise `RANGE_VIOLATION` — an ERROR worded as a publisher's mistake — on the
+   strength of that ambiguity, and the union reads arbitrarily from inside: it
+   admits `ceasn:CompetencyFramework`, `ceasn:Rubric` and
+   `ceasn:RubricCriterion` while excluding `ceasn:Competency`. That is a
+   judgment about what this tool asserts about publishers, so it is the
+   maintainer's to make rather than a mechanical fix. The snapshot fact and the
+   current disposition are both pinned by tests, so neither can drift quietly.
 
 ## Development
 

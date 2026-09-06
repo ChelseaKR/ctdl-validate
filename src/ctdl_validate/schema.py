@@ -45,10 +45,23 @@ LITERAL_RANGE_TERMS = frozenset(
 #: everything" and states that "all things described by RDF are called
 #: resources, and are instances of the class rdfs:Resource"
 #: (https://www.w3.org/TR/rdf11-schema/#ch_resource, retrieved 2026-08-22).
-#: CTDL declares it as the whole range of ceterms:hasMember,
-#: ceterms:isSimilarTo and owl:sameAs, and no CTDL class reaches it by
-#: rdfs:subClassOf, so matching a target's declared classes against it would
-#: reject every entity rather than accept every entity.
+#: No CTDL class reaches it by rdfs:subClassOf, so matching a target's
+#: declared classes against it would reject every entity rather than accept
+#: every entity.
+#:
+#: Three properties in the snapshot name it, and they are NOT alike -- an
+#: earlier version of this comment said all three ranged on it alone, which is
+#: measurably false and is why issue #60 exists:
+#:
+#:   ceterms:hasMember   1 range term:  rdfs:Resource, alone.
+#:   owl:sameAs          1 range term:  rdfs:Resource, alone.
+#:   ceterms:isSimilarTo 83 distinct range terms (84 entries -- CTDL lists
+#:                       ceterms:CredentialType twice). rdfs:Resource is one;
+#:                       the other 82 are real classes.
+#:
+#: ``range_is_universal`` tests membership, so isSimilarTo is exempted too.
+#: See its docstring: whether that is right is an open question recorded at
+#: issue #60, and it is deliberately not settled here.
 UNIVERSAL_RANGE_TERMS = frozenset({"rdfs:Resource"})
 
 #: Prefixes whose unknown terms are worth a WARNING. Terms in other namespaces
@@ -88,11 +101,44 @@ class PropertyDef:
 
     @property
     def range_is_universal(self) -> bool:
-        """True when the declared range admits every entity, so it rules nothing out.
+        """True when the declared range MENTIONS rdfs:Resource anywhere.
 
-        See ``UNIVERSAL_RANGE_TERMS``. A property declared this way says
-        "any resource may go here", and the honest reading of a range that
-        excludes nothing is that no reference can fall outside it.
+        See ``UNIVERSAL_RANGE_TERMS``. A property ranged on rdfs:Resource
+        alone says "any resource may go here", and the honest reading of a
+        range that excludes nothing is that no reference can fall outside it.
+        That is ``ceterms:hasMember`` and ``owl:sameAs``, and for them the two
+        possible rules agree.
+
+        They disagree on exactly one property in the snapshot.
+        ``ceterms:isSimilarTo`` names rdfs:Resource *among 82 other real
+        classes*, so this membership test exempts it and its published 82-term
+        union is never enforced: all four dispositions ``_range_findings`` can
+        reach sit after the early return in ``checks.domain_range``.
+
+        **This is an open question, recorded at issue #60, and is deliberately
+        not settled in this commit.** Both readings are defensible:
+
+        * Membership (what this does). ``schema:rangeIncludes`` is a
+          disjunctive "expected type" list, so a union containing "the class of
+          everything" admits everything and the other 82 terms are redundant.
+        * Only-rdfs:Resource. The rationale the exemption was added for -- that
+          matching against rdfs:Resource would reject every entity rather than
+          accept every entity -- is true of a range naming it alone and false
+          of isSimilarTo, whose other 82 terms match a great deal.
+
+        What settles it is not a coin toss. Enforcing the 82 terms would emit
+        RANGE_VIOLATION -- an ERROR worded as a publisher's mistake -- on the
+        strength of a range CTDL's own encoding made ambiguous, and the list
+        looks arbitrary from inside: it admits ceasn:CompetencyFramework,
+        ceasn:Rubric and ceasn:RubricCriterion while excluding
+        ceasn:Competency, and it lists ceterms:CredentialType twice. This
+        repository's standing finding is that its ERRORs trace to the schema
+        encoding rather than to publishers, so turning this on is the owner's
+        call, not a mechanical one.
+
+        ``tests.test_domain_range`` pins both the snapshot fact and the
+        disposition, so whichever way it goes it cannot change silently -- it
+        used to be green under either rule.
         """
         return bool(self.range & UNIVERSAL_RANGE_TERMS)
 

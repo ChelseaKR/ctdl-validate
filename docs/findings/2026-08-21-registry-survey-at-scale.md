@@ -237,7 +237,16 @@ documents, were this tool's fault**, in two classes:
   reaches `rdfs:Resource` by `rdfs:subClassOf`, so matching a target's classes
   against it rejected *every* entity instead of accepting every entity. One
   collection listing 47 licences was reported as 47 range violations. The same
-  inversion applied to `ceterms:isSimilarTo` and `owl:sameAs`.
+  inversion applied to `owl:sameAs`, which also ranges on `rdfs:Resource`
+  alone.
+
+  *Correction, 2026-09-06 ([#60](https://github.com/ChelseaKR/ctdl-validate/issues/60)):
+  this sentence originally named `ceterms:isSimilarTo` here too. It does not
+  range on `rdfs:Resource` alone -- it declares 83 distinct range terms, of
+  which that is one -- so the inversion described above never applied to it.
+  The fix exempts it anyway, because the test is membership rather than
+  "only", and that disposition is an open question rather than a finding of
+  this survey.*
 - **61 findings, 32 documents.** `ceterms:latestVersion`, `ceterms:nextVersion`
   and `ceterms:previousVersion` each declare a `schema:rangeIncludes` that is a
   strict subset of their own `schema:domainIncludes`, dropping the same six
