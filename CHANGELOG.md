@@ -135,6 +135,47 @@ and this project adheres to
 
 ### Fixed
 
+- **Check 1 never saw the `@graph` envelope's own `@id`, so a malformed
+  Registry graph URI passed clean on a real Registry document.**
+  ([#58](https://github.com/ChelseaKR/ctdl-validate/issues/58))
+  `parse_document` took `data["@graph"]` and discarded every other top-level
+  key. The envelope's `@id` never became a node, `Session` holds only the
+  graph, and every check iterates `graph.nodes` -- so no check, not just
+  check 1, could reach it.
+
+  That `@id` is the one position in which a Registry *graph* URI actually
+  appears in a published Registry document: in all five Registry-shaped
+  fixtures in this repository, `/graph/` occurs exactly once each, always as
+  the envelope `@id`. `REGISTRY_GRAPH_PREFIX` was therefore referenced only by
+  `registry_uri_tail` itself, and that branch was dead against real Registry
+  payloads. Two documented claims said otherwise -- README's check-1 row
+  ("the tail of every Registry resource/**graph** URI") and
+  `checks/ctid_format.py`'s own module docstring -- and the exclusion appeared
+  in no ADR, roadmap or "not covered in v0" list.
+
+  The envelope identifier is now kept on the `Graph` (`envelope_id`,
+  `envelope_path`) and read by check 1. It is deliberately *not* added to
+  `nodes`: nothing is asserted about it, so putting it there would submit an
+  identifier to every check that reads types and properties.
+  `REGISTRY_URI_MALFORMED` now fires on a malformed graph URI, and
+  `CTID_URI_MISMATCH` fires when the graph URI names a CTID that no entity in
+  the payload declares -- in either position, `ceterms:ctid` or the CTID tail
+  of the entity's own Registry `@id`, since requiring `ceterms:ctid`
+  specifically would report documents that are correct. Both messages name the
+  envelope rather than a `@graph` index.
+
+  The comparison is against every CTID the payload declares rather than
+  against one designated "primary" entity, because the document shape does not
+  say which entity is primary and guessing would invent findings the payload
+  does not support. Seven tests pin it, including a guard that the fixture
+  under test is still a Registry envelope and still clean unmodified; the two
+  positive cases were watched fail with the envelope dropped again.
+
+  Both published Registry surveys carry a dated coverage note: their harness
+  feeds `envelope["decoded_resource"]` straight into `parse_document`, so
+  their `REGISTRY_URI_MALFORMED` and `CTID_URI_MISMATCH` counts cover resource
+  URIs only and have not been recomputed against this check.
+
 - **`extract --from-file` decoded saved pages differently from fetched ones,
   and crashed on any page that was not UTF-8.**
   ([#59](https://github.com/ChelseaKR/ctdl-validate/issues/59)) The flag exists

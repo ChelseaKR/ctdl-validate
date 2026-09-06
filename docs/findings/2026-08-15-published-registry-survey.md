@@ -14,6 +14,17 @@ websites; this one asks what the Registry itself is holding.
 > 1,200 documents, a protocol committed before the draw, and the false-positive
 > class this run found already removed from the tool.
 
+> **Coverage note, added 2026-09-06.** These counts predate
+> [#58](https://github.com/ChelseaKR/ctdl-validate/issues/58). At the time of
+> this run, `parse_document` took the `@graph` array and discarded the
+> envelope's own `@id`, so no check could see it -- and that is the only
+> position in which a Registry *graph* URI appears in a published Registry
+> document. The harness feeds `envelope["decoded_resource"]` straight into
+> `parse_document`, so **none of the graph URIs in this sample were checked**,
+> and the `REGISTRY_URI_MALFORMED` and `CTID_URI_MISMATCH` counts below cover
+> resource URIs only. Check 1 now reads the envelope; these numbers have not
+> been recomputed against it.
+
 ## The headline
 
 **Forty ERROR findings across 120 randomly sampled published documents, and

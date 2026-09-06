@@ -55,6 +55,17 @@ class Graph:
     #: than once; the builder merges those into a single node, and
     #: ``checks.identity`` reports that it did.
     declarations: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    #: The ``@id`` of the ``@graph`` envelope itself, when the document has
+    #: one. It is not a node: nothing is asserted *about* it, so putting it in
+    #: ``nodes`` would submit an identifier to every check that reads types and
+    #: properties. But it is the one position in which a Registry *graph* URI
+    #: actually appears in a published Registry document, so check 1 reads it
+    #: from here. ``None`` for the single-entity and bare-array shapes, which
+    #: have no envelope.
+    envelope_id: str | None = None
+    #: JSON path of that identifier, for a finding that names the envelope
+    #: rather than a ``@graph`` index.
+    envelope_path: str | None = None
 
     def repeated_ids(self) -> dict[str, tuple[str, ...]]:
         """Identifiers declared by more than one node object, with their paths."""
@@ -191,13 +202,26 @@ def parse_document(data: Any, schema: SchemaIndex) -> Graph:
 
     Accepted shapes: an object with ``@graph``, a single entity object, or an
     array of entity objects.
+
+    The ``@graph`` envelope's own ``@id`` is kept on the graph rather than
+    discarded with the rest of the top-level keys; see ``Graph.envelope_id``.
     """
+    envelope_id: str | None = None
+    envelope_path: str | None = None
     if isinstance(data, dict) and "@graph" in data:
         top = data["@graph"]
         if not isinstance(top, list):
             raise DocumentError("@graph must be an array of entities")
         entities = top
         prefix = "$.@graph"
+        # Keep the envelope's own identifier. Every other top-level key is a
+        # document-level declaration (@context) rather than an assertion, but
+        # this one is a Registry graph URI, and dropping it put it beyond the
+        # reach of every check.
+        outer_id = data.get("@id")
+        if isinstance(outer_id, str):
+            envelope_id = outer_id
+            envelope_path = "$.@id"
     elif isinstance(data, dict):
         entities = [data]
         prefix = "$"
@@ -221,4 +245,6 @@ def parse_document(data: Any, schema: SchemaIndex) -> Graph:
         by_id=builder.by_id,
         by_path=builder.by_path,
         declarations={k: tuple(v) for k, v in builder.declarations.items()},
+        envelope_id=envelope_id,
+        envelope_path=envelope_path,
     )
