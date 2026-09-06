@@ -10,6 +10,39 @@ and this project adheres to
 
 ### Added
 
+- **`pypi-publish.yml` verifies the release tag's signature before anything
+  runs.** `release.yml` has verified tags since it was written, through the
+  shared `ChelseaKR/.github` release-authorize workflow. `pypi-publish.yml`,
+  the path an actual PyPI upload goes through, did not: a published Release or
+  a `workflow_dispatch` handed it a ref and it built and uploaded that ref. The
+  version check it did run compared the ref's `pyproject.toml` against the
+  ref's own tag name, which two arbitrary refs can agree about perfectly well.
+
+  A `verify-tag` job now runs first. It resolves the tag from the event,
+  requires an annotated tag object whose SSH signature verifies against the
+  committed `.github/allowed_signers`, and requires that tag to name the commit
+  the run is building. `verify`, `publish` and `verify-published` all wait for
+  it, and the first two check out the verified commit rather than re-resolving
+  the event ref. release-authorize could not simply be reused: it requires its
+  caller to be dispatched from `main`, and a published Release is dispatched
+  from a tag, so this runs the same check as a committed script against the
+  same allowed-signers file.
+
+  Nothing is grandfathered. `v0.1.0`, `v0.2.0` and `v0.2.1` are all signed
+  annotated tags that verify against the committed key today, so
+  `GRANDFATHERED_TAGS` is empty and no release is exempt. The exemption path is
+  still exercised against a throwaway tag, because an empty list nothing runs
+  is indistinguishable from a feature that stopped working, and the list may
+  hold only literal `vX.Y.Z` names: `v*` fails the gate rather than exempting
+  every release that has not happened yet.
+
+  `tests/test_release_tag_gate.py` applies `tests/test_break_the_gate.py`'s
+  discipline to the workflow. It builds a throwaway repository with throwaway
+  keys and runs the committed script against tags that are unsigned,
+  lightweight, signed by a key nobody trusts, absent, and correct but naming a
+  different commit than the one being built. Replacing the script with
+  `exit 0` fails twelve of its cases.
+
 - **The playground lists every rule this build can report, and states nothing
   about any of them.** For a tool whose whole argument is that every finding
   cites published text, the page never showed the rule set: three samples, one
