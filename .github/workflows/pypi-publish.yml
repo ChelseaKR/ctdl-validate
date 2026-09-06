@@ -13,6 +13,9 @@ name: Publish to PyPI
 #
 # Mirrors tods-validate's publish path, which is the one already working
 # against PyPI:
+#   - the release tag is an annotated tag object whose SSH signature verifies
+#     against the committed .github/allowed_signers, and which names the
+#     commit this run is building, before anything else runs (REL-08);
 #   - the full merge gate (`make verify`) re-runs at the tagged commit, and
 #     publish does not start unless it is green;
 #   - CycloneDX 1.7 SBOM for the built distribution, blocking on any schema
@@ -21,6 +24,24 @@ name: Publish to PyPI
 #   - `verify-published` re-downloads what actually landed on PyPI and checks
 #     its provenance, so a green run means the public artifact is the verified
 #     one, not merely that the upload did not error.
+#
+# The tag check is the piece that was missing until 2026-09-06. release.yml
+# has had it since it was written, through the shared
+# ChelseaKR/.github release-authorize workflow, but that workflow requires the
+# caller to be dispatched from `main` and this one is triggered by a published
+# Release, so it cannot be reused here. The check is the same one:
+# `.github/verify-release-tag.sh` against `.github/allowed_signers`, the file
+# release-authorize already reads. Without it this workflow published whatever
+# a Release event or a `workflow_dispatch` pointed at, and the version check
+# below compared that ref's pyproject.toml against that ref's tag name, which
+# two arbitrary refs can agree about perfectly well.
+#
+# Nothing is grandfathered. Every tag this repository has cut -- v0.1.0,
+# v0.2.0 and v0.2.1 -- is a signed annotated tag and verifies against the
+# committed key today, so GRANDFATHERED_TAGS is empty and no release is
+# exempt. The mechanism is still exercised, in tests/test_release_tag_gate.py,
+# because an empty list nothing runs is indistinguishable from a feature that
+# stopped working.
 #
 # No caching in the signing/publishing job, deliberately.
 
@@ -39,8 +60,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-tag:
+    name: verify-tag (the release tag is one the maintainer signed)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.verify.outputs.tag }}
+      commit: ${{ steps.verify.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history and tags: the tag object being verified has to be
+          # present locally for `git verify-tag` to read its signature.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: The release tag is signed by a key this repository trusts
+        id: verify
+        env:
+          # Routed through env: rather than interpolated into the run: shell.
+          # A tag name is `github` context data and carries no guarantee about
+          # shell metacharacters.
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          EXPECT_COMMIT: ${{ github.sha }}
+          ALLOWED_SIGNERS: .github/allowed_signers
+          # Empty on purpose: see this file's header.
+          GRANDFATHERED_TAGS: ""
+        run: bash .github/verify-release-tag.sh
+
   verify:
     name: verify (the same gate CI runs)
+    needs: [verify-tag]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -51,9 +104,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Check out the tag being released rather than whatever main points
-          # at now, so this gate tests the bits about to be published.
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+          # The commit the verified tag names. This used to be the tag name
+          # from the event, or `github.ref` on a dispatch, which is the same
+          # thing only when something has checked that the tag is real and
+          # signed; now something has.
+          ref: ${{ needs.verify-tag.outputs.commit }}
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -69,9 +124,13 @@ jobs:
       - name: The tag and the packaged version must agree
         # A release tagged v0.1.1 that ships 0.1.0 is worse than a failed
         # publish: PyPI would carry a version this repo never tagged.
-        if: github.event_name == 'release'
+        #
+        # The tag comes from verify-tag, and the `if:` that used to skip this
+        # on workflow_dispatch is gone: verify-tag refuses to resolve a tag
+        # for a dispatch from a branch, so by the time this runs there is
+        # always a verified tag to check the version against.
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ needs.verify-tag.outputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
@@ -83,7 +142,7 @@ jobs:
           echo "tag $TAG matches packaged version $packaged"
 
   publish:
-    needs: [verify]
+    needs: [verify-tag, verify]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -93,7 +152,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+          # The same verified commit `verify` gated, so the bits published
+          # are the bits that passed the gate rather than a second resolution
+          # of the same ref.
+          ref: ${{ needs.verify-tag.outputs.commit }}
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -135,18 +197,21 @@ jobs:
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
 
       # Attach the SBOM to the GitHub release for consumer verification.
+      # Only a Release has an asset list to upload into; a dispatch from a
+      # verified tag publishes to PyPI and stops there.
       - name: Upload SBOM to the release
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
-          # Routed through env: rather than interpolated into the run: shell.
-          TAG: ${{ github.event.release.tag_name }}
+          # Routed through env: rather than interpolated into the run: shell,
+          # and taken from the verified tag rather than re-read from the event.
+          TAG: ${{ needs.verify-tag.outputs.tag }}
         run: gh release upload "$TAG" ctdl-validate-sbom.cdx.json --clobber
 
   verify-published:
     # Re-fetch what actually landed on PyPI and check its attestation, rather
     # than trusting that `publish` exiting 0 means the right bits are public.
-    needs: [publish]
+    needs: [verify-tag, publish]
     if: github.event_name == 'release'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -154,7 +219,7 @@ jobs:
       contents: read
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: ${{ github.event.release.tag_name }}
+      TAG: ${{ needs.verify-tag.outputs.tag }}
     steps:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
