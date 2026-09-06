@@ -8,6 +8,17 @@ written by [`tools/survey.py`](../../tools/survey.py) from the target list in
 The tool was built first and pointed at reality second. This is what came
 back. It is not encouraging, and the discouraging part is the finding.
 
+> **Coverage note, added 2026-09-06.** These counts predate
+> [#57](https://github.com/ChelseaKR/ctdl-validate/issues/57). At the time of
+> this run both markup readers stopped walking at an item, while their
+> property walks refused to descend into one, so an `itemscope`/`typeof`
+> carrying no `itemprop`/`property` and nested inside another item was read by
+> neither path and dropped silently. `<body itemscope itemtype="WebPage">`
+> around a separately scoped `Course` is an ordinary publishing pattern, so the
+> item counts and the entity counts below are **lower bounds** for any page
+> that nested one. Both readers now walk through items; these numbers have not
+> been recomputed against that.
+
 ## Headline
 
 | | count | of pages read |

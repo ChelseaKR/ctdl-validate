@@ -187,6 +187,21 @@ class _RdfaReader:
         )
 
     def scan(self, element: Element, env: _Env, counter: list[int]) -> list[RawItem]:
+        """Every independent subject in the document, in document order.
+
+        In RDFa 1.1 ``typeof`` without ``property``/``rel`` establishes a new
+        subject wherever it appears, so the walk continues into an item's own
+        subtree rather than stopping at it. It has to: ``_properties`` refuses
+        to descend into an element carrying ``typeof``, so a nested ``typeof``
+        with no ``property`` was reached by neither path and vanished from the
+        extract with no note at all -- the microdata reader had the identical
+        defect in ``_top_level_elements``.
+
+        Nothing is read twice: ``property`` decides which path reads an
+        element, and the two conditions are mutually exclusive.
+        ``_report_beyond_lite`` latches after its first note, so revisiting a
+        subtree cannot duplicate it.
+        """
         items: list[RawItem] = []
         for child in element.children:
             child_env = env.extend(child)
@@ -194,8 +209,7 @@ class _RdfaReader:
             if "typeof" in child.attrs and "property" not in child.attrs:
                 items.append(self.read_item(child, child_env, f"rdfa[{counter[0]}]"))
                 counter[0] += 1
-            else:
-                items.extend(self.scan(child, child_env, counter))
+            items.extend(self.scan(child, child_env, counter))
         return items
 
 

@@ -224,3 +224,146 @@ def test_every_format_on_one_page_is_inventoried() -> None:
     assert [block.fmt for block in blocks] == ["json-ld", "json-ld", "json-ld", "microdata"]
     assert blocks[2].items == 2, "the nested course counts too"
     assert items
+
+
+# -- nested items are items (#57) -------------------------------------------
+#
+# Both readers stopped walking at an item, while their property walks refuse
+# to descend into one. An itemscope/typeof carrying no itemprop/property,
+# nested anywhere inside another item, was therefore reached by neither path
+# and fell out of the extract entirely -- silently, and with the block
+# inventory undercounting the items it claimed to have found. Neither format
+# had a fixture that nested one, so the whole suite stayed green.
+
+NESTED_MICRODATA = """
+<html><body itemscope itemtype="https://schema.org/WebPage">
+<h1 itemprop="name">Programs</h1>
+<div itemscope itemtype="https://schema.org/Course">
+  <span itemprop="name">Introduction to Welding</span>
+  <span itemprop="courseCode">WELD-101</span>
+</div>
+</body></html>
+"""
+
+NESTED_RDFA = """
+<html><body>
+<div vocab="https://schema.org/" typeof="Course">
+  <span property="name">Introduction to Welding</span>
+  <div typeof="Organization"><span property="name">Example Community College</span></div>
+</div>
+</body></html>
+"""
+
+
+def test_a_nested_microdata_item_that_is_no_property_value_is_top_level() -> None:
+    root = parse_html(NESTED_MICRODATA)
+    items, _ = read_microdata(root, SOURCE, load_schema())
+
+    # <body itemscope> wrapping a separately scoped Course is an ordinary
+    # publishing pattern; the Course used to disappear along with both its
+    # properties.
+    assert [item.types for item in items] == [("schema:WebPage",), ("schema:Course",)]
+    course = dict(items[1].props)
+    assert course["schema:name"].text == "Introduction to Welding"
+    assert course["schema:courseCode"].text == "WELD-101"
+    # ... and the outer item keeps its own property, unchanged.
+    assert dict(items[0].props)["schema:name"].text == "Programs"
+
+
+def test_a_nested_typeof_without_property_is_its_own_rdfa_item() -> None:
+    root = parse_html(NESTED_RDFA)
+    items, notes = read_rdfa(root, SOURCE, load_schema())
+
+    # RDFa 1.1: typeof without property/rel establishes a new subject.
+    assert [item.types for item in items] == [("schema:Course",), ("schema:Organization",)]
+    assert dict(items[1].props)["schema:name"].text == "Example Community College"
+    assert notes == [], "nothing was dropped, so nothing is reported dropped"
+
+
+def test_a_nested_item_carrying_itemprop_is_still_a_property_value() -> None:
+    """The distinction the fix must not blur: itemprop decides which it is."""
+    root = parse_html(load_page("organization_microdata.html"))
+    items, _ = read_microdata(root, SOURCE, load_schema())
+
+    # The fixture nests <div itemprop="address" itemscope>. It is a value of
+    # the Organization, not a second top-level entity.
+    assert all("schema:PostalAddress" not in item.types for item in items)
+    address = dict(items[0].props)["schema:address"]
+    assert address.item is not None and address.item.types == ("schema:PostalAddress",)
+
+
+def test_a_nested_typeof_carrying_property_is_still_a_property_value() -> None:
+    page = """
+    <html><body><div vocab="https://schema.org/" typeof="Course">
+      <span property="name">Welding</span>
+      <div property="provider" typeof="Organization">
+        <span property="name">Example Community College</span></div>
+    </div></body></html>
+    """
+    items, _ = read_rdfa(parse_html(page), SOURCE, load_schema())
+
+    assert [item.types for item in items] == [("schema:Course",)]
+    provider = dict(items[0].props)["schema:provider"]
+    assert provider.item is not None and provider.item.types == ("schema:Organization",)
+
+
+def test_an_item_nested_at_depth_inside_a_property_value_is_still_found() -> None:
+    """Top-level means "no itemprop", at any depth -- including inside one."""
+    page = """
+    <html><body itemscope itemtype="https://schema.org/WebPage">
+      <div itemprop="mainEntity" itemscope itemtype="https://schema.org/Course">
+        <span itemprop="name">Welding</span>
+        <section><div><article itemscope itemtype="https://schema.org/Organization">
+          <span itemprop="name">Example Community College</span>
+        </article></div></section>
+      </div>
+    </body></html>
+    """
+    items, _ = read_microdata(parse_html(page), SOURCE, load_schema())
+
+    assert [item.types for item in items] == [("schema:WebPage",), ("schema:Organization",)]
+    assert dict(items[1].props)["schema:name"].text == "Example Community College"
+
+
+def test_the_block_inventory_counts_the_nested_items_it_now_reads() -> None:
+    """The inventory said "1 item" for a page publishing two."""
+    _, blocks, _ = read_page(NESTED_MICRODATA, SOURCE, load_schema())
+    microdata = [block for block in blocks if block.fmt == "microdata"]
+    assert len(microdata) == 1
+    assert microdata[0].items == 2
+    assert list(microdata[0].types) == ["schema:WebPage", "schema:Course"]
+
+
+def test_nesting_costs_no_entity_or_note_that_the_siblings_would_produce() -> None:
+    """Same two items, nested and side by side, read the same either way."""
+    siblings = """
+    <html><body>
+    <div itemscope itemtype="https://schema.org/WebPage"><h1 itemprop="name">Programs</h1></div>
+    <div itemscope itemtype="https://schema.org/Course">
+      <span itemprop="name">Introduction to Welding</span>
+      <span itemprop="courseCode">WELD-101</span>
+    </div></body></html>
+    """
+    nested_items, _ = read_microdata(parse_html(NESTED_MICRODATA), SOURCE, load_schema())
+    sibling_items, _ = read_microdata(parse_html(siblings), SOURCE, load_schema())
+
+    assert declared_types(nested_items) == declared_types(sibling_items)
+    assert len(list(walk_items(nested_items))) == len(list(walk_items(sibling_items)))
+
+
+def test_an_rdfa_item_nested_at_depth_is_found_and_the_wrapper_is_walked_through() -> None:
+    """Plain wrappers are transparent to both walks: the property walk descends
+    through them to reach a property, and the subject walk descends through the
+    item itself to reach a nested subject."""
+    page = """
+    <html><body><div vocab="https://schema.org/" typeof="Course">
+      <section><div><span property="name">Welding</span></div></section>
+      <section><div><div typeof="Organization">
+        <span property="name">Example Community College</span></div></div></section>
+    </div></body></html>
+    """
+    items, _ = read_rdfa(parse_html(page), SOURCE, load_schema())
+
+    assert [item.types for item in items] == [("schema:Course",), ("schema:Organization",)]
+    assert dict(items[0].props)["schema:name"].text == "Welding", "reached through two wrappers"
+    assert dict(items[1].props)["schema:name"].text == "Example Community College"
