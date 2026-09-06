@@ -8,6 +8,36 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- **The full-history secret scan could not fail on a credential that had been
+  revoked.** `trufflehog.yml` ran `--only-verified`, which reports a finding
+  only when TruffleHog authenticates the credential against the live service.
+  A credential that leaked and was then revoked -- the normal end state of a
+  real incident, and the exact case a scheduled history sweep exists to catch
+  -- answers "no", and TruffleHog files that answer under `unverified`. So the
+  sweep was structurally incapable of failing on the thing it exists for, and
+  it went green for it. Measured on a throwaway clone with a real-shaped AWS
+  key planted in one commit and deleted in the next: `--only-verified`,
+  `--results=verified` and `--results=verified,unknown` all exited 0 reporting
+  nothing; `--results=verified,unknown,unverified` exited 183 reporting it.
+
+  The scan now runs `--results=verified,unknown,unverified`. This repository's
+  entire history was re-scanned under the widened tier before the change and
+  reported nothing, so no allowlist was needed and no false positive was
+  traded in. The existing `--exclude-detectors=Lob` exclusion is kept: it was
+  re-measured and still suppresses only pytest function names.
+
+  The step also had no `version:` input. That input is what selects the
+  scanning binary (`ghcr.io/trufflesecurity/trufflehog:${VERSION}`) and
+  defaults to `latest`, so the SHA pin on `uses:` pinned only the wrapper and
+  the sweep silently tracked whatever upstream published last. It is now
+  pinned to 3.97.1, the release the `uses:` SHA names.
+
+  `tests/test_secret_scan_tiers.py` fails if any lane drops the `unverified`
+  tier, reintroduces `--only-verified`, loses `fetch-depth: 0` or `path: ./`,
+  or lets the pinned ref and the `version:` input name different releases.
+
 ### Added
 
 - **`pypi-publish.yml` verifies the release tag's signature before anything

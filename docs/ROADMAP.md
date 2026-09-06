@@ -21,7 +21,7 @@ README's "Scope, honestly" section.
 | Vendored snapshot integrity | SHA-256 of every vendored file matches `vendor/SOURCES.md` | `tests/test_vendor_integrity.py` | AUTO | Maintainer |
 | Gate self-test | Every seeded corruption of a clean fixture is caught | `tests/test_break_the_gate.py` | AUTO | Maintainer |
 | Dependency vulnerabilities | 0 known in the locked toolchain | `make audit` (pip-audit) in verify and CI; Dependabot weekly | AUTO | Maintainer |
-| Secret and SAST scanning | 0 verified secrets; 0 unresolved Semgrep findings | trufflehog.yml (push, PR, weekly), semgrep.yml (push, PR) | AUTO | Maintainer |
+| Secret and SAST scanning | 0 secrets reported in any TruffleHog result tier (verified, unknown and unverified -- a revoked credential is `unverified`); 0 unresolved Semgrep findings | trufflehog.yml (push, PR, weekly), semgrep.yml (push, PR) | AUTO | Maintainer |
 | SHA-pinned workflow actions | 100% | portfolio conformance checker; review on workflow diffs | AUTO | Maintainer |
 | Spec snapshot freshness | Re-vendor and re-hash when upstream CTDL encodings change | Manual check against credreg.net before a release | REVIEW | Maintainer |
 | Severity contract accuracy | UNVERIFIABLE never gates the exit code; ERROR always does | `tests/test_cli.py` plus release review of any severity change | AUTO + REVIEW | Maintainer |
