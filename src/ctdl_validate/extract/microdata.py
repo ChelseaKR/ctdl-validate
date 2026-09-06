@@ -176,14 +176,30 @@ class _MicrodataReader:
 
 
 def _top_level_elements(element: Element, language: str | None) -> list[tuple[Element, str | None]]:
-    """Item elements that are not themselves property values, in document order."""
+    """Item elements that are not themselves property values, in document order.
+
+    Per the HTML Living Standard the top-level microdata items of a document
+    are exactly the item elements with no ``itemprop``, *at any depth* -- so
+    the walk continues into an item's own subtree rather than stopping at it.
+    It has to: ``_properties`` refuses to descend into an element carrying
+    ``itemscope``, so an ``itemscope`` without ``itemprop`` nested inside
+    another item was reached by neither path and fell out of the extract
+    silently, taking its properties and the block inventory's count with it.
+    ``<body itemscope itemtype="WebPage">`` around a separately scoped
+    ``Course`` is an ordinary publishing pattern.
+
+    An element cannot be yielded twice: ``itemprop`` decides which path reads
+    it, and the two conditions are mutually exclusive. A nested item that
+    *does* carry ``itemprop`` is still a property value and still not yielded
+    here -- but the walk goes through it, because a top-level item may sit
+    inside one.
+    """
     found: list[tuple[Element, str | None]] = []
     for child in element.children:
         child_language = child.attrs.get("lang") or child.attrs.get("xml:lang") or language
         if "itemscope" in child.attrs and "itemprop" not in child.attrs:
             found.append((child, child_language))
-        else:
-            found.extend(_top_level_elements(child, child_language))
+        found.extend(_top_level_elements(child, child_language))
     return found
 
 

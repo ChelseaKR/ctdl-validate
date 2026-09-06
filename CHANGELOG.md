@@ -135,6 +135,50 @@ and this project adheres to
 
 ### Fixed
 
+- **A nested item that was not a property value was dropped from the extract
+  with no note.** ([#57](https://github.com/ChelseaKR/ctdl-validate/issues/57))
+  `microdata._top_level_elements` appended an item and stopped walking there,
+  and `_properties` refuses to descend into an element carrying `itemscope`.
+  So an `itemscope` *without* `itemprop`, nested anywhere inside another item,
+  was reached by neither path: not a property value, so the property walk
+  skipped it; inside an item, so the top-level walk never got to it.
+  `rdfa.scan` had the identical shape against `typeof`/`property`.
+
+  Per the HTML Living Standard the top-level microdata items of a document are
+  exactly the item elements with no `itemprop`, *at any depth*; in RDFa 1.1,
+  `typeof` without `property`/`rel` establishes a new subject wherever it
+  appears. `_top_level_elements`' own docstring stated the contract -- "Item
+  elements that are not themselves property values" -- and the function did
+  not deliver it.
+
+  The drop was silent in three places at once: the document lost the entity,
+  the notes said nothing, and the block inventory undercounted the items it
+  claimed to have found -- against `report.py`'s "notes saying what was read,
+  what was dropped, and why" and README's "Under-reporting is visible in the
+  notes". It was on no "Cannot, by construction" list and in no ADR, roadmap
+  or expansion-plan entry.
+
+  Both walks now continue into an item's own subtree. Nothing is read twice:
+  `itemprop`/`property` decides which walk reads an element and the two
+  conditions are mutually exclusive, and `_report_beyond_lite` latches after
+  its first note. `<body itemscope itemtype="WebPage">` around a separately
+  scoped `Course` -- an ordinary publishing pattern -- now yields both items,
+  the `Course`'s properties, and the `PROPERTY_NOT_MAPPED` note its
+  `courseCode` earns; measured before the fix, nesting cost a real, mappable
+  CTDL entity plus that note.
+
+  Eight tests cover both formats: a nested item, a nested item at depth inside
+  a *property-value* item, a nested item read through plain wrappers, the
+  block inventory's count, and a nested-versus-sibling equivalence test. Two
+  are regression guards that an `itemprop`/`property`-bearing nested item is
+  still a property value and not a second entity. The two coverage misses the
+  issue named, `microdata.py:144-145` and `rdfa.py:173-174`, are now executed.
+  Five of the eight were watched fail with the old walk restored.
+
+  `docs/findings/2026-08-14-provider-markup-survey.md` carries a dated note
+  that its item and entity counts are lower bounds for any page that nested an
+  item, and have not been recomputed.
+
 - **Check 1 never saw the `@graph` envelope's own `@id`, so a malformed
   Registry graph URI passed clean on a real Registry document.**
   ([#58](https://github.com/ChelseaKR/ctdl-validate/issues/58))
