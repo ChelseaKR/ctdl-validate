@@ -228,7 +228,10 @@ puts the report and the document in one envelope; `--format jsonld` prints
 the document alone on stdout and the report on stderr, so piping the document
 somewhere never silently discards what was dropped on the way. `--from-file
 PATH` reads a saved copy of the page instead of fetching it, which makes a run
-reproducible offline.
+reproducible offline; it decodes those bytes exactly as the fetch path does --
+the page's own `<meta charset>`, then a labelled `errors="replace"` fallback --
+so the same bytes give the same document either way, and the report names the
+encoding it used.
 
 Exit codes: 0 when at least one CTDL entity came out, 1 when the page was read
 and produced none, 2 when nothing could be read at all. With `--validate` the

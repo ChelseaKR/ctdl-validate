@@ -26,7 +26,14 @@ from .. import __version__
 from ..findings import Severity, render_findings_json, render_findings_text
 from ..validator import validate_document
 from .dom import MarkupError
-from .fetch import DEFAULT_MAX_BYTES, DEFAULT_MIN_INTERVAL, DEFAULT_TIMEOUT, Fetcher, FetchError
+from .fetch import (
+    DEFAULT_MAX_BYTES,
+    DEFAULT_MIN_INTERVAL,
+    DEFAULT_TIMEOUT,
+    Fetcher,
+    FetchError,
+    decode_body,
+)
 from .markup import extract_from_html
 from .report import Extraction, render_document, render_json, render_text
 
@@ -92,10 +99,22 @@ def _load_page(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
     if args.from_file:
         path = Path(args.from_file)
         try:
-            page = path.read_text(encoding="utf-8")
+            body = path.read_bytes()
         except OSError as exc:
             raise FetchError(f"cannot read {path}: {exc}") from exc
-        return page, {"source": "file", "path": str(path), "bytes": len(page.encode("utf-8"))}
+        # Read as bytes and decode exactly the way the fetch path does, so the
+        # same saved bytes produce the same document either way. Reading with
+        # read_text(encoding="utf-8") raised UnicodeDecodeError -- a ValueError,
+        # so neither the OSError handler here nor main's caught it -- and a page
+        # that was never opened escaped as a traceback on exit 1, the code that
+        # means "read fine, no CTDL markup".
+        page, encoding = decode_body(body)
+        return page, {
+            "source": "file",
+            "path": str(path),
+            "encoding": encoding,
+            "bytes": len(body),
+        }
     fetcher = Fetcher(
         contact=args.contact,
         timeout=args.timeout,

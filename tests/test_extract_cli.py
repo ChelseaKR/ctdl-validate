@@ -127,3 +127,117 @@ def test_help_for_the_subcommand_is_its_own(capsys: pytest.CaptureFixture[str]) 
         main(["extract", "--help"])
     assert exit_info.value.code == 0
     assert "robots.txt" in capsys.readouterr().out
+
+
+# --- saved pages are decoded the way fetched pages are (#59) ---------------
+#
+# --from-file existed to make a run reproducible offline: "same page bytes,
+# same output, byte for byte" (README). It hard-coded UTF-8 while the fetch
+# path honoured the markup's declared charset, so the two paths disagreed on
+# the same bytes, and a non-UTF-8 saved page raised UnicodeDecodeError -- a
+# ValueError, caught by neither handler -- and exited 1, the code reserved for
+# "read fine, publishes no CTDL".
+
+
+def _page_bytes(name: str, charset: str, encoding: str) -> bytes:
+    """A minimal JSON-LD course page declaring ``charset``, stored as ``encoding``."""
+    return (
+        '<!doctype html>\n<html lang="fr">\n<head>\n'
+        f'<meta charset="{charset}">\n'
+        "<title>Soudage</title>\n"
+        '<script type="application/ld+json">\n'
+        '{"@context": "https://schema.org", "@type": "Course",'
+        ' "@id": "https://example.edu/courses/weld-101",'
+        f' "name": "{name}", "courseCode": "WELD-101"}}\n'
+        "</script>\n</head>\n<body></body>\n</html>\n"
+    ).encode(encoding)
+
+
+def _run_json(argv: list[str], capsys: pytest.CaptureFixture[str]) -> tuple[int, Any]:
+    code = main(argv)
+    return code, json.loads(capsys.readouterr().out)
+
+
+def test_a_non_utf8_saved_page_is_read_rather_than_crashing(
+    tmp_path: Any, capsys: pytest.CaptureFixture[str]
+) -> None:
+    saved = tmp_path / "page_cp1252.html"
+    saved.write_bytes(_page_bytes("Collège Example Welding", "windows-1252", "windows-1252"))
+
+    code, payload = _run_json(
+        ["extract", SOURCE, "--from-file", str(saved), "--format", "json"], capsys
+    )
+
+    assert code == 0, "the page is readable and carries a course; it is not a failed read"
+    assert payload["fetch"]["encoding"] == "windows-1252"
+    assert payload["fetch"]["bytes"] == len(saved.read_bytes()), "bytes read, not bytes re-encoded"
+    names = json.dumps(payload["document"], ensure_ascii=False)
+    assert "Collège" in names, "the accented byte survived the round trip"
+
+
+def test_a_saved_page_whose_bytes_defy_its_declared_charset_is_labelled_not_lost(
+    tmp_path: Any, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Bytes are windows-1252 but the page claims UTF-8, so the declared codec
+    # cannot decode them. The fetch path replaces and says so; so must this one.
+    saved = tmp_path / "page_mislabelled.html"
+    saved.write_bytes(_page_bytes("Collège Example Welding", "utf-8", "windows-1252"))
+
+    code, payload = _run_json(
+        ["extract", SOURCE, "--from-file", str(saved), "--format", "json"], capsys
+    )
+
+    assert code != 2, "the page was read; only some bytes were unrepresentable"
+    assert payload["fetch"]["encoding"] == "utf-8 (undecodable, replaced)"
+
+
+def test_an_unreadable_saved_page_exits_two_and_never_traces_back(
+    tmp_path: Any, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # A directory is the readable stand-in for every OSError: exit 2 ("nothing
+    # could be read"), never exit 1 ("read fine, no CTDL"), never a traceback.
+    unreadable = tmp_path / "a_directory.html"
+    unreadable.mkdir()
+    assert main(["extract", SOURCE, "--from-file", str(unreadable)]) == 2
+    assert "cannot read" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("charset", "encoding"),
+    [
+        ("windows-1252", "windows-1252"),  # declared charset matches the bytes
+        ("utf-8", "utf-8"),  # the ordinary case
+        ("windows-1252", "utf-8"),  # declared charset disagrees with the bytes
+        ("utf-8", "windows-1252"),  # ... and the other way, so decoding fails
+    ],
+)
+def test_from_file_and_fetch_produce_the_same_document_for_the_same_bytes(
+    charset: str, encoding: str, tmp_path: Any, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """README's "same page bytes, same output, byte for byte" guarantee, pinned.
+
+    Whether the declared charset is right, wrong, or unusable, the two paths
+    must agree -- the point is parity, not that either answer is correct.
+    """
+    body = _page_bytes("Collège Example Welding", charset, encoding)
+    saved = tmp_path / "saved.html"
+    saved.write_bytes(body)
+
+    # No charset on the response, so the markup's own declaration decides on
+    # both paths; that is the only condition under which they can agree.
+    routes = {"/robots.txt": ALLOW_ALL, "/course": Route(body=body, content_type="text/html")}
+    with serve(routes) as site:
+        url = f"{site.base}/course"
+        fetched_code, fetched = _run_json(
+            ["extract", url, "--format", "json", "--min-interval", "0"], capsys
+        )
+        saved_code, from_file = _run_json(
+            ["extract", url, "--from-file", str(saved), "--format", "json"], capsys
+        )
+
+    assert fetched_code == saved_code
+    assert from_file["document"] == fetched["document"]
+    assert from_file["blocks"] == fetched["blocks"]
+    assert from_file["notes"] == fetched["notes"]
+    assert from_file["fetch"]["encoding"] == fetched["fetch"]["encoding"]
+    assert from_file["fetch"]["bytes"] == fetched["fetch"]["bytes"] == len(body)
