@@ -12,6 +12,17 @@ question at ten times the scale, with the false-positive class removed: what
 does the validator say about the published corpus now, and how much of what it
 says is an answer rather than "I cannot see the document this points at"?
 
+> **Coverage note, added 2026-09-06.** These counts predate
+> [#58](https://github.com/ChelseaKR/ctdl-validate/issues/58). At the time of
+> this run, `parse_document` took the `@graph` array and discarded the
+> envelope's own `@id`, so no check could see it -- and that is the only
+> position in which a Registry *graph* URI appears in a published Registry
+> document. The harness feeds `envelope["decoded_resource"]` straight into
+> `parse_document`, so **none of the graph URIs in this sample were checked**,
+> and the `REGISTRY_URI_MALFORMED` and `CTID_URI_MISMATCH` counts below cover
+> resource URIs only. Check 1 now reads the envelope; these numbers have not
+> been recomputed against it.
+
 ## Protocol, fixed before the draw
 
 Everything in this section was written and committed before the first page was

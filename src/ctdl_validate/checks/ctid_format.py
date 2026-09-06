@@ -1,8 +1,10 @@
 """Check 1: CTID format.
 
 Values of ceterms:ctid, plus the CTID portion of any Registry resource/graph
-URI appearing anywhere in the payload (including @id), must match the
-published grammar. See ctid.py for the grammar and its source.
+URI appearing anywhere in the payload, must match the published grammar. That
+includes both @id positions: a node's, and the @graph envelope's own -- the
+latter being the only place a Registry *graph* URI appears in a published
+Registry document. See ctid.py for the grammar and its source.
 """
 
 from __future__ import annotations
@@ -10,9 +12,15 @@ from __future__ import annotations
 from .. import rules
 from ..ctid import EXPECTED_GRAMMAR, classify_ctid, registry_uri_tail
 from ..findings import Finding, Severity
+from ..graph import Graph
 from ..session import Session
 
 CTID_PROP = "ceterms:ctid"
+
+#: Appended to a finding's message when the URI is the ``@graph`` envelope's
+#: own ``@id`` rather than a node's, so the report says which position it sits
+#: in. A Registry graph URI appears nowhere else in a published document.
+_ENVELOPE_WHERE = " This URI is the @graph envelope's own @id ($.@id)."
 
 
 def _ctid_value_findings(entity: str, value: object) -> list[Finding]:
@@ -94,7 +102,7 @@ def _ctid_value_findings(entity: str, value: object) -> list[Finding]:
     return findings
 
 
-def _registry_uri_findings(entity: str, prop: str, value: str) -> list[Finding]:
+def _registry_uri_findings(entity: str, prop: str, value: str, where: str = "") -> list[Finding]:
     tail = registry_uri_tail(value)
     if tail is None:
         return []
@@ -111,6 +119,7 @@ def _registry_uri_findings(entity: str, prop: str, value: str) -> list[Finding]:
             "Registry URI whose tail is not a CTID. Registry resource and graph URIs "
             f"end in the resource's CTID: {EXPECTED_GRAMMAR}."
         )
+    message += where
     return [
         Finding(
             code="REGISTRY_URI_MALFORMED",
@@ -124,9 +133,70 @@ def _registry_uri_findings(entity: str, prop: str, value: str) -> list[Finding]:
     ]
 
 
+def _ctids_declared(graph: Graph) -> set[str]:
+    """Every CTID the payload declares, however it declares it.
+
+    Both positions count: a ``ceterms:ctid`` value, and the CTID tail of a
+    node's own Registry ``@id``. A graph URI is compared against this set
+    rather than against one designated "primary" entity, because the document
+    shape does not say which entity is primary and guessing would invent
+    findings the payload does not support.
+    """
+    declared: set[str] = set()
+    for node in graph.nodes:
+        for value in node.props.get(CTID_PROP, ()):
+            if isinstance(value, str) and classify_ctid(value).matches_shape:
+                declared.add(value)
+        if node.node_id is not None:
+            tail = registry_uri_tail(node.node_id)
+            if tail is not None and classify_ctid(tail).matches_shape:
+                declared.add(tail)
+    return declared
+
+
+def _envelope_findings(graph: Graph) -> list[Finding]:
+    """Check 1 against the ``@graph`` envelope's own ``@id``.
+
+    This is the only position in which a Registry *graph* URI appears in a
+    published Registry document -- in all five Registry-shaped fixtures here,
+    ``/graph/`` occurs exactly once each, always as this key. Until the
+    envelope identifier was kept (see ``graph.Graph.envelope_id``) no check
+    could see it, so ``REGISTRY_URI_MALFORMED`` could not fire on a real
+    Registry payload at all and ``registry_uri_tail``'s graph-prefix branch
+    was dead against them.
+    """
+    envelope_id = graph.envelope_id
+    if envelope_id is None:
+        return []
+    findings = _registry_uri_findings(envelope_id, "@id", envelope_id, where=_ENVELOPE_WHERE)
+    tail = registry_uri_tail(envelope_id)
+    if tail is None or not classify_ctid(tail).matches_shape:
+        return findings
+    declared = _ctids_declared(graph)
+    if not declared or tail in declared:
+        return findings
+    findings.append(
+        Finding(
+            code="CTID_URI_MISMATCH",
+            severity=Severity.ERROR,
+            entity=envelope_id,
+            prop="@id",
+            value=envelope_id,
+            message=(
+                f"The @graph envelope's own @id ($.@id) names CTID {tail}, which no "
+                "entity in the payload declares -- neither as ceterms:ctid nor as the "
+                "CTID portion of its own Registry @id. Declared here: "
+                f"{', '.join(sorted(declared))}."
+            ),
+            rule=rules.CTID_URI_STRUCTURE,
+        )
+    )
+    return findings
+
+
 def check(session: Session) -> list[Finding]:
     graph = session.graph
-    findings: list[Finding] = []
+    findings: list[Finding] = _envelope_findings(graph)
     for node in graph.nodes:
         entity = node.label
         for value in node.props.get(CTID_PROP, ()):
