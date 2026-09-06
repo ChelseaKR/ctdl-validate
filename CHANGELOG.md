@@ -135,6 +135,39 @@ and this project adheres to
 
 ### Fixed
 
+- **`extract --from-file` decoded saved pages differently from fetched ones,
+  and crashed on any page that was not UTF-8.**
+  ([#59](https://github.com/ChelseaKR/ctdl-validate/issues/59)) The flag exists
+  to make a run reproducible offline -- README's "Same *page bytes*, same
+  output, byte for byte" -- but it hard-coded `read_text(encoding="utf-8")`
+  while the fetch path honoured the `Content-Type` charset, then the page's
+  own `<meta charset>`, then fell back to `errors="replace"` labelled
+  `(undecodable, replaced)`. The same bytes therefore produced two different
+  documents depending only on which path read them.
+
+  Worse, `UnicodeDecodeError` is a `ValueError`, so the `except OSError`
+  around the read did not catch it and neither did `main`'s
+  `(FetchError, MarkupError, RecursionError)` handler. A saved page in any
+  other encoding escaped as an unhandled traceback on Python's default exit 1
+  -- which this command documents as "the page was read and produced no CTDL
+  entities. Not an error; on the open web it is the common case." A harness
+  reading exit codes recorded "no CTDL markup here" for a page that was never
+  opened. The code for "nothing could be read" is 2.
+
+  `--from-file` now reads bytes and decodes them through the same function the
+  fetch path uses, so the markup's declared charset decides on both paths and
+  undecodable bytes are replaced-and-labelled rather than fatal. The reported
+  `bytes` is now the bytes read rather than the decoded text re-encoded, and
+  the report names the encoding used. Every remaining unreadable-file case is
+  an `OSError`, so it raises `FetchError` and exits 2.
+
+  Six tests pin it: a `windows-1252` page read end to end, a page whose
+  declared charset cannot decode its own bytes, an unreadable path exiting 2,
+  and a four-way parametrized parity test asserting `--from-file` and `fetch`
+  emit the identical document, blocks, notes and encoding for the identical
+  bytes -- with the declared charset right, wrong, and unusable. All but the
+  exit-2 guard were watched fail against the previous implementation.
+
 - The half of the check 5 fix in [#35](https://github.com/ChelseaKR/ctdl-validate/pull/35)
   that no test held. `_asserts_back` accepts an inverse written as a nested
   object because of the identifier the object carries -- and replacing that

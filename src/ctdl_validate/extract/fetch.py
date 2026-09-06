@@ -138,8 +138,16 @@ def _charset(content_type: str, body: bytes) -> str:
     return declared.group(1).decode("ascii") if declared else "utf-8"
 
 
-def _decode(body: bytes, content_type: str) -> tuple[str, str]:
-    """Decode using the encoding the response or the markup declares."""
+def decode_body(body: bytes, content_type: str = "") -> tuple[str, str]:
+    """Decode using the encoding the response or the markup declares.
+
+    Public because ``--from-file`` decodes with it too. The saved-page path
+    has no response headers, so it passes no ``content_type`` and the markup's
+    own ``<meta charset>`` decides -- which is what makes the two paths agree.
+    Bytes that will not decode are never lost and never raise: they come back
+    with ``errors="replace"`` under a label that says so, so an undecodable
+    page is reported rather than mistaken for a page with no markup.
+    """
     encoding = _charset(content_type, body)
     try:
         return body.decode(encoding), encoding
@@ -243,7 +251,7 @@ class Fetcher:
     ) -> tuple[RobotFileParser | None, str]:
         if 200 <= status < 300:
             parser = RobotFileParser()
-            parser.parse(_decode(body[:ROBOTS_MAX_BYTES], "text/plain")[0].splitlines())
+            parser.parse(decode_body(body[:ROBOTS_MAX_BYTES], "text/plain")[0].splitlines())
             return parser, f"read from {url} (HTTP {status})"
         if 400 <= status < 500:
             # RFC 9309 2.3.1.3: unavailable, so any resource may be accessed.
@@ -321,5 +329,5 @@ class Fetcher:
                 f"{' and '.join(self.accepted_content_types)} only. A JSON-LD file "
                 "that is already CTDL should be validated directly, not extracted."
             )
-        text, encoding = _decode(body, content_type)
+        text, encoding = decode_body(body, content_type)
         return content_type, text, encoding
