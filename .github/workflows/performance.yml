@@ -86,8 +86,15 @@ on:
 permissions:
   contents: read
 
+# A push to main falls through to the second operand, so keying it on
+# `github.ref` put every commit on main into one group `...-refs/heads/main`.
+# Two pushes landing close together then cancelled the older run, and that
+# commit stayed on main with no verdict: a cancelled run reports `cancelled`,
+# not a failure, so nothing goes red and nobody is told it went unchecked.
+# `github.sha` gives each commit its own group. Pull requests are unaffected --
+# they still key on the PR number and still collapse to one run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
