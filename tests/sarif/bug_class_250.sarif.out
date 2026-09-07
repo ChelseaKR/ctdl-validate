@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "properties": {
+        "document": {
+          "path": "tests/fixtures/bug_class_250_bare_uuid_for_ctid.json"
+        },
+        "summary": {
+          "ERROR": 2,
+          "INFO": 0,
+          "UNVERIFIABLE": 0,
+          "WARNING": 0
+        }
+      },
+      "results": [
+        {
+          "kind": "fail",
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+                  "name": "b55f88e3-dfd4-430b-ab47-3e5f9986e1e4"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/fixtures/bug_class_250_bare_uuid_for_ctid.json"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "@id = https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4 on https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4. Registry URI whose CTID portion is a bare UUID: the ce- prefix is missing. Expected: ce- followed by a UUID v4 in 8-4-4-4-12 form, 39 characters, lower case hexadecimal, e.g. ce-e8a41a52-6ff6-48f0-9872-889c87b093b7.\n\nRule: About the CTID, section \"CTID-Based URI Structure\": Registry URIs are constructed from https://credentialengineregistry.org plus /resources/ or /graph/ plus the CTID itself, and \"the value of a resource's CTID property will exactly match the CTID portion of that resource's URI\".\nSource: https://credreg.net/ctdl/ctid (retrieved 2026-08-06)"
+          },
+          "partialFingerprints": {
+            "ctdlValidate/finding/v1": "464fb741451ffff7e33e5ab33e2a0e57298a78086e7417acd166b4a7f8c1f11b"
+          },
+          "properties": {
+            "entity": "https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+            "property": "@id",
+            "rule": {
+              "citation": "About the CTID, section \"CTID-Based URI Structure\": Registry URIs are constructed from https://credentialengineregistry.org plus /resources/ or /graph/ plus the CTID itself, and \"the value of a resource's CTID property will exactly match the CTID portion of that resource's URI\".",
+              "retrieved": "2026-08-06",
+              "url": "https://credreg.net/ctdl/ctid"
+            },
+            "severity": "ERROR",
+            "value": "https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4"
+          },
+          "ruleId": "REGISTRY_URI_MALFORMED",
+          "ruleIndex": 1
+        },
+        {
+          "kind": "fail",
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+                  "name": "b55f88e3-dfd4-430b-ab47-3e5f9986e1e4"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/fixtures/bug_class_250_bare_uuid_for_ctid.json"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "ceterms:ctid = b55f88e3-dfd4-430b-ab47-3e5f9986e1e4 on https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4. Bare UUID where a CTID belongs: the ce- prefix is missing. Expected grammar: ce- followed by a UUID v4 in 8-4-4-4-12 form, 39 characters, lower case hexadecimal, e.g. ce-e8a41a52-6ff6-48f0-9872-889c87b093b7.\n\nRule: About the CTID, section \"CTID Structure\": \"Each CTID is made up of a standard UUID v4 prefixed with ce-\", and with the prefix \"there are a total of 34 hexadecimal characters and 5 hyphens for a total of 39 characters\", in the form ce- plus 8-4-4-4-12 hexadecimal digits. Example given: ce-e8a41a52-6ff6-48f0-9872-889c87b093b7.\nSource: https://credreg.net/ctdl/ctid (retrieved 2026-08-06)"
+          },
+          "partialFingerprints": {
+            "ctdlValidate/finding/v1": "2f0559701f35090d542a69ed51f96b24b52fd7a0a98494c9aaf61cf95d50f154"
+          },
+          "properties": {
+            "entity": "https://credentialengineregistry.org/resources/b55f88e3-dfd4-430b-ab47-3e5f9986e1e4",
+            "property": "ceterms:ctid",
+            "rule": {
+              "citation": "About the CTID, section \"CTID Structure\": \"Each CTID is made up of a standard UUID v4 prefixed with ce-\", and with the prefix \"there are a total of 34 hexadecimal characters and 5 hyphens for a total of 39 characters\", in the form ce- plus 8-4-4-4-12 hexadecimal digits. Example given: ce-e8a41a52-6ff6-48f0-9872-889c87b093b7.",
+              "retrieved": "2026-08-06",
+              "url": "https://credreg.net/ctdl/ctid"
+            },
+            "severity": "ERROR",
+            "value": "b55f88e3-dfd4-430b-ab47-3e5f9986e1e4"
+          },
+          "ruleId": "CTID_BARE_UUID",
+          "ruleIndex": 0
+        }
+      ],
+      "tool": {
+        "driver": {
+          "informationUri": "https://github.com/ChelseaKR/ctdl-validate",
+          "name": "ctdl-validate",
+          "properties": {
+            "vendoredSnapshot": {
+              "algorithm": "sha256",
+              "files": {
+                "ctdl/context.json": "ddb6b4586c38df5fa43aa5f6a558de407dd7acdec9bc1329ce790e164bf40db5",
+                "ctdl/schema.json": "a2dd28cb08f9e5e0324fe155e7381c276d70e69cb95521dab120f042cc538776",
+                "ctdlasn/context.json": "783a5a5e132deb0023f6a4ea5201b9b69e298e6c359c1fd8d3c595392f8e7e72",
+                "ctdlasn/schema.json": "8bacfcec140c03e144903acd04eeacc3f466c2245ca2a1bb703a322981fda0b7"
+              },
+              "retrieved": "2026-08-06"
+            }
+          },
+          "rules": [
+            {
+              "helpUri": "https://credreg.net/ctdl/ctid",
+              "id": "CTID_BARE_UUID",
+              "name": "CTID_BARE_UUID",
+              "properties": {
+                "sources": [
+                  {
+                    "retrieved": "2026-08-06",
+                    "url": "https://credreg.net/ctdl/ctid"
+                  }
+                ]
+              },
+              "shortDescription": {
+                "text": "A CTID is a bare UUID: the ce- prefix is missing."
+              }
+            },
+            {
+              "helpUri": "https://credreg.net/ctdl/ctid",
+              "id": "REGISTRY_URI_MALFORMED",
+              "name": "REGISTRY_URI_MALFORMED",
+              "properties": {
+                "sources": [
+                  {
+                    "retrieved": "2026-08-06",
+                    "url": "https://credreg.net/ctdl/ctid"
+                  }
+                ]
+              },
+              "shortDescription": {
+                "text": "A Registry resource or graph URI does not end in a valid CTID."
+              }
+            }
+          ],
+          "semanticVersion": "0.2.1",
+          "version": "0.2.1"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
+
+[exit 1]

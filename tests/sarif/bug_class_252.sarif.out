@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "properties": {
+        "document": {
+          "path": "tests/fixtures/bug_class_252_wrong_framework_identifier.json"
+        },
+        "summary": {
+          "ERROR": 1,
+          "INFO": 0,
+          "UNVERIFIABLE": 1,
+          "WARNING": 1
+        }
+      },
+      "results": [
+        {
+          "kind": "fail",
+          "level": "warning",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+                  "name": "ce-9e492574-07fc-4154-b7f2-898425f4f3a3"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/fixtures/bug_class_252_wrong_framework_identifier.json"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "ceasn:isPartOf = https://credentialengineregistry.org/resources/ce-82566cee-17f3-4a6e-8f59-b45273aac457 on https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3. This competency's isPartOf identifier matches no CompetencyFramework in this payload, although this run can see one (https://credentialengineregistry.org/resources/ce-177f4c85-4efe-401d-acdd-1ea4adeeaf37). If this competency belongs to that framework, this identifier is the wrong one.\n\nRule: ceasn:isPartOf is defined as \"Competency framework that this competency is a part of\" (CTDL-ASN schema), and the CTDL Handbook states: \"In the Registry, Competency Frameworks and their member Competencies are published in the same JSON-LD Graph\". A member competency whose isPartOf identifier matches no framework in its own payload very likely carries the wrong identifier.\nSource: https://credreg.net/ctdl/handbook (retrieved 2026-08-06)"
+          },
+          "partialFingerprints": {
+            "ctdlValidate/finding/v1": "d5dd52acc312ef15aa86bb60380d33915eb854254aa9b9d709d57c9fdf3c3bd4"
+          },
+          "properties": {
+            "entity": "https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+            "property": "ceasn:isPartOf",
+            "rule": {
+              "citation": "ceasn:isPartOf is defined as \"Competency framework that this competency is a part of\" (CTDL-ASN schema), and the CTDL Handbook states: \"In the Registry, Competency Frameworks and their member Competencies are published in the same JSON-LD Graph\". A member competency whose isPartOf identifier matches no framework in its own payload very likely carries the wrong identifier.",
+              "retrieved": "2026-08-06",
+              "url": "https://credreg.net/ctdl/handbook"
+            },
+            "severity": "WARNING",
+            "value": "https://credentialengineregistry.org/resources/ce-82566cee-17f3-4a6e-8f59-b45273aac457"
+          },
+          "ruleId": "ISPARTOF_FRAMEWORK_MISMATCH",
+          "ruleIndex": 0
+        },
+        {
+          "kind": "open",
+          "level": "note",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+                  "name": "ce-9e492574-07fc-4154-b7f2-898425f4f3a3"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/fixtures/bug_class_252_wrong_framework_identifier.json"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "ceasn:isPartOf = https://credentialengineregistry.org/resources/ce-82566cee-17f3-4a6e-8f59-b45273aac457 on https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3. Reference does not resolve inside this payload. It may exist in the Registry or elsewhere; without fetching it, its existence and class cannot be confirmed or denied. Pass it with --resolve to settle this.\n\nRule: ctdl-validate policy: no network access at validation time. A reference that points outside the submitted payload cannot be confirmed or denied, so it is reported UNVERIFIABLE, never as a pass or a fail. --resolve widens what the run can see, using documents the operator already has; it fetches nothing.\nSource: README.md (Methodology) (retrieved -)"
+          },
+          "partialFingerprints": {
+            "ctdlValidate/finding/v1": "22246094eba3b4676c9ed35ed931abea2c0275689abde064f84813247e1fa45a"
+          },
+          "properties": {
+            "entity": "https://credentialengineregistry.org/resources/ce-9e492574-07fc-4154-b7f2-898425f4f3a3",
+            "property": "ceasn:isPartOf",
+            "rule": {
+              "citation": "ctdl-validate policy: no network access at validation time. A reference that points outside the submitted payload cannot be confirmed or denied, so it is reported UNVERIFIABLE, never as a pass or a fail. --resolve widens what the run can see, using documents the operator already has; it fetches nothing.",
+              "retrieved": "-",
+              "url": "README.md (Methodology)"
+            },
+            "severity": "UNVERIFIABLE",
+            "value": "https://credentialengineregistry.org/resources/ce-82566cee-17f3-4a6e-8f59-b45273aac457"
+          },
+          "ruleId": "REF_OUTSIDE_PAYLOAD",
+          "ruleIndex": 2
+        },
+        {
+          "kind": "fail",
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://credentialengineregistry.org/resources/ce-b4da9602-bb7a-4ddc-9426-f119482e32a9",
+                  "name": "ce-b4da9602-bb7a-4ddc-9426-f119482e32a9"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/fixtures/bug_class_252_wrong_framework_identifier.json"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "ceasn:isPartOf = https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f on https://credentialengineregistry.org/resources/ce-b4da9602-bb7a-4ddc-9426-f119482e32a9. Referenced entity https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f is typed [ceasn:Competency], which is outside the declared range of ceasn:isPartOf.\n\nRule: ceasn:isPartOf declares schema:rangeIncludes [ceasn:CompetencyFramework] in the schema encoding; the referenced entity's class is not among them or their subclasses.\nSource: https://credreg.net/ctdlasn/schema/encoding/json (retrieved 2026-08-06)"
+          },
+          "partialFingerprints": {
+            "ctdlValidate/finding/v1": "db069d972fd65edd3263c01a3927e709f2ec46f37b5bdc3687795bbcb1ecbf70"
+          },
+          "properties": {
+            "entity": "https://credentialengineregistry.org/resources/ce-b4da9602-bb7a-4ddc-9426-f119482e32a9",
+            "property": "ceasn:isPartOf",
+            "rule": {
+              "citation": "ceasn:isPartOf declares schema:rangeIncludes [ceasn:CompetencyFramework] in the schema encoding; the referenced entity's class is not among them or their subclasses.",
+              "retrieved": "2026-08-06",
+              "url": "https://credreg.net/ctdlasn/schema/encoding/json"
+            },
+            "severity": "ERROR",
+            "value": "https://credentialengineregistry.org/resources/ce-5e3de882-3b49-421b-b623-695c63587f4f"
+          },
+          "ruleId": "RANGE_VIOLATION",
+          "ruleIndex": 1
+        }
+      ],
+      "tool": {
+        "driver": {
+          "informationUri": "https://github.com/ChelseaKR/ctdl-validate",
+          "name": "ctdl-validate",
+          "properties": {
+            "vendoredSnapshot": {
+              "algorithm": "sha256",
+              "files": {
+                "ctdl/context.json": "ddb6b4586c38df5fa43aa5f6a558de407dd7acdec9bc1329ce790e164bf40db5",
+                "ctdl/schema.json": "a2dd28cb08f9e5e0324fe155e7381c276d70e69cb95521dab120f042cc538776",
+                "ctdlasn/context.json": "783a5a5e132deb0023f6a4ea5201b9b69e298e6c359c1fd8d3c595392f8e7e72",
+                "ctdlasn/schema.json": "8bacfcec140c03e144903acd04eeacc3f466c2245ca2a1bb703a322981fda0b7"
+              },
+              "retrieved": "2026-08-06"
+            }
+          },
+          "rules": [
+            {
+              "helpUri": "https://credreg.net/ctdl/handbook",
+              "id": "ISPARTOF_FRAMEWORK_MISMATCH",
+              "name": "ISPARTOF_FRAMEWORK_MISMATCH",
+              "properties": {
+                "sources": [
+                  {
+                    "retrieved": "2026-08-06",
+                    "url": "https://credreg.net/ctdl/handbook"
+                  }
+                ]
+              },
+              "shortDescription": {
+                "text": "A competency declares ceasn:isPartOf a framework other than the one it belongs to."
+              }
+            },
+            {
+              "helpUri": "https://credreg.net/ctdlasn/schema/encoding/json",
+              "id": "RANGE_VIOLATION",
+              "name": "RANGE_VIOLATION",
+              "properties": {
+                "sources": [
+                  {
+                    "retrieved": "2026-08-06",
+                    "url": "https://credreg.net/ctdlasn/schema/encoding/json"
+                  }
+                ]
+              },
+              "shortDescription": {
+                "text": "A property's value is of a class its declared range does not include."
+              }
+            },
+            {
+              "id": "REF_OUTSIDE_PAYLOAD",
+              "name": "REF_OUTSIDE_PAYLOAD",
+              "properties": {
+                "sources": [
+                  {
+                    "retrieved": "-",
+                    "url": "README.md (Methodology)"
+                  }
+                ]
+              },
+              "shortDescription": {
+                "text": "A reference could not be resolved from the payload or any supplied document."
+              }
+            }
+          ],
+          "semanticVersion": "0.2.1",
+          "version": "0.2.1"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
+
+[exit 1]

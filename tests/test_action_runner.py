@@ -9,6 +9,7 @@ it hands back to GitHub: 0 clean, 1 gated findings, 2 unusable input.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -227,3 +228,202 @@ def test_the_action_reads_the_version_the_package_actually_writes() -> None:
     match = re.search(r'SUPPORTED_REPORT_SCHEMA_MAJOR = "(\d+)"', source)
     assert match, "the runner no longer declares which report major it reads"
     assert REPORT_SCHEMA_VERSION.split(".")[0] == match.group(1)
+
+
+# -- the SARIF file: complete, or not written at all ----------------------------
+
+
+def _sarif_run(tmp_path: Path, path: str, **inputs: str) -> tuple[int, str, Path]:
+    destination = tmp_path / "out" / "ctdl-validate.sarif"
+    code, stdout, _ = _run(tmp_path, CTDL_PATH=path, CTDL_SARIF_FILE=str(destination), **inputs)
+    return code, stdout, destination
+
+
+def test_no_sarif_is_written_unless_it_is_asked_for(tmp_path: Path) -> None:
+    code, _, _ = _run(tmp_path, CTDL_PATH=str(FIXTURES / "clean_framework.json"))
+    assert code == 0
+    assert not list(tmp_path.rglob("*.sarif"))
+
+
+def test_the_sarif_file_carries_every_document_as_one_run(tmp_path: Path) -> None:
+    documents = tmp_path / "documents"
+    documents.mkdir()
+    names = (
+        "bug_class_250_bare_uuid_for_ctid.json",
+        "bug_class_252_wrong_framework_identifier.json",
+    )
+    for name in names:
+        (documents / name).write_bytes((ROOT / FIXTURES / name).read_bytes())
+
+    code, stdout, destination = _sarif_run(tmp_path, str(documents), CTDL_FAIL_ON="error")
+    assert code == 1, stdout  # both fixtures carry an ERROR finding
+    log = json.loads(destination.read_text(encoding="utf-8"))
+    assert log["version"] == "2.1.0"
+    assert len(log["runs"]) == 1, "GitHub accepts at most twenty runs in one file"
+    run = log["runs"][0]
+    assert [d["path"] for d in run["properties"]["documents"]] == [
+        (documents / name).as_uri() for name in sorted(names)
+    ]
+    assert run["properties"]["summary"]["ERROR"] == 3
+    rules = run["tool"]["driver"]["rules"]
+    for result in run["results"]:
+        assert rules[result["ruleIndex"]]["id"] == result["ruleId"]
+
+
+def test_the_sarif_file_records_which_vendored_snapshot_decided_it(tmp_path: Path) -> None:
+    code, stdout, destination = _sarif_run(tmp_path, str(FIXTURES / "clean_framework.json"))
+    assert code == 0, stdout
+    log = json.loads(destination.read_text(encoding="utf-8"))
+    recorded = log["runs"][0]["tool"]["driver"]["properties"]["vendoredSnapshot"]
+    assert recorded["algorithm"] == "sha256"
+    assert len(recorded["files"]) == 4
+
+
+def test_no_sarif_is_written_when_a_document_could_not_be_read(tmp_path: Path) -> None:
+    """An upload resolves the alerts it omits, so a file missing a document's
+    findings is worse than no file: it closes real alerts as fixed."""
+    documents = tmp_path / "documents"
+    documents.mkdir()
+    (documents / "clean.json").write_bytes((ROOT / FIXTURES / "clean_framework.json").read_bytes())
+    (documents / "broken.json").write_text("{ not json", encoding="utf-8")
+
+    code, stdout, destination = _sarif_run(tmp_path, str(documents))
+    assert code == 2, stdout
+    assert not destination.exists(), "a partial SARIF file must never be written"
+    assert "resolves the alerts it omits" in stdout
+
+
+def _sarif_stub(tmp_path: Path, report: object, sarif: object) -> Path:
+    """A stub CLI that answers both formats, so the two can be made to disagree.
+
+    This one replaces the command-line entry point and *only* that: its
+    ``__init__`` extends ``__path__`` back over the real package, so
+    ``ctdl_validate.sarif`` -- which the runner imports to merge -- is still
+    the real module. A whole-package stub would shadow it, and the runner
+    would then fail on an import error rather than on the thing under test.
+    """
+    package = tmp_path / "stub" / "ctdl_validate"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text(
+        f"__path__.append({str(ROOT / 'src' / 'ctdl_validate')!r})\n", encoding="utf-8"
+    )
+    (package / "__main__.py").write_text(
+        "import json, sys\n"
+        f"print(json.dumps({sarif!r} if '--format' in sys.argv and "
+        f"sys.argv[sys.argv.index('--format') + 1] == 'sarif' else {report!r}))\n",
+        encoding="utf-8",
+    )
+    return tmp_path / "stub"
+
+
+def _run_with_sarif_stub(tmp_path: Path, report: object, sarif: object) -> tuple[int, str, Path]:
+    stub = _sarif_stub(tmp_path, report, sarif)
+    destination = tmp_path / "ctdl-validate.sarif"
+    completed = subprocess.run(
+        [sys.executable, str(RUNNER)],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "PYTHONPATH": f"{stub}{os.pathsep}{ROOT / 'src'}",
+            "GITHUB_OUTPUT": str(tmp_path / "outputs.txt"),
+            "CTDL_PATH": str(FIXTURES / "clean_framework.json"),
+            "CTDL_SARIF_FILE": str(destination),
+        },
+        check=False,
+    )
+    return completed.returncode, completed.stdout, destination
+
+
+def _whole_sarif(results: int) -> dict[str, object]:
+    return {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "ctdl-validate",
+                        "properties": {},
+                        "rules": [
+                            {
+                                "id": "X",
+                                "name": "X",
+                                "properties": {
+                                    "sources": [
+                                        {"url": "https://credreg.net/x", "retrieved": "2026-01-01"}
+                                    ]
+                                },
+                            }
+                        ],
+                    }
+                },
+                "results": [
+                    {"ruleId": "X", "ruleIndex": 0, "message": {"text": "x"}}
+                    for _ in range(results)
+                ],
+                "properties": {
+                    "document": {"path": "x.json"},
+                    "summary": {"ERROR": 0, "WARNING": 0, "INFO": 0, "UNVERIFIABLE": results},
+                },
+            }
+        ],
+    }
+
+
+def _report_with(findings: int) -> dict[str, object]:
+    report = _whole_report()
+    report["findings"] = [
+        {
+            "code": "X",
+            "severity": "UNVERIFIABLE",
+            "entity": "_:b0",
+            "property": "p",
+            "value": "v",
+            "message": "m",
+            "rule": {"citation": "c", "url": "u", "retrieved": "r"},
+        }
+        for _ in range(findings)
+    ]
+    summary = report["summary"]
+    assert isinstance(summary, dict)
+    summary["UNVERIFIABLE"] = findings
+    return report
+
+
+def test_the_sarif_stub_harness_itself_passes_when_the_two_agree(tmp_path: Path) -> None:
+    """Without this every assertion below could pass for the wrong reason."""
+    code, stdout, destination = _run_with_sarif_stub(tmp_path, _report_with(2), _whole_sarif(2))
+    assert code == 0, stdout
+    assert destination.exists()
+
+
+def test_a_sarif_run_that_lost_a_result_is_refused_not_uploaded(tmp_path: Path) -> None:
+    """Two renderings of one list of findings cannot legitimately disagree,
+    and the smaller one is the one that would be uploaded."""
+    code, stdout, destination = _run_with_sarif_stub(tmp_path, _report_with(2), _whole_sarif(1))
+    assert code == 2, stdout
+    assert not destination.exists()
+    assert "1 result(s)" in stdout and "2 finding(s)" in stdout
+
+
+def test_sarif_that_is_not_one_run_is_refused(tmp_path: Path) -> None:
+    log = _whole_sarif(0)
+    runs = log["runs"]
+    assert isinstance(runs, list)
+    log["runs"] = runs + runs
+    code, stdout, destination = _run_with_sarif_stub(tmp_path, _report_with(0), log)
+    assert code == 2, stdout
+    assert not destination.exists()
+    assert "exactly one run" in stdout
+
+
+def test_the_action_inputs_and_the_runner_read_the_same_environment() -> None:
+    """A renamed input does not fail; it arrives as an empty string, and the
+    feature it controls silently does nothing. This is the only thing that
+    notices."""
+    source = RUNNER.read_text(encoding="utf-8")
+    read = set(re.findall(r'os\.environ\.get\("(CTDL_[A-Z_]+)"\)', source))
+    passed = set(re.findall(r"^\s+(CTDL_[A-Z_]+):", (ROOT / "action.yml").read_text("utf-8"), re.M))
+    assert read == passed, "action.yml and the runner disagree about the environment"

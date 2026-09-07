@@ -24,11 +24,19 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+  # Only the SARIF suite uses it: the OASIS SARIF 2.1.0 schema is draft-04
+  # and far outside the subset tests/schema_check.py enforces by hand, and a
+  # checker that skipped the keywords it does not implement would be the very
+  # thing that file exists to refuse. The report schema is still checked by
+  # tests/schema_check.py; this validates the SARIF log only, offline, against
+  # the vendored copy in tests/sarif/.
+  "jsonschema>=4.23",
   "mypy>=1.18",
   "pip-audit>=2.7",
   "pytest>=8",
   "pytest-cov>=5.0",
   "ruff>=0.15",
+  "types-jsonschema>=4.23",
 ]
 
 [project.scripts]

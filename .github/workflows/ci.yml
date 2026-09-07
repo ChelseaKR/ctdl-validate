@@ -86,3 +86,40 @@ jobs:
         run: |
           echo "::error::action.yml passed a document with an ERROR finding"
           exit 1
+
+      # `sarif-file` is the one input whose effect is a file rather than an
+      # exit code, so nothing else here would notice if it stopped producing
+      # one. The findings still gate the job, hence continue-on-error again.
+      - name: A run with sarif-file still gates, and writes the file
+        id: sarif
+        continue-on-error: true
+        uses: ./
+        with:
+          path: tests/fixtures/bug_class_25*.json
+          sarif-file: ctdl-validate.sarif
+
+      - name: The SARIF is one run, covers both documents, and cites correctly
+        # The outcome reaches the script through env: rather than being
+        # interpolated into the run: block, the same posture action.yml takes
+        # with its own inputs.
+        env:
+          SARIF_OUTCOME: ${{ steps.sarif.outcome }}
+        run: |
+          test "$SARIF_OUTCOME" = "failure" \
+            || { echo "::error::sarif-file must not change what the gate does"; exit 1; }
+          python3 - <<'PY'
+          import json, pathlib
+          log = json.loads(pathlib.Path("ctdl-validate.sarif").read_text(encoding="utf-8"))
+          assert log["version"] == "2.1.0", log["version"]
+          runs = log["runs"]
+          assert len(runs) == 1, f"{len(runs)} runs; GitHub accepts at most 20 per file"
+          run = runs[0]
+          assert len(run["properties"]["documents"]) == 2, run["properties"]["documents"]
+          assert run["results"], "both fixtures have findings; the file reports none"
+          rules = run["tool"]["driver"]["rules"]
+          for result in run["results"]:
+              assert rules[result["ruleIndex"]]["id"] == result["ruleId"], result["ruleId"]
+          digests = run["tool"]["driver"]["properties"]["vendoredSnapshot"]["files"]
+          assert len(digests) == 4, digests
+          print(f"{len(run['results'])} result(s) in one run, all rule-indexed correctly")
+          PY
