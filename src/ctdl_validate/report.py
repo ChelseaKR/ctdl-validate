@@ -28,11 +28,12 @@ alternative is a consumer silently reading a report it does not understand.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 #: The version of ``report.schema.json``, stamped into every JSON report.
 #: See the module docstring for what each part means.
-REPORT_SCHEMA_VERSION = "1.0.0"
+REPORT_SCHEMA_VERSION = "1.1.0"
 
 #: The schema itself, shipped as package data so an installed copy -- and the
 #: playground's Pyodide wheel -- can print it. ``pyproject.toml`` lists it
@@ -44,3 +45,40 @@ REPORT_SCHEMA_PATH = Path(__file__).resolve().parent / "report.schema.json"
 def read_report_schema() -> str:
     """The schema as published, byte for byte."""
     return REPORT_SCHEMA_PATH.read_text(encoding="utf-8")
+
+
+@dataclass(frozen=True)
+class DocumentScope:
+    """How much of a parsed document this tool has jurisdiction over.
+
+    ``ctdl-validate`` checks terms in the ``ceterms:`` and ``ceasn:``
+    namespaces (:func:`ctdl_validate.schema.is_checked_term`). A document that
+    declares none of them trips no rule -- correctly, because there is nothing
+    in it this tool has anything to say about. What is *not* correct is that
+    the report of such a run has been indistinguishable from the report of a
+    clean CTDL payload: both read ``0 finding(s): 0 ERROR, ...`` and exit 0.
+
+    Measured on 2026-09-07: ``package.json``, ``tsconfig.json``, ``{}``,
+    ``[]``, this repository's own ``report.schema.json`` and the vendored
+    ``vendor/ctdl/context.json`` each produce exactly that report. The sibling
+    tool refuses the same input -- ``oscal-validate`` exits 2 with "no OSCAL
+    model root found" -- and the difference matters most in a pre-commit hook,
+    where ``types: [json]`` hands the validator every JSON file in a
+    repository and a wall of clean reports over files that are not CTDL reads
+    as a passing gate (#63).
+
+    So the count is published beside the findings. ``checked_entities`` is
+    zero exactly when the run had nothing to check, and a reader who sees zero
+    findings can tell the two conditions apart. Nothing here changes a
+    severity, a finding, or an exit code: the exit contract in ``docs/API.md``
+    is unchanged, because a document that parses is not a document that could
+    not be read.
+    """
+
+    #: Entities the walk registered, including nested ones.
+    entities: int
+    #: Of those, how many declare at least one term this tool checks -- as a
+    #: ``@type`` or as a property key. Both are counted because a node can
+    #: carry ``ceterms:`` properties under a class the snapshot does not name,
+    #: and such a node is squarely this tool's business.
+    checked_entities: int

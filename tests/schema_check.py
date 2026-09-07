@@ -55,8 +55,7 @@ def _resolve(reference: str, root: dict[str, Any]) -> dict[str, Any]:
     return node
 
 
-def _type_error(schema: dict[str, Any], instance: Any, where: str) -> list[str]:
-    declared = schema["type"]
+def _one_type_error(declared: str, instance: Any, where: str) -> list[str]:
     expected = TYPES.get(declared)
     if expected is None:
         raise UnsupportedKeyword(f"type {declared!r}")
@@ -66,6 +65,25 @@ def _type_error(schema: dict[str, Any], instance: Any, where: str) -> list[str]:
     if not isinstance(instance, expected):
         return [f"{where}: expected {declared}, got {type(instance).__name__}"]
     return []
+
+
+def _type_error(schema: dict[str, Any], instance: Any, where: str) -> list[str]:
+    """Draft 2020-12 lets ``type`` be a list, meaning any one of them.
+
+    Added for ``measured_count``, which is ``["integer", "null"]`` -- the third
+    state a count needs when the producer did not measure it. An unrecognised
+    member still raises: a list is a union of the type names this checker
+    knows, not an escape from having to know them.
+    """
+    declared = schema["type"]
+    if isinstance(declared, str):
+        return _one_type_error(declared, instance, where)
+    if not declared:
+        raise UnsupportedKeyword(f"{where}: an empty type list matches nothing")
+    per_type = [_one_type_error(name, instance, where) for name in declared]
+    if any(not errors for errors in per_type):
+        return []
+    return [f"{where}: expected one of {list(declared)}, got {type(instance).__name__}"]
 
 
 def _check_scalar(instance: Any, schema: dict[str, Any], where: str) -> list[str]:
