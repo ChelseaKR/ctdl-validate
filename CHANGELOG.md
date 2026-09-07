@@ -40,6 +40,59 @@ and this project adheres to
 
 ### Added
 
+- **SARIF 2.1.0 output, and a `sarif-file` input on the Action** (part of
+  issue #63; the pre-commit hook it also asks for is not in this change),
+  ported from `oscal-validate`'s renderer.
+
+  `ctdl-validate <file> --format sarif` writes a SARIF 2.1.0 log of the same
+  findings the JSON report carries, in the same order, with the same citation
+  on each. The severity contract survives the conversion, which is the part
+  worth stating: ERROR and WARNING are `kind: fail`, INFO is
+  `informational`, and UNVERIFIABLE is `kind: open` -- SARIF's own word for
+  "evaluated and not settled" -- at `level: note`. No result is ever
+  `kind: pass`. The specification's prose would put a non-`fail` result at
+  `level: none`; GitHub code scanning renders only `note`, `warning` and
+  `error`, so `level: none` would make every UNVERIFIABLE finding vanish from
+  the place the format is most often read, which is the absence-as-pass this
+  tool exists to refuse. The reasoning is in `src/ctdl_validate/sarif.py`.
+
+  `tool.driver.properties.vendoredSnapshot` carries the snapshot's retrieval
+  date and the SHA-256 of all four vendored files, computed at run time from
+  the bytes the run actually read rather than transcribed from `SOURCES.md`.
+  A code-scanning alert outlives the checkout that produced it, and
+  "ctdl-validate 0.2.1 said so" does not identify the encoding a verdict was
+  made against -- which matters here more than most places, because
+  `TERM_UNSTABLE` and `CONCEPT_OUTSIDE_SNAPSHOT` exist precisely because CTDL
+  moves. `tests/test_sarif.py` asserts the identity covers every file under
+  `vendor/`, and that altering a vendored file's bytes moves its digest.
+
+  `action.yml` gains `sarif-file`, and `tools/action_runner.py` merges the
+  documents into **one** SARIF run rather than one run each, because GitHub
+  accepts at most twenty runs per uploaded file and a publication set of
+  twenty-one payloads is an ordinary set. The merge is
+  `ctdl_validate.sarif.merge_logs`, not a second implementation in the
+  runner: merging rules re-decides a code's `helpUri` when two payloads cite
+  it from different encodings, and that is a rendering decision.
+
+  The file is written only when every document produced a SARIF run whose
+  result count equals its own JSON summary; otherwise the run exits 2 and
+  writes nothing. `upload-sarif` treats an upload as the complete picture and
+  resolves any alert missing from it, so a SARIF file that had lost a
+  document's findings would not merely under-report -- it would close real
+  alerts as fixed. That is the same absence-published-as-a-measurement the
+  report-shape check added on 2026-09-06 was written for, one layer out.
+
+  Also pinned: `action.yml` and the runner must read the same `CTDL_*`
+  environment. A renamed input does not fail -- it arrives as an empty string
+  and the feature it controls silently does nothing.
+
+  `jsonschema` joins the development group, used by the SARIF suite alone to
+  validate the log against the vendored OASIS schema offline. The report
+  schema is still checked by `tests/schema_check.py`; the SARIF schema is
+  draft-04 and far outside the subset that file enforces by hand, and a
+  checker that skipped the keywords it does not implement would be the very
+  thing `schema_check.py` exists to refuse.
+
 - **`ctdl-validate diff`: what changed between two runs** (issue #61), in
   `src/ctdl_validate/compare.py` and `diff.py` (both new), `cli.py`,
   `tests/test_diff.py` (new) and the README. Each side is a CTDL payload,

@@ -30,6 +30,7 @@ from . import __version__
 from .findings import Severity, render_findings_json, render_findings_text
 from .graph import DocumentError
 from .report import read_report_schema
+from .sarif import render_findings_sarif
 from .validator import validate_document
 
 #: The one command in this tool that opens a network connection.
@@ -116,9 +117,13 @@ def validate_main(argv: Sequence[str]) -> int:
     )
     parser.add_argument(
         "--format",
-        choices=("text", "json"),
+        choices=("text", "json", "sarif"),
         default="text",
-        help="output format (default: text)",
+        help=(
+            "output format (default: text). sarif is SARIF 2.1.0 with the same findings: "
+            "see src/ctdl_validate/sarif.py for how severities map and why no result is "
+            "ever a pass"
+        ),
     )
     parser.add_argument(
         "--report-schema",
@@ -147,11 +152,12 @@ def validate_main(argv: Sequence[str]) -> int:
         print(f"ctdl-validate: {args.file}: {exc}", file=sys.stderr)
         return 2
 
-    print(
-        render_findings_json(findings, __version__)
-        if args.format == "json"
-        else render_findings_text(findings)
-    )
+    if args.format == "json":
+        print(render_findings_json(findings, __version__))
+    elif args.format == "sarif":
+        print(render_findings_sarif(findings, __version__, Path(args.file)))
+    else:
+        print(render_findings_text(findings))
     return 1 if any(f.severity is Severity.ERROR for f in findings) else 0
 
 

@@ -64,7 +64,12 @@ ERROR        CTID_BARE_UUID  entity=$.@graph[0]
 
 Exit code 0 when there are no ERROR findings, 1 when there are, 2 when the
 input cannot be read at all. `--format json` produces machine-readable output
-with the same content.
+with the same content, and `--format sarif` the same findings as SARIF 2.1.0
+for code-scanning viewers: ERROR is `error`, WARNING is `warning`, INFO and
+UNVERIFIABLE are `note`, and no result is ever rendered as a pass. The
+reasoning, including why UNVERIFIABLE is `kind: open` and not `level: none`,
+is in `src/ctdl_validate/sarif.py`; the output validates offline against the
+OASIS schema vendored in `tests/sarif/`.
 
 ## Why this exists
 
@@ -93,6 +98,7 @@ Python 3.12+, no runtime dependencies.
 pip install ctdl-validate
 ctdl-validate <file.json>
 ctdl-validate <file.json> --format json
+ctdl-validate <file.json> --format sarif   # SARIF 2.1.0, for code scanning
 ctdl-validate --report-schema        # the shape that report conforms to
 
 # What changed between two runs. No network, exit 0 either way.
@@ -243,7 +249,7 @@ jobs:
 ```
 
 `path` takes one document, a directory (searched recursively for `*.json`), or
-a glob such as `payloads/**/*.json`. Two further inputs, both optional:
+a glob such as `payloads/**/*.json`. Three further inputs, all optional:
 
 - `resolve`: space-separated documents or directories to resolve references
   against, passed through as repeated `--resolve`. Same rules as the CLI, so
@@ -252,6 +258,9 @@ a glob such as `payloads/**/*.json`. Two further inputs, both optional:
   ERROR and only ERROR; a lower threshold is applied by the action, from the
   counts in the CLI's own `--format json` summary. UNVERIFIABLE is gated at no
   setting, because the tool counts it as neither a pass nor a fail.
+- `sarif-file`: a path to write SARIF 2.1.0 to, for
+  `github/codeql-action/upload-sarif`. Empty by default, which writes nothing.
+  See [below](#code-scanning).
 
 ```yaml
       - uses: ChelseaKR/ctdl-validate@v0.2.1
@@ -275,6 +284,57 @@ nothing to install: `ctdl-validate` has zero runtime dependencies and ships
 `python -m ctdl_validate`, so the action runs the checked-out source directly
 and resolves nothing from PyPI while it runs. `actions/setup-python` is pinned
 to a commit SHA and to the same Python 3.12 the rest of this repository uses.
+
+### Code scanning
+
+Annotations vanish with the workflow run. To keep the findings, set
+`sarif-file` and hand the file to `github/codeql-action/upload-sarif`; the
+findings then appear in the Security tab and inline on the pull request. Every
+UNVERIFIABLE finding arrives as an alert at level `note`, on purpose; filter by
+rule, never by hiding them.
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  code-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ChelseaKR/ctdl-validate@v0.2.1 # `sarif-file` is newer than v0.2.1; pin a commit that carries it
+        id: ctdl
+        with:
+          path: payloads/
+          resolve: reference-data/
+          sarif-file: ctdl-validate.sarif
+      - if: ${{ !cancelled() && steps.ctdl.outcome != 'skipped' }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ctdl-validate.sarif
+          category: ctdl-validate
+```
+
+The `if:` is what carries a *failing* run's findings to the Security tab:
+without it the upload is skipped exactly when there is something to upload.
+
+Every payload goes into one SARIF run, not one run each, because GitHub
+accepts at most twenty runs per file and a publication set is routinely more
+than twenty payloads. The file is written only when every document produced a
+complete SARIF run, and the run fails without writing it otherwise. That is
+deliberate and worth knowing: `upload-sarif` treats an upload as the complete
+picture and resolves any alert it does not contain, so a file that had quietly
+lost one payload's findings would close those alerts as fixed. A missing file
+fails the upload step loudly instead.
+
+`tool.driver.properties.vendoredSnapshot` in the log records the snapshot's
+retrieval date and the SHA-256 of all four vendored files the run read,
+computed from the files themselves. An alert outlives the checkout that
+produced it, and the version of the tool alone does not say which encoding
+decided the verdict — which matters here more than most places, because this
+tool already reports `TERM_UNSTABLE` and `CONCEPT_OUTSIDE_SNAPSHOT` precisely
+because CTDL moves.
 
 The gate is tested in both directions, because a gate that cannot fail is
 worse than no gate: `tests/test_action_runner.py` asserts the exit code for
