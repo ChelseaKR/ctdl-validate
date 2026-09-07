@@ -10,6 +10,33 @@ and this project adheres to
 
 ### Fixed
 
+- **The Action treated a severity it did not know as a count of zero, and
+  annotated it as a notice.** `docs/API.md` permits `Severity` to gain a member
+  within a major version and says a consumer "must not treat an unknown
+  severity as a pass". `tools/action_runner.py` did exactly that, in two places
+  at once: `validate_one` folds only the four names in `SEVERITIES` into
+  `totals`, so findings of a fifth would have been counted by **no** `fail-on`
+  threshold and the run would have exited 0 with them in the report; and
+  `report_findings` mapped it through `LEVELS.get(severity, "notice")` — the
+  mildest level GitHub has — so a severity possibly graver than ERROR would
+  have rendered as an informational annotation.
+
+  Both were reachable without any change this script would otherwise have
+  noticed, because adding a severity is a minor bump and the runner accepts
+  later minors of the same major on purpose.
+
+  This is the same defect as the `summary.get(severity, 0)` fold removed on
+  2026-09-06, said the other way round: a count that is not there is not a
+  count of none, and **a count this action does not know how to gate on is not
+  a count of zero either.** `describe_unreadable` now refuses a report carrying
+  an unrecognised severity — in a finding or as a summary key — and the run
+  exits 2 rather than gating on a subset of what was reported. The annotator's
+  fallback level moved from `notice` to `error`.
+
+  Not live: the tool has emitted exactly four severities in every release. The
+  hole was in what would happen the first time it did not. The identical hole
+  was in `oscal-validate` and is fixed there in its own pull request.
+
 - **A document with nothing in it this tool checks reported as a clean
   payload.** `ctdl-validate` reads terms in the `ceterms:` and `ceasn:`
   namespaces. A document declaring none of them trips no rule, which is
