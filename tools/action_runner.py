@@ -39,6 +39,11 @@ TOOL = "ctdl-validate"
 #: The tool's severities, in the order it reports them.
 SEVERITIES = ("ERROR", "WARNING", "INFO", "UNVERIFIABLE")
 
+#: The major version of ``report.schema.json`` this script knows how to read.
+#: A report declaring a different major fails the run rather than being read
+#: on a guess; see :func:`describe_unreadable`.
+SUPPORTED_REPORT_SCHEMA_MAJOR = "1"
+
 #: What each ``fail-on`` setting gates on. UNVERIFIABLE is in none of them.
 GATED: dict[str, tuple[str, ...]] = {
     "error": ("ERROR",),
@@ -115,6 +120,44 @@ def report_findings(document: Path, findings: list[dict[str, str]]) -> None:
         )
 
 
+def describe_unreadable(report: object) -> str | None:
+    """Why this report cannot be gated on, or ``None`` when it can.
+
+    This exists because the previous reading was ``summary.get(severity, 0)``:
+    a summary that had lost a key -- renamed, or written by a future version
+    of the report -- counted as zero findings of that severity, and the gate
+    passed. That is an absence published as a measurement, which is the defect
+    this tool exists to report. A count that is not there is not a count of
+    none, so a report missing any part of the contract fails the run (exit 2)
+    instead of being read as clean.
+
+    The check is on the shape the action actually reads, not the whole schema:
+    the schema is the published contract and lives in the package, but this
+    script must stay dependency-free and must not fail a run over a key it
+    never looks at.
+    """
+    if not isinstance(report, dict):
+        return "the report is not a JSON object"
+    declared = report.get("report_schema_version")
+    if not isinstance(declared, str):
+        return "report_schema_version is missing"
+    major = declared.split(".")[0]
+    if major != SUPPORTED_REPORT_SCHEMA_MAJOR:
+        return (
+            f"report_schema_version is {declared}, and this action reads "
+            f"{SUPPORTED_REPORT_SCHEMA_MAJOR}.x"
+        )
+    if not isinstance(report.get("findings"), list):
+        return "findings is missing or is not a list"
+    summary = report.get("summary")
+    if not isinstance(summary, dict):
+        return "summary is missing"
+    absent = [severity for severity in SEVERITIES if not isinstance(summary.get(severity), int)]
+    if absent:
+        return f"summary has no integer count for {', '.join(absent)}"
+    return None
+
+
 def validate_one(document: Path, resolve: Sequence[str], totals: dict[str, int]) -> bool:
     """Validate one document and fold its counts into ``totals``.
 
@@ -132,11 +175,20 @@ def validate_one(document: Path, resolve: Sequence[str], totals: dict[str, int])
         annotate("error", f"{TOOL} produced output this action could not read", file=str(document))
         return False
 
+    unreadable = describe_unreadable(report)
+    if unreadable is not None:
+        annotate(
+            "error",
+            f"{TOOL} produced a report this action could not read: {unreadable}",
+            file=str(document),
+        )
+        return False
+
     report_findings(document, report["findings"])
     summary = report["summary"]
     for severity in SEVERITIES:
-        totals[severity] += int(summary.get(severity, 0))
-    print(f"{document}: " + ", ".join(f"{summary.get(s, 0)} {s}" for s in SEVERITIES))
+        totals[severity] += int(summary[severity])
+    print(f"{document}: " + ", ".join(f"{summary[s]} {s}" for s in SEVERITIES))
     return True
 
 

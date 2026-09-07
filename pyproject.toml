@@ -38,7 +38,7 @@ ctdl-validate = "ctdl_validate.cli:entrypoint"
 where = ["src"]
 
 [tool.setuptools.package-data]
-ctdl_validate = ["py.typed", "vendor/SOURCES.md", "vendor/*/*.json"]
+ctdl_validate = ["py.typed", "report.schema.json", "vendor/SOURCES.md", "vendor/*/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

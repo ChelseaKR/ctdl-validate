@@ -40,6 +40,52 @@ and this project adheres to
 
 ### Added
 
+- **A versioned, published schema for the JSON report, and a named public
+  library API** (issue #65), in `src/ctdl_validate/report.schema.json` (new,
+  shipped as package data), `report.py` (new), `findings.py`, `cli.py`,
+  `__init__.py`, `tools/action_runner.py`, `docs/API.md` (new),
+  `tests/schema_check.py`, `tests/test_report_schema.py` and
+  `tests/test_public_api.py` (all new). `--format json` is parsed by the
+  Action, by the playground through Pyodide, and by the Registry survey
+  harness, and its shape was defined only by the function that wrote it.
+
+  Every report now carries `report_schema_version`, and
+  `ctdl-validate --report-schema` prints the JSON Schema (draft 2020-12) it
+  conforms to. The schema version moves independently of the tool version, and
+  `docs/API.md` says which kind of change moves which part of it. Every report
+  the suite produces is validated against the shipped schema, including the
+  CLI's own output over a fixture that fails.
+
+  **The Action was reading an absent count as zero.**
+  `tools/action_runner.py` folded its totals with
+  `int(summary.get(severity, 0))`, so a summary that had lost a key -- renamed
+  in a later version, or truncated -- contributed nothing and the gate passed
+  clean. That is an absence published as a measurement, in the tool whose
+  purpose is to refuse exactly that. It now checks the shape it is about to
+  read, including the report's declared schema major, and exits 2 with an
+  annotation saying what was missing rather than gating on a partial report.
+  Five tests hand it a deliberately incomplete report through a stub CLI; all
+  five go red against the previous reading, and a sixth passes a whole report
+  through the same stub so the harness cannot pass for the wrong reason.
+
+  The conformance checker is `tests/schema_check.py`, about 130 lines of
+  stdlib, because the default path has no runtime dependency and the check
+  should not add one. It **raises on any JSON Schema keyword it does not
+  implement** rather than skipping it: a subset checker that ignores what it
+  does not know is a gate that cannot fail on the part of the contract it
+  never learned, which is the same defect one level up.
+
+  The playground is the second consumer of this shape in a second runtime. It
+  builds no report of its own -- its Download button hands over the output of
+  the same `render_findings_json` -- and two tests parse the page's embedded
+  Python to hold that property, so the download carries
+  `report_schema_version` for the same reason the CLI does.
+
+  `docs/API.md` names the seven public symbols with their exact signatures and
+  a SemVer stability promise; `tests/test_public_api.py` pins those signatures
+  and the fields of `Finding` and `Rule`. No version was bumped: this is
+  additive, and the release itself is issue #52's, which is the owner's.
+
 - **`pypi-publish.yml` verifies the release tag's signature before anything
   runs.** `release.yml` has verified tags since it was written, through the
   shared `ChelseaKR/.github` release-authorize workflow. `pypi-publish.yml`,

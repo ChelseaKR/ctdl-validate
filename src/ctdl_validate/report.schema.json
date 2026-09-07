@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ChelseaKR/ctdl-validate/main/src/ctdl_validate/report.schema.json",
+  "title": "ctdl-validate report",
+  "description": "The shape of `ctdl-validate --format json`. Every report carries `report_schema_version`, which is the version of this document and not the version of the tool. `additionalProperties` is false everywhere on purpose: a consumer that validates against this schema learns about a new key rather than ignoring it.",
+  "type": "object",
+  "required": [
+    "report_schema_version",
+    "tool",
+    "findings",
+    "summary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "report_schema_version": {
+      "description": "The version of this schema that the report conforms to. Semantic: the major part changes when a consumer that reads the old shape would break.",
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "tool": {
+      "description": "What produced the report.",
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "ctdl-validate"
+        },
+        "version": {
+          "description": "The tool's own version, which moves independently of report_schema_version.",
+          "type": "string"
+        }
+      }
+    },
+    "findings": {
+      "description": "Every finding, deduplicated and in the tool's own deterministic order. An empty array means the payload tripped no rule, which is not the same as a payload that was fully checked; UNVERIFIABLE findings are how the difference is reported.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "summary": {
+      "description": "How many findings of each severity. Every severity is always present, including the ones that are zero: a consumer must never have to read the absence of a key as a count of none.",
+      "type": "object",
+      "required": [
+        "ERROR",
+        "WARNING",
+        "INFO",
+        "UNVERIFIABLE"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ERROR": {
+          "$ref": "#/$defs/count"
+        },
+        "WARNING": {
+          "$ref": "#/$defs/count"
+        },
+        "INFO": {
+          "$ref": "#/$defs/count"
+        },
+        "UNVERIFIABLE": {
+          "$ref": "#/$defs/count"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "severity": {
+      "description": "ERROR gates the exit code. UNVERIFIABLE never does; it marks what the payload alone cannot settle, and it is never a pass.",
+      "type": "string",
+      "enum": [
+        "ERROR",
+        "WARNING",
+        "INFO",
+        "UNVERIFIABLE"
+      ]
+    },
+    "rule": {
+      "description": "The published rule a finding is made under, with the source it was read from and the date it was read. Never a rule written from memory.",
+      "type": "object",
+      "required": [
+        "citation",
+        "url",
+        "retrieved"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "citation": {
+          "type": "string"
+        },
+        "url": {
+          "description": "Where the rule was read. A URL for a published rule; for this tool's own stated policy, the document and section that states it.",
+          "type": "string"
+        },
+        "retrieved": {
+          "description": "The date the cited source was downloaded, ISO 8601, or \"-\" when the citation is tool policy rather than an external document.",
+          "type": "string"
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "entity",
+        "property",
+        "value",
+        "message",
+        "rule"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "description": "The stable identifier of what was found.",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "entity": {
+          "description": "The @id of the entity the finding is about, or the tool's own name for an entity that declares none.",
+          "type": "string"
+        },
+        "property": {
+          "description": "The CTDL property, or the tool's name for the aspect, the finding is about.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value as written, rendered as a string. \"(absent)\" where the finding is that nothing was written.",
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/$defs/rule"
+        }
+      }
+    }
+  }
+}
