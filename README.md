@@ -94,6 +94,9 @@ pip install ctdl-validate
 ctdl-validate <file.json>
 ctdl-validate <file.json> --format json
 ctdl-validate --report-schema        # the shape that report conforms to
+
+# What changed between two runs. No network, exit 0 either way.
+ctdl-validate diff before.json after.json
 ```
 
 That installs the release on PyPI. To run the code in this checkout instead —
@@ -131,6 +134,56 @@ is false throughout the schema for the same reason: a consumer that validates
 what it reads learns about a new key instead of passing over it. And an empty
 `findings` array means no rule was tripped, not that everything was checked —
 what the payload alone cannot settle is reported as `UNVERIFIABLE`.
+
+### `diff`: what changed between two runs
+
+```console
+$ ctdl-validate diff tests/fixtures/clean_framework.json \
+    tests/fixtures/bug_class_252_wrong_framework_identifier.json
+added: present after, absent before (3)
+  WARNING      ISPARTOF_FRAMEWORK_MISMATCH  entity=...ce-9e492574-...
+      ceasn:isPartOf = ...ce-82566cee-...
+      rule: ...
+removed: present before, absent after (0)
+  (none)
+...
+0 unchanged. A removed finding is a finding this run did not report; it is not
+evidence that it was fixed.
+```
+
+Each side is a CTDL payload, validated on the spot with its own
+`--resolve-before` / `--resolve-after` set, or a saved `--format json` report.
+`--format json` for machine use. The exit code is 0 whether or not anything
+changed, because a diff is data rather than a verdict; `--fail-on-new` exits 1
+when an ERROR is present after and absent before.
+
+This repository already computed this by hand every time a rule changed — "36
+of 120 documents failing became 0, as all 38 `RANGE_VIOLATION` findings became
+`CONCEPT_RANGE_CONFLICT`" is a diff between two runs, produced once and then
+typed. The verb makes it reproducible, and gives every publisher the same
+before/after view, offline.
+
+Two identical findings are the same finding when their code, entity, property
+and rule citation match. A finding whose value or message moved under that
+identity is *changed*. A finding that differs only in its entity — a re-minted
+CTID, a renumbered blank node — is *moved*, but **only where exactly one was
+removed and exactly one added** under the same code, property, value and rule.
+Where several were, which went where is a guess, so the pairing is declined
+and said to be declined.
+
+Two things it deliberately does not say:
+
+- **A removed finding is not a resolved one.** Two finding lists cannot tell a
+  repair from a run that read a different payload, used a different resolve
+  set, or could not get far enough to report anything. It says *removed*, and
+  prints what that is worth beneath the summary.
+- **A saved report does not record which vendored CTDL snapshot produced it.**
+  It records the tool version and the report schema version and nothing else
+  about the run, so two reports can be compared with no way to know whether
+  the same schema and context documents were behind them. That is printed as
+  unknown in the header rather than passed over, and a tool-version mismatch
+  is printed too. Neither stops the diff: they make it something the reader
+  has to interpret, which they can only do if they are told.
 
 ## Resolving references against documents you already have
 
