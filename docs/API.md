@@ -53,6 +53,20 @@ mean the payload was fully checked: what could not be settled from the payload
 alone is reported as `UNVERIFIABLE`, and a consumer that treats an empty list
 as a clean bill of health is making the claim the tool declined to make.
 
+Nor does it mean there was anything to check. `document.checked_entities` says
+how many entities declared a `ceterms:` or `ceasn:` term — as a `@type` or as a
+property key — and **zero means the run had nothing in scope at all**. Until
+report schema 1.1.0 a report over `package.json` was byte-identical to a report
+over a clean CTDL payload, which is what makes a wide `pre-commit` `files:`
+pattern a gate that cannot fail. The exit code is deliberately unchanged: a
+document that parses is not a document that could not be read, so exit 2 stays
+what it always was.
+
+`document.entities` and `document.checked_entities` are `integer` **or `null`**,
+and the two are different facts. `null` means the producer did not measure the
+scope — a caller rendering findings it assembled by hand has no document to
+measure — and a consumer must not read it as zero. Three states, not two.
+
 ## The library
 
 ```python

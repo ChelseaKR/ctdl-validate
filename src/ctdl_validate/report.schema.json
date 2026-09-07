@@ -7,6 +7,7 @@
   "required": [
     "report_schema_version",
     "tool",
+    "document",
     "findings",
     "summary"
   ],
@@ -15,7 +16,7 @@
     "report_schema_version": {
       "description": "The version of this schema that the report conforms to. Semantic: the major part changes when a consumer that reads the old shape would break.",
       "type": "string",
-      "const": "1.0.0"
+      "const": "1.1.0"
     },
     "tool": {
       "description": "What produced the report.",
@@ -36,8 +37,25 @@
         }
       }
     },
+    "document": {
+      "description": "How much of the document the run had jurisdiction over. `entities` is every entity the walk registered, nested ones included; `checked_entities` is how many of those declare at least one ceterms: or ceasn: term, as a @type or as a property key. An empty `findings` array means the payload tripped no rule, and that is not the same fact as the payload having been checked: a document declaring none of those terms trips nothing because there is nothing in it this tool reads. Measured 2026-09-07: package.json, tsconfig.json, {}, [] and this repository's own vendored context.json each produced a report indistinguishable from a clean CTDL payload's. A `checked_entities` of zero tells them apart.",
+      "type": "object",
+      "required": [
+        "entities",
+        "checked_entities"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "$ref": "#/$defs/measured_count"
+        },
+        "checked_entities": {
+          "$ref": "#/$defs/measured_count"
+        }
+      }
+    },
     "findings": {
-      "description": "Every finding, deduplicated and in the tool's own deterministic order. An empty array means the payload tripped no rule, which is not the same as a payload that was fully checked; UNVERIFIABLE findings are how the difference is reported.",
+      "description": "Every finding, deduplicated and in the tool's own deterministic order. An empty array means the payload tripped no rule, which is not the same as a payload that was fully checked; UNVERIFIABLE findings are how the difference is reported, and `document.checked_entities` says whether anything was in scope at all.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/finding"
@@ -72,6 +90,14 @@
   "$defs": {
     "count": {
       "type": "integer",
+      "minimum": 0
+    },
+    "measured_count": {
+      "description": "A count, or null when the producer did not measure it. Three states, not two: null is not zero, and a consumer must not read it as one. The CLI and the playground always measure; a caller rendering findings it assembled by hand has no document to measure, and a count invented for it would be exactly the defect this field exists to remove.",
+      "type": [
+        "integer",
+        "null"
+      ],
       "minimum": 0
     },
     "severity": {

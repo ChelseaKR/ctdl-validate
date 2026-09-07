@@ -141,6 +141,15 @@ what it reads learns about a new key instead of passing over it. And an empty
 `findings` array means no rule was tripped, not that everything was checked —
 what the payload alone cannot settle is reported as `UNVERIFIABLE`.
 
+It also does not mean there was anything to check. This tool reads `ceterms:`
+and `ceasn:` terms; hand it `package.json` and it correctly trips no rule, and
+until report schema 1.1.0 that report was byte-identical to a clean CTDL
+payload's. `document.checked_entities` now says how many entities were in
+scope, and the text report says in words when nothing was — which is what a
+`pre-commit` hook needs before a `files:` pattern can be trusted. `null` there
+is a third state, meaning the producer did not measure the scope; it is not
+zero, and a consumer must not read it as zero.
+
 ### `diff`: what changed between two runs
 
 ```console

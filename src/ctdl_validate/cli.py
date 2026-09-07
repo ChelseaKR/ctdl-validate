@@ -28,10 +28,10 @@ from pathlib import Path
 
 from . import __version__
 from .findings import Severity, render_findings_json, render_findings_text
-from .graph import DocumentError
+from .graph import DocumentError, scope_of
 from .report import read_report_schema
 from .sarif import render_findings_sarif
-from .validator import validate_document
+from .validator import build_session, validate
 
 #: The one command in this tool that opens a network connection.
 #:
@@ -147,17 +147,24 @@ def validate_main(argv: Sequence[str]) -> int:
         print(f"ctdl-validate: {args.file} is not valid JSON: {exc}", file=sys.stderr)
         return 2
     try:
-        findings = validate_document(data, [Path(p) for p in args.resolve])
+        # The session rather than `validate_document`, because the run has to
+        # be able to say how much of the document it had jurisdiction over --
+        # a report of "0 finding(s)" over a file that is not CTDL at all was
+        # byte-identical to one over a clean payload. Same checks, same
+        # findings, same order: `validate_document` is these two calls.
+        session = build_session(data, [Path(p) for p in args.resolve])
+        findings = validate(session)
     except DocumentError as exc:
         print(f"ctdl-validate: {args.file}: {exc}", file=sys.stderr)
         return 2
+    scope = scope_of(session.graph)
 
     if args.format == "json":
-        print(render_findings_json(findings, __version__))
+        print(render_findings_json(findings, __version__, scope=scope))
     elif args.format == "sarif":
         print(render_findings_sarif(findings, __version__, Path(args.file)))
     else:
-        print(render_findings_text(findings))
+        print(render_findings_text(findings, scope=scope))
     return 1 if any(f.severity is Severity.ERROR for f in findings) else 0
 
 

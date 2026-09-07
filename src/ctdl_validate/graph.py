@@ -14,7 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .schema import SchemaIndex
+from .report import DocumentScope
+from .schema import SchemaIndex, is_checked_term
 
 
 class DocumentError(ValueError):
@@ -248,3 +249,14 @@ def parse_document(data: Any, schema: SchemaIndex) -> Graph:
         envelope_id=envelope_id,
         envelope_path=envelope_path,
     )
+
+
+def scope_of(graph: Graph) -> DocumentScope:
+    """How many of ``graph``'s entities this tool has anything to say about."""
+    checked = sum(
+        1
+        for node in graph.nodes
+        if any(is_checked_term(t) for t in node.types)
+        or any(is_checked_term(p) for p in node.props)
+    )
+    return DocumentScope(entities=len(graph.nodes), checked_entities=checked)

@@ -812,7 +812,8 @@ import pathlib
 import ctdl_validate
 from ctdl_validate import __version__, validate_document
 from ctdl_validate.findings import render_findings_json, render_findings_text
-from ctdl_validate.graph import DocumentError
+from ctdl_validate.graph import DocumentError, scope_of
+from ctdl_validate.validator import build_session, validate
 
 CHECKS = pathlib.Path(ctdl_validate.__file__).parent / "checks"
 
@@ -865,9 +866,14 @@ def run(text, resolve_text):
         except json.JSONDecodeError as exc:
             return json.dumps({"error": f"The supplied document is not valid JSON: {exc}"})
     try:
-        findings = validate_document(data, _supplied(resolve_text, "supplied.json"))
+        # The session rather than `validate_document`, so the page can say how
+        # much of the pasted document was in scope. A paste that is JSON but
+        # not CTDL used to render as "0 finding(s)", which reads as a pass.
+        session = build_session(data, _supplied(resolve_text, "supplied.json"))
+        findings = validate(session)
     except DocumentError as exc:
         return json.dumps({"error": f"ctdl-validate cannot read this document shape: {exc}"})
+    scope = scope_of(session.graph)
     # text and json are the CLI's own renderers, so what the copy and download
     # buttons hand over is byte for byte what `ctdl-validate` would have
     # printed. A second formatter written in JavaScript would be a second
@@ -876,8 +882,8 @@ def run(text, resolve_text):
         {
             "version": __version__,
             "findings": [f.to_dict() for f in findings],
-            "text": render_findings_text(findings),
-            "json": render_findings_json(findings, __version__),
+            "text": render_findings_text(findings, scope=scope),
+            "json": render_findings_json(findings, __version__, scope=scope),
         }
     )
 

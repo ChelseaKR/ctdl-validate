@@ -10,6 +10,45 @@ and this project adheres to
 
 ### Fixed
 
+- **A document with nothing in it this tool checks reported as a clean
+  payload.** `ctdl-validate` reads terms in the `ceterms:` and `ceasn:`
+  namespaces. A document declaring none of them trips no rule, which is
+  correct — and the report of such a run was **byte-identical** to the report
+  of a clean CTDL payload: `0 finding(s): 0 ERROR, 0 WARNING, 0 INFO, 0
+  UNVERIFIABLE`, exit 0.
+
+  Measured 2026-09-07 against this repository's own files: `package.json`,
+  `tsconfig.json`, `{}`, `[]`, `src/ctdl_validate/report.schema.json` and the
+  vendored `vendor/ctdl/context.json` each produced exactly that report. The
+  sibling tool disagrees — `oscal-validate` exits 2 on the same input with "no
+  OSCAL model root found" — so the two validators did different things with a
+  file that is not theirs.
+
+  It matters most where issue #63 wants to put this tool. A `pre-commit` hook
+  declaring `types: [json]` hands the validator every JSON file in a
+  repository, and a wall of clean reports over files that are not CTDL reads
+  as a passing gate. A `files:` pattern narrow enough to avoid that can just as
+  easily match nothing in a user's repository, which is the same failure
+  wearing the opposite coat. Neither is fixable by choosing a better pattern;
+  the report had to be able to say it checked nothing.
+
+  So it does. The JSON report gains `document`, with `entities` and
+  `checked_entities`, and the text report says in words that nothing was
+  checked when that is the case. `report_schema_version` moves **1.0.0 →
+  1.1.0**: a key was added that an existing consumer may ignore.
+
+  Two decisions inside that are deliberate. The **exit code does not move** —
+  `docs/API.md` pins exit 2 for input that could not be read, and a document
+  that parses is not that. And the counts are `integer` **or `null`**, because
+  a caller rendering findings it assembled by hand has no document to measure;
+  writing `0` there would be this same defect pointing the other way, an
+  unmeasured scope reading as "nothing was checked". `null` is not zero and
+  the schema says so.
+
+  `tests/schema_check.py` gained support for a `type` union to enforce that,
+  and still raises on a type name it does not implement: the union is a union
+  of names it knows, not an escape from having to know them.
+
 - **The full-history secret scan could not fail on a credential that had been
   revoked.** `trufflehog.yml` ran `--only-verified`, which reports a finding
   only when TruffleHog authenticates the credential against the live service.
