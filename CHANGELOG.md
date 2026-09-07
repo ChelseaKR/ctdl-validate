@@ -40,6 +40,62 @@ and this project adheres to
 
 ### Added
 
+- **`ctdl-validate diff`: what changed between two runs** (issue #61), in
+  `src/ctdl_validate/compare.py` and `diff.py` (both new), `cli.py`,
+  `tests/test_diff.py` (new) and the README. Each side is a CTDL payload,
+  validated on the spot with its own resolve set, or a saved `--format json`
+  report. `--format json`; exit 0 either way, with `--fail-on-new` to gate on
+  an ERROR that is present after and absent before.
+
+  This repository already computed this by hand every time a rule changed --
+  the README's "36 of 120 documents failing became 0, as all 38
+  `RANGE_VIOLATION` findings became `CONCEPT_RANGE_CONFLICT`" is a diff
+  between two runs, produced once and then typed.
+
+  **A removed finding is not called a resolved one, anywhere in this verb.**
+  Two finding lists cannot tell a repair from a run that read a different
+  payload, used a different resolve set, or could not get far enough to report
+  anything -- an empty second side is exactly what a truncated or failed run
+  produces. The verb says *removed*, and prints what that is worth beneath the
+  summary. `Comparison` has no field named `resolved`, and a test holds that.
+
+  Displacement is reported rather than buried: a re-minted CTID or a
+  renumbered blank node shifts every entity identifier under it, and reporting
+  that as a wall of removals and additions hides whatever really changed. A
+  finding matching on code, property, value and rule at a different entity is
+  *moved* -- but only where exactly one was removed and exactly one added
+  under that key. Where several were, the pairing is declined and the key is
+  printed so the reader knows it was declined rather than missed.
+
+  A saved report records the tool version and the report schema version and
+  nothing about which vendored CTDL snapshot produced it, so the header says
+  that rather than letting the silence read as agreement.
+
+  The design is `oscal-validate`'s `compare` module, which shipped there in
+  its PR #78. The two validators publish one report shape and now describe a
+  change to it the same way; what differs is this tool's own -- a finding is
+  located by its entity rather than by a JSON pointer.
+
+- **ADR-0004's additive property is now checkable in one line.** A diff
+  between an unresolved and a resolved run must contain no ERROR about
+  something the unresolved run had no target for, and
+  `test_resolution_is_additive_a_resolved_run_introduces_no_error_the_other_lacked`
+  asserts exactly that, with a control alongside it: a fabricated
+  non-additive run fails the same check, so a green result is not just the
+  fixture happening to add nothing.
+
+### Changed
+
+- **The default path no longer loads the code that fetches.** `cli.py`
+  imported `ctdl_validate.extract.command` at module scope, so every
+  validation run loaded the extraction and fetching modules on its way past.
+  Nothing was ever fetched -- `tests/test_offline_guarantee.py` takes the
+  socket away and the validator still runs -- but "the default path does not
+  load the code that fetches" is a stronger and more checkable claim than "the
+  code that fetches was not called". `extract` and `diff` are now both
+  dispatched by name and imported only then, by a literal module path, and a
+  fresh-process test asserts that running `diff` loads no `extract` module.
+
 - **A versioned, published schema for the JSON report, and a named public
   library API** (issue #65), in `src/ctdl_validate/report.schema.json` (new,
   shipped as package data), `report.py` (new), `findings.py`, `cli.py`,

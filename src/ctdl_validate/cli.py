@@ -20,25 +20,52 @@ documents its own, in :mod:`ctdl_validate.extract.command`.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 from . import __version__
-from .extract.command import main as extract_main
 from .findings import Severity, render_findings_json, render_findings_text
 from .graph import DocumentError
 from .report import read_report_schema
 from .validator import validate_document
 
+#: The one command in this tool that opens a network connection.
+#:
+#: Dispatched by name before the default parser sees the arguments, and
+#: imported only then, by a **literal** module path. Until 2026-09-06 it was
+#: imported at module scope, so every validation run loaded the fetching code
+#: on its way past. Nothing was ever fetched -- ``tests/test_offline_guarantee``
+#: takes the socket away and the validator still runs -- but "the default path
+#: does not load the code that fetches" is a stronger claim than "the code
+#: that fetches was not called", and it is checkable in a fresh process.
+#:
+#: Interpolating the argument into ``import_module`` would work and would let
+#: this pair of names be written once, but it also means the first word of a
+#: command line names a module. That is not a property worth having to save a
+#: line, and semgrep's ``non-literal-import`` says so.
 EXTRACT_COMMAND = "extract"
+
+#: A verb that is as deterministic and as offline as the default path.
+#: Dispatched by name, and for the same reason ``extract`` is: the default
+#: parser takes a file as its first positional, so a verb name would be read
+#: as a filename. Imported by a literal module path, not by interpolating the
+#: argument, so the first word of a command line never names a module.
+DIFF_COMMAND = "diff"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     if args and args[0] == EXTRACT_COMMAND:
-        return extract_main(args[1:])
+        extract_cli = importlib.import_module("ctdl_validate.extract.command")
+        extracted: int = extract_cli.main(args[1:])
+        return extracted
+    if args and args[0] == DIFF_COMMAND:
+        diff_cli = importlib.import_module("ctdl_validate.diff")
+        verdict: int = diff_cli.main(args[1:])
+        return verdict
     return validate_main(args)
 
 
