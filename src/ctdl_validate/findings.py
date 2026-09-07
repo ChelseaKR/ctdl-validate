@@ -18,6 +18,8 @@ import json
 from dataclasses import dataclass
 from enum import StrEnum
 
+from .report import REPORT_SCHEMA_VERSION
+
 
 class Severity(StrEnum):
     ERROR = "ERROR"
@@ -94,7 +96,14 @@ def counts(findings: list[Finding]) -> dict[str, int]:
 
 
 def render_findings_json(findings: list[Finding], version: str) -> str:
+    """The canonical machine-readable report.
+
+    ``report_schema_version`` names the published shape this conforms to, so a
+    consumer can check what it is reading instead of inferring it from the
+    tool version. See :mod:`ctdl_validate.report`.
+    """
     payload = {
+        "report_schema_version": REPORT_SCHEMA_VERSION,
         "tool": {"name": "ctdl-validate", "version": version},
         "findings": [f.to_dict() for f in findings],
         "summary": counts(findings),

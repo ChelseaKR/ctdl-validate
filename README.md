@@ -93,6 +93,7 @@ Python 3.12+, no runtime dependencies.
 pip install ctdl-validate
 ctdl-validate <file.json>
 ctdl-validate <file.json> --format json
+ctdl-validate --report-schema        # the shape that report conforms to
 ```
 
 That installs the release on PyPI. To run the code in this checkout instead —
@@ -106,6 +107,30 @@ pip install -e .        # or, without uv, an editable install
 
 Input can be a JSON-LD object with `@graph`, a single entity object, or an
 array of entities.
+
+### The JSON report is a published contract
+
+`--format json` is what the GitHub Action, the playground, and the Registry
+survey harness read. Its shape is published as a JSON Schema (draft 2020-12),
+shipped inside the package and printed by `ctdl-validate --report-schema`, and
+every report carries the `report_schema_version` it conforms to. That version
+is the schema's, not the tool's, and the two move independently;
+[docs/API.md](docs/API.md) says which kind of change moves which part of it,
+and names the library surface with the same promise.
+
+Read counts out of `summary` by key, never with a default:
+
+```python
+errors = report["summary"]["ERROR"]  # yes
+errors = report["summary"].get("ERROR", 0)  # no
+```
+
+Every severity is always present, including the ones that are zero, so that a
+missing key is a broken report rather than a count of none. `additionalProperties`
+is false throughout the schema for the same reason: a consumer that validates
+what it reads learns about a new key instead of passing over it. And an empty
+`findings` array means no rule was tripped, not that everything was checked —
+what the payload alone cannot settle is reported as `UNVERIFIABLE`.
 
 ## Resolving references against documents you already have
 
