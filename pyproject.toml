@@ -41,6 +41,11 @@ dev = [
 
 [project.scripts]
 ctdl-validate = "ctdl_validate.cli:entrypoint"
+# The `pre-commit` entry point (#63). A separate console script rather than a
+# flag on `ctdl-validate`, because pre-commit appends every staged filename to
+# one invocation and the CLI validates exactly one document -- the same
+# division tools/action_runner.py keeps for GitHub Actions.
+ctdl-validate-pre-commit = "ctdl_validate.hook:entrypoint"
 
 [tool.setuptools.packages.find]
 where = ["src"]

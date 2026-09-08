@@ -123,3 +123,79 @@ jobs:
           assert len(digests) == 4, digests
           print(f"{len(run['results'])} result(s) in one run, all rule-indexed correctly")
           PY
+
+  # `make verify` covers the hook's entry point (tests/test_pre_commit_hook.py)
+  # and asserts the contract in `.pre-commit-hooks.yaml`. Neither can tell you
+  # that pre-commit itself can build the environment, find the console script
+  # and select the files -- so this job runs the real thing, in both
+  # directions, exactly as the action self-test above does for action.yml.
+  #
+  # pre-commit is pinned here rather than added to the dev group on purpose:
+  # `.pre-commit-config.yaml` deliberately keeps it out of the lock (its own
+  # comment says so), and this job is the only thing in the repository that
+  # needs it. `--python 3.12` is the floor in pyproject; without it pre-commit
+  # builds its hook env with whatever interpreter is running it, and an older
+  # one fails while installing build dependencies rather than saying why.
+  pre-commit-self-test:
+    name: pre-commit self-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PRE_COMMIT: "pre-commit==4.3.0"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.12.1"
+          enable-cache: true
+
+      - name: A clean payload passes the hook
+        run: |
+          uvx --python 3.12 --from "$PRE_COMMIT" pre-commit try-repo . ctdl-validate \
+            --files tests/fixtures/clean_framework.json
+
+      # The half that is easy to leave untested. The exit code is read from the
+      # command itself, never through a pipe, and the output is printed before
+      # the job decides -- a failing hook's output is what a reader needs most.
+      - name: A payload with an ERROR finding must fail the hook
+        run: |
+          set +e
+          uvx --python 3.12 --from "$PRE_COMMIT" pre-commit try-repo . ctdl-validate \
+            --files tests/fixtures/bug_class_250_bare_uuid_for_ctid.json > broken.log 2>&1
+          code=$?
+          set -e
+          cat broken.log
+          test "$code" -eq 1 || {
+            echo "::error::the hook exited $code over a document with two ERROR findings"
+            exit 1
+          }
+          grep -q 'CTID_BARE_UUID' broken.log || {
+            echo "::error::the hook failed without naming the finding"
+            exit 1
+          }
+
+      # The design argument in one step: a wide `types: [json]` selection must
+      # not be able to report success on the merits over files nothing checked.
+      - name: A file that is not CTDL passes, and the run says it checked nothing
+        run: |
+          set +e
+          uvx --python 3.12 --from "$PRE_COMMIT" pre-commit try-repo . ctdl-validate \
+            --verbose --files src/ctdl_validate/report.schema.json > none.log 2>&1
+          code=$?
+          set -e
+          cat none.log
+          test "$code" -eq 0 || {
+            echo "::error::a repository holding non-CTDL JSON must not fail every commit"
+            exit 1
+          }
+          grep -q 'Nothing was checked' none.log || {
+            echo "::error::the run reported success without saying it examined nothing"
+            exit 1
+          }
