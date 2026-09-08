@@ -605,6 +605,46 @@ deterministic extractor limited to declared equivalences can only ever under-
 report. Under-reporting is visible in the notes; a fabricated credential in
 the Registry is not.
 
+### What extraction reports
+
+Under-reporting is only visible in the notes if the notes are written down, so
+here they are. Every one is a statement about *this page and this mapping*, not
+a defect in the page: WARNING means the page published something the extract
+does not carry, INFO means something worth a human's eye that lost nothing.
+ERROR is not used here -- extraction either completes and reports, or fails
+outright with a nonzero exit code.
+
+| Code | Severity | What it says |
+|---|---|---|
+| `NO_STRUCTURED_DATA` | WARNING | The page publishes no JSON-LD, microdata or RDFa. Reading the credential off the prose would mean inventing structure the publisher never asserted. |
+| `JSONLD_PARSE_ERROR` | WARNING | A `<script type="application/ld+json">` block is not valid JSON, so it was skipped whole. |
+| `JSONLD_CONTEXT_UNRESOLVED` | WARNING | The block's `@context` is not one this tool resolves, so its unprefixed keys were left unread rather than resolved against a vocabulary nobody declared. |
+| `MICRODATA_NAME_UNRESOLVED` | WARNING | A bare `itemprop` on an item with no `itemtype`. The HTML standard makes such a name proprietary to the author, so there is nothing to resolve it against. |
+| `MICRODATA_ITEMREF` | WARNING | The page associates properties with items through `itemref`, which this reader does not follow, so any property reached only that way is missing. |
+| `EMPTY_VALUE` | INFO | An element carries an `itemprop` and publishes no value for it. An empty value asserts nothing. |
+| `RDFA_TERM_UNRESOLVED` | WARNING | A bare RDFa term with no `vocab` in scope. |
+| `RDFA_BEYOND_LITE` | WARNING | An element carries RDFa 1.1 Core attributes alongside Lite ones. The Core attributes are not interpreted, so statements depending on them are missing. |
+| `ITEM_UNTYPED` | WARNING | The markup declares no type for an item, so there is no class to map and nothing was emitted for it. |
+| `CLASS_NOT_MAPPED` | WARNING | No CTDL class is declared equivalent to this type, so the item and its values were dropped rather than filed under a class this tool chose. |
+| `CLASS_RELATED_NOT_EQUIVALENT` | INFO | A CTDL class is declared a *subclass* of this type. That relation runs from CTDL outward and does not license reading the type as that class. |
+| `CLASS_AMBIGUOUS` | WARNING | More than one CTDL class declares an equivalence to this type, so no single class follows from the markup. |
+| `PROPERTY_NOT_MAPPED` | WARNING | No CTDL property is declared equivalent to this term, so the value was dropped. The page published it; the extract does not carry it. |
+| `PROPERTY_RELATED_NOT_EQUIVALENT` | INFO | A CTDL property is declared a *subproperty* of this term, which does not license reading the term as that property. |
+| `PROPERTY_AMBIGUOUS` | WARNING | Two or more CTDL properties claim this term and the subject's class does not single one out by declared domain. |
+| `NESTED_ITEM_DROPPED` | WARNING | The value is a nested item that produced no CTDL entity, so the reference would point at nothing. |
+| `VALUE_NOT_LITERAL` | WARNING | The page published a nested item where the CTDL property takes a literal; flattening it would mean composing text this tool wrote. |
+| `VALUE_NOT_IDENTIFIER` | WARNING | The CTDL property takes an identifier and the page published a literal. Minting one to hold it would invent an entity. |
+| `LANGUAGE_UNDECLARED` | INFO | CTDL declares the property a language map and the page declared no language. The literal is emitted untagged for a publisher to complete. |
+| `CTID_ABSENT` | INFO | No entity in the extract carries a CTID, because the page published none. Registry publication needs one per resource; this tool will not generate it. |
+
+Like the rule table below, this is a hand-written list held up by a gate:
+`tests/test_every_rule_fires.py` fails if a code here is not emitted by
+`src/ctdl_validate/extract/` or a code that package emits is not here, and
+each one is backed by a page in `EXTRACT_TRIPWIRES` that the extractor is
+actually run over. That file also reconciles both tables against every finding
+code the whole package constructs, so a directory falling outside them fails
+rather than shrinking the denominator in silence.
+
 ### Pointed at reality
 
 [`docs/findings/2026-08-14-provider-markup-survey.md`](docs/findings/2026-08-14-provider-markup-survey.md)

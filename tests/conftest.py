@@ -9,6 +9,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from .test_every_rule_fires import census
+
 FIXTURES = Path(__file__).parent / "fixtures"
 PAGES = FIXTURES / "pages"
 
@@ -94,3 +96,16 @@ def robots(body: str) -> Route:
 
 
 ALLOW_ALL = robots("User-agent: *\nDisallow:\n")
+
+
+# -- the census, printed on every run ----------------------------------------
+#
+# tests/test_every_rule_fires.py spent a year reporting success over 28 of the
+# 48 finding codes this package constructs, and nothing in its output said so.
+# A gate that does not state its own denominator is indistinguishable from one
+# that examined everything, so the denominator is printed here -- on a passing
+# run as much as a failing one, because a passing run is where it was needed.
+
+
+def pytest_terminal_summary(terminalreporter: Any) -> None:
+    terminalreporter.write_line(census())
