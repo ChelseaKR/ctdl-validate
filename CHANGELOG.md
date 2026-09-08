@@ -106,6 +106,45 @@ and this project adheres to
 
 ### Added
 
+- **A `pre-commit` hook**, which completes issue #63. `.pre-commit-hooks.yaml`
+  offers one hook, `ctdl-validate`, entered through a new
+  `ctdl-validate-pre-commit` console script.
+
+  A separate script rather than a flag on `ctdl-validate`, because pre-commit
+  appends **every** matching staged path to one invocation and the CLI
+  validates exactly one document -- `entry: ctdl-validate` would have exited 2
+  with `unrecognized arguments` the first time a contributor staged two
+  payloads. That is the same division `tools/action_runner.py` states for
+  GitHub Actions: the CLI is the gate over one document, and expanding a set
+  and collapsing its exit codes is somebody else's job. A test pins the CLI's
+  refusal of a second file, so folding the two together stays a deliberate
+  act.
+
+  The hook declares `types: [json]` and **no** default `files:` pattern. Both
+  halves are deliberate, and the reason is the entry below this one: pre-commit
+  hands the hook every staged JSON file, most repositories hold a lot of JSON
+  that is not CTDL, and until 2026-09-07 a run over `package.json` was
+  byte-identical to a run over a clean payload. Shipping a narrow default
+  pattern instead only trades that for a pattern that can match nothing in a
+  user's repository, and a gate that ran over zero files reports success
+  exactly as loudly. Neither is fixable by choosing a better pattern, so the
+  hook counts three outcomes apart and prints all three -- **checked**, **not
+  CTDL**, **unreadable** -- names every file in the second group without
+  giving it a report of its own, and, when the first group is empty, says in a
+  sentence that the run is not evidence about any payload. It still exits 0
+  there: failing every commit in a repository that merely holds JSON would be
+  absurd, and the sentence is the honest thing, not the exit code.
+
+  An unreadable staged file exits 2 even when every other file is clean, which
+  is the posture the Action already takes -- a gate that could not read its
+  input is not a gate that passed. `--resolve` works as it does everywhere
+  else.
+
+  CI runs `pre-commit try-repo` against this repository's own fixtures in all
+  three directions, because neither the unit tests nor the assertions over
+  `.pre-commit-hooks.yaml` can tell you that pre-commit itself can build the
+  environment, find the console script and select the files.
+
 - **SARIF 2.1.0 output, and a `sarif-file` input on the Action** (part of
   issue #63; the pre-commit hook it also asks for is not in this change),
   ported from `oscal-validate`'s renderer.

@@ -1,0 +1,24 @@
+# The hook this repository offers to other repositories (#63). Not to be
+# confused with `.pre-commit-config.yaml`, which is the hooks this repository
+# runs on itself.
+#
+# `types: [json]` and no default `files:` pattern, deliberately. pre-commit
+# hands the hook every staged JSON file, and most repositories hold JSON that
+# is not CTDL; shipping a narrow default pattern instead would trade that for
+# a gate that silently matches nothing, which reports success just as readily.
+# Neither is fixable by choosing a better pattern, so the hook counts what it
+# checked, what was not CTDL and what it could not read, and says all three --
+# see the module docstring in src/ctdl_validate/hook.py and the README.
+#
+# Set `files:` in your own .pre-commit-config.yaml to the paths that hold your
+# CTDL. The hook will tell you if that pattern is selecting nothing.
+- id: ctdl-validate
+  name: ctdl-validate (CTDL JSON-LD structural validation)
+  description: >-
+    Validate staged CTDL JSON-LD payloads against the Credential Engine's
+    published encodings. Offline and deterministic; exits 1 on an ERROR
+    finding and 2 on a file it could not read.
+  entry: ctdl-validate-pre-commit
+  language: python
+  types: [json]
+  minimum_pre_commit_version: "3.0.0"

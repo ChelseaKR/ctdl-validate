@@ -351,6 +351,74 @@ clean documents, gated findings, unreadable input, and a `path` that matches
 nothing, and CI runs the composite action itself over a clean fixture and a
 deliberately broken one, failing the build if the broken one passes.
 
+## pre-commit hook
+
+The Action catches a bad payload after it is pushed. The hook catches it
+before it is committed.
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/ChelseaKR/ctdl-validate
+    rev: v0.2.1 # the hook is newer than v0.2.1; pin a commit that carries it
+    hooks:
+      - id: ctdl-validate
+        files: ^payloads/.*\.json$
+        args: [--resolve, reference-data/]
+```
+
+Exit codes are the CLI's: 0 nothing gating, 1 at least one ERROR finding, 2 a
+staged file that could not be read. `--resolve` behaves as it does everywhere
+else — it lets a staged document resolve references against neighbours you
+already hold, and the neighbours are never themselves validated.
+
+**Set `files:` to the paths that hold your CTDL.** The hook declares
+`types: [json]` and ships **no** default `files:` pattern, and that is a
+decision rather than an omission. Without a pattern pre-commit hands it every
+staged JSON file, and most repositories hold a great deal of JSON that is not
+CTDL. Shipping a narrow default instead would trade that for a pattern that
+can just as easily match nothing in your repository — and a gate that ran over
+zero files reports success exactly as loudly as one that ran over all of them.
+
+Neither problem is fixable by choosing a better pattern, so the hook counts
+the three outcomes separately and prints all three:
+
+```
+ctdl-validate 0.2.1: 12 staged file(s) -- 3 checked, 9 not CTDL, 0 unreadable
+```
+
+A file that is valid JSON but declares no `ceterms:` or `ceasn:` term is
+listed by name under **not CTDL**, and gets no report of its own — because
+`0 finding(s): 0 ERROR, 0 WARNING, 0 INFO, 0 UNVERIFIABLE` printed under
+`package.json` is not a fact about `package.json`. If *every* staged file
+turns out that way, the run still exits 0, and says so in a sentence:
+
+```
+Nothing was checked. None of the staged files declared a term this tool
+validates, so this run is not evidence that any CTDL payload is clean.
+```
+
+A staged `.json` file that does not parse exits 2 and names the parse error,
+even when every other file is clean — a gate that could not read its input is
+not a gate that passed, which is the posture the Action takes too. If your
+repository keeps JSON-with-comments under a `.json` extension, `exclude:` those
+paths.
+
+The hook installs this package, which requires Python 3.12 or newer, into the
+environment pre-commit builds for it — and pre-commit builds that environment
+with the interpreter *it* is running under. If yours is older, the install
+fails while resolving build dependencies, in a message about `setuptools` that
+says nothing about this project. Point it at a supported interpreter:
+
+```yaml
+default_language_version:
+  python: python3.12
+```
+
+CI runs `pre-commit try-repo` against this repository's own fixtures, in all
+three directions: the clean fixture must pass, the broken one must fail, and a
+JSON file that is not CTDL must pass *while saying it checked nothing*.
+
 ## Extraction
 
 `ctdl-validate extract <url>` reads the structured markup a page already
