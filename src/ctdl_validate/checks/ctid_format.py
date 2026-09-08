@@ -133,7 +133,7 @@ def _registry_uri_findings(entity: str, prop: str, value: str, where: str = "") 
     ]
 
 
-def _ctids_declared(graph: Graph) -> set[str]:
+def ctids_declared(graph: Graph) -> set[str]:
     """Every CTID the payload declares, however it declares it.
 
     Both positions count: a ``ceterms:ctid`` value, and the CTID tail of a
@@ -172,7 +172,7 @@ def _envelope_findings(graph: Graph) -> list[Finding]:
     tail = registry_uri_tail(envelope_id)
     if tail is None or not classify_ctid(tail).matches_shape:
         return findings
-    declared = _ctids_declared(graph)
+    declared = ctids_declared(graph)
     if not declared or tail in declared:
         return findings
     findings.append(

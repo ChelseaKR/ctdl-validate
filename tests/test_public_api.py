@@ -37,7 +37,10 @@ PUBLIC: dict[str, str | None] = {
     "Severity": None,
     "__version__": None,
     "read_report_schema": "() -> 'str'",
-    "validate_document": "(data: 'Any', resolve: 'list[Path] | None' = None) -> 'list[Finding]'",
+    "validate_document": (
+        "(data: 'Any', resolve: 'list[Path] | None' = None, *, "
+        "suggest: 'bool' = False) -> 'list[Finding]'"
+    ),
 }
 
 #: The fields of ``Finding``, in order, with their declared types. A field
@@ -51,7 +54,23 @@ FINDING_FIELDS = [
     ("value", "str"),
     ("message", "str"),
     ("rule", "Rule"),
+    ("suggestions", "tuple[Suggestion, ...]"),
 ]
+
+#: The one field of ``Finding`` allowed to carry a default, and why.
+#:
+#: The rule below — no field of a Finding is optional — exists so that a check
+#: cannot construct a finding short of its ``value`` or ``message`` and have
+#: the gap read as an empty string. ``suggestions`` is not written by a check
+#: at all: every check builds a finding without it and
+#: ``suggest.with_suggestions`` attaches candidates afterwards, under
+#: ``--suggest`` only. An empty tuple is the honest value for a finding nobody
+#: derived anything for, and the JSON report omits the key rather than writing
+#: an empty array.
+#:
+#: This is a set of one on purpose. A second entry here is a second field whose
+#: absence means something, and adding one has to be as deliberate as this was.
+FIELDS_WITH_A_DEFAULT = {"suggestions"}
 
 RULE_FIELDS = [("citation", "str"), ("url", "str"), ("retrieved", "str")]
 
@@ -78,16 +97,17 @@ def test_finding_and_rule_keep_their_fields() -> None:
     assert [(f.name, f.type) for f in dataclasses.fields(Rule)] == RULE_FIELDS
 
 
-def test_no_field_of_a_finding_is_optional() -> None:
-    """A Finding cannot be built short of a field and have the gap read as an
-    empty string."""
-    optional = [
+def test_no_field_of_a_finding_is_optional_but_the_one_named_exemption() -> None:
+    """A Finding cannot be built short of a *reported* field and have the gap
+    read as an empty string. See ``FIELDS_WITH_A_DEFAULT`` for the single
+    derived field that is exempt and why."""
+    optional = {
         field.name
         for field in dataclasses.fields(Finding)
         if field.default is not dataclasses.MISSING
         or field.default_factory is not dataclasses.MISSING
-    ]
-    assert optional == []
+    }
+    assert optional == FIELDS_WITH_A_DEFAULT
 
 
 def test_finding_and_rule_are_frozen() -> None:

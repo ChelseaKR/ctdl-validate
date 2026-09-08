@@ -187,7 +187,30 @@ def _message(finding: Finding) -> str:
 
 
 def _result(finding: Finding, rule_index: int, document: Path) -> dict[str, Any]:
+    """One SARIF result for one finding.
+
+    Determined re-spellings ride in the result's property bag rather than in
+    SARIF's ``fixes``, which wants an ``artifactChange`` with a byte or line
+    region: this tool reports an entity path, not a source position (#66), and
+    a ``fixes`` entry with no region would be a repair a consumer cannot
+    apply. The property bag says the same thing without claiming to be
+    machine-applicable. The key is absent unless ``--suggest`` was passed and
+    the finding has a candidate, so the default log's bytes do not move.
+    """
     kind, level = KINDS[finding.severity]
+    properties: dict[str, Any] = {
+        "severity": finding.severity.value,
+        "entity": finding.entity,
+        "property": finding.prop,
+        "value": finding.value,
+        "rule": {
+            "citation": finding.rule.citation,
+            "url": finding.rule.url,
+            "retrieved": finding.rule.retrieved,
+        },
+    }
+    if finding.suggestions:
+        properties["suggestions"] = [s.to_dict() for s in finding.suggestions]
     return {
         "ruleId": finding.code,
         "ruleIndex": rule_index,
@@ -201,17 +224,7 @@ def _result(finding: Finding, rule_index: int, document: Path) -> dict[str, Any]
             }
         ],
         "partialFingerprints": {FINGERPRINT: _fingerprint(finding)},
-        "properties": {
-            "severity": finding.severity.value,
-            "entity": finding.entity,
-            "property": finding.prop,
-            "value": finding.value,
-            "rule": {
-                "citation": finding.rule.citation,
-                "url": finding.rule.url,
-                "retrieved": finding.rule.retrieved,
-            },
-        },
+        "properties": properties,
     }
 
 

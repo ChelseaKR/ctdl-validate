@@ -8,6 +8,68 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- **`--suggest`: the correction, where the payload determines it.** Four codes
+  name a defect whose repair is not a search — the corrected value is already
+  written in the run's own input. `CTID_UPPERCASE` offers the same CTID in
+  lower case; `CTID_URI_MISMATCH` offers the CTID this entity's own `@id`
+  already carries, or, on the `@graph` envelope's own `@id`, the envelope URI
+  re-spelled with the payload's one declared CTID; `REF_BARE_CTID` offers the
+  `@id` of the entity in this run that declares that CTID; and
+  `ISPARTOF_FRAMEWORK_MISMATCH` offers the `@id` of the one
+  `ceasn:CompetencyFramework` in reach. Candidates come from the payload or
+  from a `--resolve` document. No CTID is minted, no language is guessed, no
+  literal becomes an IRI, and no model is involved.
+
+  **What is refused matters more than what is offered**, so the refusals are
+  data with a written reason rather than an omission. `CTID_BARE_UUID` and
+  `REF_BARE_UUID` are never suggested for: prefixing the UUID with `ce-` would
+  produce a well-formed CTID, which is precisely the claim the finding
+  disputes. `LANGUAGE_MAP_EXPECTED` is never suggested for, because wrapping a
+  literal needs a language tag the document does not supply. And no
+  UNVERIFIABLE finding of any code is, because a candidate computed from the
+  payload cannot settle what the payload cannot settle. `suggest.py`'s
+  `NEVER_SUGGESTED` carries each reason, the suite asserts that set is disjoint
+  from the suggesters and that both name codes the check modules can still
+  emit, and `docs/API.md` states every entry.
+
+  Where the run holds **more than one** candidate — two declared CTIDs under a
+  graph URI, two frameworks in reach — nothing is offered. A guess dressed as a
+  determination is worse than silence, because a suggestion is the one part of
+  a validator's output a reader is inclined to apply without re-reading the
+  finding.
+
+  Off by default, and additive when on: it runs after `finalize`, so it cannot
+  change which findings there are, their order or their identity, and with the
+  flag absent the text, JSON and SARIF bytes are what they were. In SARIF the
+  candidates ride in each result's `properties` bag rather than in `fixes`,
+  which wants a source region this tool does not yet report (#66) — a `fixes`
+  entry with no region would be a repair a consumer cannot apply.
+
+  Part of #64; `repair --draft`, the other half of that issue, is not in this
+  change and the issue stays open for it.
+
+### Changed
+
+- **Report schema 1.1.0 → 1.2.0**, a minor bump: a finding may now carry a
+  `suggestions` array, which an existing consumer may ignore. It is written
+  **only** when `--suggest` derived at least one, and the schema declares
+  `minItems: 1` so an empty array is unwritable rather than merely unwritten —
+  "nothing was derived" and "nothing was asked" are both the absence of the
+  key, and neither is ever spelled as a list of none. `tests/schema_check.py`
+  gained `minItems` enforcement, because a subset checker that skipped it would
+  have been a gate that could not fail on the half of the constraint that
+  matters.
+
+- **`docs/API.md`**: `validate_document` gains a keyword-only `suggest`
+  parameter defaulting to `False`, and `Finding` gains a `suggestions` field
+  with a default. Both are backwards compatible and both are pinned in
+  `tests/test_public_api.py`, where `suggestions` is now the single named
+  exemption from "no field of a Finding is optional" — it is derived rather
+  than reported, no check ever constructs it, and a second exemption has to be
+  as deliberate as this one.
+
 ### Fixed
 
 - **The Action treated a severity it did not know as a count of zero, and

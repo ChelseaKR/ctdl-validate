@@ -126,6 +126,19 @@ def validate_main(argv: Sequence[str]) -> int:
         ),
     )
     parser.add_argument(
+        "--suggest",
+        action="store_true",
+        help=(
+            "beneath a finding whose correction the payload itself determines, name the "
+            "value it determines: the lower-cased CTID, the CTID this entity's own @id "
+            "already carries, the @id of the entity that declares a bare CTID, the one "
+            "framework in reach. Computed offline from this run's own input; never "
+            "offered where more than one candidate exists, never for an UNVERIFIABLE "
+            "finding, and never a claim about what was meant. Off by default: without "
+            "it this command's bytes are unchanged"
+        ),
+    )
+    parser.add_argument(
         "--report-schema",
         action=PrintReportSchema,
         help=(
@@ -153,7 +166,7 @@ def validate_main(argv: Sequence[str]) -> int:
         # byte-identical to one over a clean payload. Same checks, same
         # findings, same order: `validate_document` is these two calls.
         session = build_session(data, [Path(p) for p in args.resolve])
-        findings = validate(session)
+        findings = validate(session, suggest=args.suggest)
     except DocumentError as exc:
         print(f"ctdl-validate: {args.file}: {exc}", file=sys.stderr)
         return 2

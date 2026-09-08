@@ -17,7 +17,7 @@ from ..graph import NestedRef
 from ..session import Session
 
 
-def _looks_like_iri(value: str) -> bool:
+def looks_like_iri(value: str) -> bool:
     # An IRI here means: has a scheme, or is a blank node identifier. This is
     # deliberately loose; the point is to catch values that are plainly not
     # identifiers, not to fully validate IRIs.
@@ -68,7 +68,7 @@ def check(session: Session) -> list[Finding]:
                             rule=rules.CTID_URI_STRUCTURE,
                         )
                     )
-                elif not _looks_like_iri(value):
+                elif not looks_like_iri(value):
                     findings.append(
                         Finding(
                             code="REF_NOT_IRI",
