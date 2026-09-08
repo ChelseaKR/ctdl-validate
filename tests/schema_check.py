@@ -26,7 +26,17 @@ ANNOTATIONS = frozenset({"$schema", "$id", "title", "description", "$defs", "exa
 
 #: Keywords this checker implements.
 IMPLEMENTED = frozenset(
-    {"type", "required", "properties", "additionalProperties", "items", "enum", "const", "minimum"}
+    {
+        "type",
+        "required",
+        "properties",
+        "additionalProperties",
+        "items",
+        "enum",
+        "const",
+        "minimum",
+        "minItems",
+    }
 )
 
 TYPES: dict[str, type | tuple[type, ...]] = {
@@ -119,6 +129,28 @@ def _check_object(
     return errors
 
 
+def _check_array(
+    instance: list[Any], schema: dict[str, Any], root: dict[str, Any], where: str
+) -> list[str]:
+    """``minItems`` and ``items``.
+
+    ``minItems`` is what makes "absent" and "empty" different facts rather than
+    two spellings of the same one: an optional array that may also be written
+    empty says nothing a reader can act on, which is this project's own
+    dominant defect wearing an array's clothes.
+    """
+    errors: list[str] = []
+    if "minItems" in schema and len(instance) < schema["minItems"]:
+        errors.append(
+            f"{where}: {len(instance)} item(s), fewer than the declared "
+            f"minimum of {schema['minItems']}"
+        )
+    if "items" in schema:
+        for index, item in enumerate(instance):
+            errors += check(item, schema["items"], root, f"{where}[{index}]")
+    return errors
+
+
 def check(
     instance: Any,
     schema: dict[str, Any],
@@ -144,7 +176,6 @@ def check(
     errors = _check_scalar(instance, schema, where)
     if isinstance(instance, dict):
         errors += _check_object(instance, schema, root, where)
-    if isinstance(instance, list) and "items" in schema:
-        for index, item in enumerate(instance):
-            errors += check(item, schema["items"], root, f"{where}[{index}]")
+    if isinstance(instance, list):
+        errors += _check_array(instance, schema, root, where)
     return errors

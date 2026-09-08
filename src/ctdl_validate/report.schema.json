@@ -16,7 +16,7 @@
     "report_schema_version": {
       "description": "The version of this schema that the report conforms to. Semantic: the major part changes when a consumer that reads the old shape would break.",
       "type": "string",
-      "const": "1.1.0"
+      "const": "1.2.0"
     },
     "tool": {
       "description": "What produced the report.",
@@ -133,6 +133,24 @@
         }
       }
     },
+    "suggestion": {
+      "description": "A re-spelling this run determined from its own input: a value already written in the document, or in a document supplied with --resolve, that the finding's defect calls for. Present only under --suggest, offered only where exactly one candidate exists, and never a claim about what was meant.",
+      "type": "object",
+      "required": [
+        "value",
+        "difference"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "difference": {
+          "description": "What a reader would have to change, in the tool's own vocabulary.",
+          "type": "string"
+        }
+      }
+    },
     "finding": {
       "type": "object",
       "required": [
@@ -170,6 +188,14 @@
         },
         "rule": {
           "$ref": "#/$defs/rule"
+        },
+        "suggestions": {
+          "description": "Determined re-spellings for this finding. Absent unless --suggest is on and this run derived at least one; absent is not the same as an empty array, and no report writes one. A code the tool refuses to suggest for -- a bare UUID, a missing language tag, anything UNVERIFIABLE -- never carries this key, and src/ctdl_validate/suggest.py says why for each.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/suggestion"
+          }
         }
       }
     }

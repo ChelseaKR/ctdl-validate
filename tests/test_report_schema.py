@@ -292,8 +292,16 @@ def test_every_key_the_renderer_writes_is_declared_by_the_schema() -> None:
     report = _valid()
     assert set(report) == set(SCHEMA["properties"])
     declared = set(SCHEMA["$defs"]["finding"]["properties"])
+    required = set(SCHEMA["$defs"]["finding"]["required"])
+    # `suggestions` is the one declared key a finding may omit, and the schema
+    # is where that is stated. Naming it here rather than relaxing the
+    # comparison to a subset keeps both directions live: a key the renderer
+    # writes and the schema does not declare still fails, and a *required* key
+    # the renderer stopped writing still fails.
+    assert declared - required == {"suggestions"}
     for finding in report["findings"]:
-        assert set(finding) == declared, set(finding) ^ declared
+        assert set(finding) - declared == set(), set(finding) - declared
+        assert required <= set(finding), required - set(finding)
 
 
 def test_the_schema_declares_the_severities_the_tool_actually_has() -> None:

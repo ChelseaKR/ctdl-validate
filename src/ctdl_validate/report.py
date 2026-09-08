@@ -33,7 +33,7 @@ from pathlib import Path
 
 #: The version of ``report.schema.json``, stamped into every JSON report.
 #: See the module docstring for what each part means.
-REPORT_SCHEMA_VERSION = "1.1.0"
+REPORT_SCHEMA_VERSION = "1.2.0"
 
 #: The schema itself, shipped as package data so an installed copy -- and the
 #: playground's Pyodide wheel -- can print it. ``pyproject.toml`` lists it

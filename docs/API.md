@@ -67,6 +67,57 @@ and the two are different facts. `null` means the producer did not measure the
 scope — a caller rendering findings it assembled by hand has no document to
 measure — and a consumer must not read it as zero. Three states, not two.
 
+### `suggestions` on a finding
+
+Added in report schema **1.2.0**, and a minor bump under the table above: a
+key an existing consumer may ignore.
+
+A finding carries `suggestions` only when `--suggest` was passed *and* this
+run determined at least one candidate. It is an array of
+`{"value", "difference"}` objects: `value` is a string already written
+somewhere in the run's own input, `difference` says what a reader would have
+to change, in the tool's own vocabulary. Neither field asserts that `value` is
+what was meant.
+
+**An empty array is never written.** The schema declares `minItems: 1`, so
+"nothing was derived" and "nothing was asked" are both spelled as the absence
+of the key rather than one of them being spelled as an empty list. A consumer
+must not read the absence of `suggestions` as "there is no correction"; it
+means only that this run did not publish one.
+
+Four codes can carry a suggestion, because their correction is fully
+determined by the payload rather than searched for:
+
+| Code | The candidate |
+|---|---|
+| `CTID_UPPERCASE` | the same CTID in lower case |
+| `CTID_URI_MISMATCH` | the CTID in this entity's own `@id`; on the `@graph` envelope's own `@id`, the envelope URI re-spelled with the payload's one declared CTID, and only when it declares exactly one |
+| `REF_BARE_CTID` | the `@id` of the entity in this run — payload or `--resolve` document — that declares that CTID |
+| `ISPARTOF_FRAMEWORK_MISMATCH` | the `@id` of the one `ceasn:CompetencyFramework` in reach |
+
+Where the run holds more than one candidate, or none, nothing is offered.
+
+Three refusals are permanent, and they are written down in
+[`suggest.py`](../src/ctdl_validate/suggest.py) with the reason as the value
+of `NEVER_SUGGESTED`:
+
+- `CTID_BARE_UUID` and `REF_BARE_UUID` — prefixing the UUID with `ce-` would
+  produce a well-formed CTID, which is exactly the problem: it asserts that a
+  generated UUID names a Registry resource. A bare UUID is evidence that
+  something other than a CTID was written, not evidence about which CTID was
+  meant.
+- `LANGUAGE_MAP_EXPECTED` — wrapping a literal needs a language tag, and the
+  document does not say which one.
+
+And no UNVERIFIABLE finding of any code carries one: UNVERIFIABLE means the
+payload alone cannot settle the question, and a candidate computed from that
+same payload cannot settle it either.
+
+`--format sarif` carries the same objects in each result's `properties`
+bag rather than in SARIF's `fixes`, which wants a source region this tool does
+not yet report (issue #66); a `fixes` entry with no region would be a repair a
+consumer cannot apply.
+
 ## The library
 
 ```python
@@ -77,8 +128,8 @@ findings = ctdl_validate.validate_document(payload)
 
 | Name | Signature | What it is |
 |---|---|---|
-| `validate_document` | `(data: Any, resolve: list[Path] \| None = None) -> list[Finding]` | Validate a decoded CTDL JSON-LD document: an object with `@graph`, a single entity, or an array of entities. Raises `graph.DocumentError` for shapes the tool does not read. |
-| `Finding` | frozen dataclass | One finding: `code`, `severity`, `entity`, `prop`, `value`, `message`, `rule`. |
+| `validate_document` | `(data: Any, resolve: list[Path] \| None = None, *, suggest: bool = False) -> list[Finding]` | Validate a decoded CTDL JSON-LD document: an object with `@graph`, a single entity, or an array of entities. Raises `graph.DocumentError` for shapes the tool does not read. `suggest` is additive: it attaches determined re-spellings and changes nothing else. |
+| `Finding` | frozen dataclass | One finding: `code`, `severity`, `entity`, `prop`, `value`, `message`, `rule`, and `suggestions` — an empty tuple unless `suggest=True` derived one. |
 | `Rule` | frozen dataclass | The published rule a finding is made under: `citation`, `url`, `retrieved`. |
 | `Severity` | `StrEnum` | `ERROR`, `WARNING`, `INFO`, `UNVERIFIABLE`. |
 | `REPORT_SCHEMA_VERSION` | `str` | The version of the report schema this package writes. |
@@ -94,7 +145,10 @@ The package follows Semantic Versioning. Within a major version:
 
 - no name in the table above is removed or renamed;
 - no parameter is removed, reordered, or made required;
-- `Finding` and `Rule` gain no required field, and lose no field;
+- `Finding` and `Rule` gain no required field, and lose no field. `Finding`
+  may gain a field with a default, as `suggestions` did; a consumer
+  constructing one positionally is unaffected, and one reading it by name gets
+  a value that is empty until it is asked for;
 - `Severity` may gain a member. A consumer that switches on severity should
   have a branch for one it does not know, and must not treat an unknown
   severity as a pass.

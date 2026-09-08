@@ -33,7 +33,7 @@ import pytest
 from ctdl_validate import __version__
 from ctdl_validate.findings import render_findings_json, render_findings_text
 from ctdl_validate.graph import parse_document, scope_of
-from ctdl_validate.report import REPORT_SCHEMA_PATH, DocumentScope
+from ctdl_validate.report import REPORT_SCHEMA_PATH, REPORT_SCHEMA_VERSION, DocumentScope
 from ctdl_validate.schema import load_schema
 from ctdl_validate.validator import build_session, validate
 
@@ -168,7 +168,14 @@ def test_the_text_report_stays_silent_when_the_scope_was_not_measured() -> None:
 
 
 def test_the_schema_declares_the_new_field_and_the_version_moved() -> None:
-    assert SCHEMA["properties"]["report_schema_version"]["const"] == "1.1.0"
+    # Not pinned to the exact version this field arrived in: `document` was a
+    # minor bump and so is every later added key, so an equality here goes red
+    # on the next one for a reason that has nothing to do with this field. What
+    # has to hold is that the schema moved off the pre-`document` 1.0.0 and
+    # that reports carry whatever it now says.
+    declared = SCHEMA["properties"]["report_schema_version"]["const"]
+    assert declared != "1.0.0"
+    assert declared == REPORT_SCHEMA_VERSION
     assert "document" in SCHEMA["required"]
     assert set(SCHEMA["$defs"]["measured_count"]["type"]) == {"integer", "null"}
 

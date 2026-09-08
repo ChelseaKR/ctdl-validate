@@ -29,6 +29,28 @@ class Severity(StrEnum):
 
 
 @dataclass(frozen=True)
+class Suggestion:
+    """A re-spelling this run can determine from what it was given.
+
+    ``difference`` says what a reader would have to change, in the tool's own
+    vocabulary. Neither field asserts that ``value`` is what was meant: it
+    asserts only that ``value`` is written somewhere in this run's input and
+    that the finding names a defect whose correction that value supplies. See
+    :mod:`ctdl_validate.suggest` for which codes can produce one and, more
+    importantly, which are refused.
+    """
+
+    value: str
+    difference: str
+
+    def to_dict(self) -> dict[str, str]:
+        return {"value": self.value, "difference": self.difference}
+
+    def render_text(self) -> str:
+        return f"    suggested: {self.value}  ({self.difference})"
+
+
+@dataclass(frozen=True)
 class Rule:
     """Where a rule comes from. Every finding carries one.
 
@@ -50,12 +72,23 @@ class Finding:
     value: str
     message: str
     rule: Rule
+    #: Determined re-spellings, and the only field here with a default. It is
+    #: not written by a check: every check constructs a finding without it, and
+    #: `suggest.with_suggestions` attaches them afterwards, under `--suggest`
+    #: only. So it is derived rather than reported, an empty tuple is the
+    #: honest value for a finding nothing was derived for, and it takes no part
+    #: in `sort_key` or in the deduplication `finalize` does -- a suggestion is
+    #: not part of a finding's identity.
+    #:
+    #: `tests/test_public_api.py` names this as the single exemption from "no
+    #: field of a Finding is optional", so a second one cannot appear quietly.
+    suggestions: tuple[Suggestion, ...] = ()
 
     def sort_key(self) -> tuple[str, str, str, str, str, str]:
         return (self.entity, self.prop, self.code, self.value, self.severity.value, self.message)
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "code": self.code,
             "severity": self.severity.value,
             "entity": self.entity,
@@ -68,6 +101,9 @@ class Finding:
                 "retrieved": self.rule.retrieved,
             },
         }
+        if self.suggestions:
+            payload["suggestions"] = [s.to_dict() for s in self.suggestions]
+        return payload
 
     def render_text(self) -> str:
         return (
@@ -76,6 +112,7 @@ class Finding:
             f"    {self.message}\n"
             f"    rule: {self.rule.citation}\n"
             f"    source: {self.rule.url} (retrieved {self.rule.retrieved})"
+            + "".join("\n" + s.render_text() for s in self.suggestions)
         )
 
 

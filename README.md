@@ -99,6 +99,7 @@ pip install ctdl-validate
 ctdl-validate <file.json>
 ctdl-validate <file.json> --format json
 ctdl-validate <file.json> --format sarif   # SARIF 2.1.0, for code scanning
+ctdl-validate <file.json> --suggest        # name the corrections the payload determines
 ctdl-validate --report-schema        # the shape that report conforms to
 
 # What changed between two runs. No network, exit 0 either way.
@@ -199,6 +200,50 @@ Two things it deliberately does not say:
   unknown in the header rather than passed over, and a tool-version mismatch
   is printed too. Neither stops the diff: they make it something the reader
   has to interpret, which they can only do if they are told.
+
+## `--suggest`: the corrections the payload already determines
+
+Four of this tool's codes name a defect whose repair is not a search. The
+corrected value is written somewhere in the run's own input, and the only
+thing missing is for a reader to see it beside the finding.
+
+```console
+$ ctdl-validate credential.json --suggest
+WARNING      CTID_UPPERCASE  entity=$.@graph[0]
+    ceterms:ctid = ce-B55F88E3-DFD4-430B-AB47-3E5F9986E1E4
+    ...
+    suggested: ce-b55f88e3-dfd4-430b-ab47-3e5f9986e1e4  (the same CTID in lower case)
+```
+
+| Code | What is offered |
+|---|---|
+| `CTID_UPPERCASE` | the same CTID in lower case |
+| `CTID_URI_MISMATCH` | the CTID this entity's own `@id` already carries — or, on the `@graph` envelope's own `@id`, the envelope URI re-spelled with the payload's one declared CTID |
+| `REF_BARE_CTID` | the `@id` of the entity in this run that declares that CTID |
+| `ISPARTOF_FRAMEWORK_MISMATCH` | the `@id` of the one `ceasn:CompetencyFramework` in reach |
+
+Nothing is invented. No CTID is minted, no language is guessed, no literal
+becomes an IRI, no model is involved: every candidate is a string already in
+this run's input, drawn from the payload or from a `--resolve` document. Where
+the run holds more than one candidate, or none, nothing is offered rather than
+one being picked.
+
+Three refusals are permanent, and
+[`suggest.py`](src/ctdl_validate/suggest.py) carries the reason for each as
+data rather than as a comment. `CTID_BARE_UUID` and `REF_BARE_UUID` get
+nothing, because prefixing the UUID with `ce-` would produce a well-formed
+CTID — which is exactly the problem: it would assert that a generated UUID
+names a Registry resource, the claim the finding disputes. `LANGUAGE_MAP_EXPECTED`
+gets nothing, because wrapping a literal needs a language tag the document does
+not supply. And no UNVERIFIABLE finding of any code gets one, because a
+candidate computed from the payload cannot settle what the payload cannot
+settle.
+
+Off by default, and the flag adds only: with it absent, this command's bytes
+in every format are what they were. In `--format json` a finding carries a
+`suggestions` array only where a candidate was derived — never an empty one,
+so a report never spells "nothing was derived" the same way as "nothing was
+asked". [docs/API.md](docs/API.md) states the shape and the version rule.
 
 ## Resolving references against documents you already have
 
