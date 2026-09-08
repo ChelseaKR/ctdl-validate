@@ -44,7 +44,7 @@ from typing import Any
 import pytest
 
 from ctdl_validate import Severity, validate_document
-from tests.test_every_rule_fires import codes_in_source
+from tests.test_every_rule_fires import rule_codes_in_source
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "web" / "index.html"
@@ -146,7 +146,7 @@ def page_python() -> dict[str, Any]:
 
 def test_every_code_the_source_emits_has_a_document_on_the_page() -> None:
     """A rule the playground cannot demonstrate is a rule its visitors cannot find."""
-    missing = sorted(codes_in_source() - set(corpus()))
+    missing = sorted(rule_codes_in_source() - set(corpus()))
     assert missing == [], (
         "the check modules emit these and web/index.html ships no document that reaches "
         f"them, so the playground's rule list would be missing them: {missing}"
@@ -154,7 +154,7 @@ def test_every_code_the_source_emits_has_a_document_on_the_page() -> None:
 
 
 def test_no_document_on_the_page_outlives_the_rule_it_was_written_for() -> None:
-    stale = sorted(set(corpus()) - codes_in_source())
+    stale = sorted(set(corpus()) - rule_codes_in_source())
     assert stale == [], (
         "web/index.html files documents under these codes and no check module emits them "
         f"any more: {stale}. Remove the entry, or the rule was deleted by accident."
@@ -198,10 +198,10 @@ def test_the_pages_code_scan_finds_exactly_the_codes_the_source_emits(
         f"{unreadable} finding code in the check modules is built at run time rather than "
         "written as a string literal, so the page cannot list it"
     )
-    assert codes == codes_in_source(), (
+    assert codes == rule_codes_in_source(), (
         "the scan embedded in web/index.html and the one in test_every_rule_fires.py "
-        f"disagree: only on the page {sorted(codes - codes_in_source())}, only in the test "
-        f"{sorted(codes_in_source() - codes)}"
+        f"disagree: only on the page {sorted(codes - rule_codes_in_source())}, only in the test "
+        f"{sorted(rule_codes_in_source() - codes)}"
     )
 
 
@@ -213,7 +213,7 @@ def test_the_page_would_render_a_derived_row_for_every_rule(
     derived = json.loads(page_python()["catalogue"](json.dumps(corpus())))
     rows = derived["rows"]
     assert derived["unreadable"] == 0
-    assert {row["code"] for row in rows} == codes_in_source()
+    assert {row["code"] for row in rows} == rule_codes_in_source()
     without_example = sorted(row["code"] for row in rows if not row["example"])
     assert without_example == [], (
         "the playground would show these rules with no derived example, which is honest "

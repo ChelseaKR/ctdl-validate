@@ -47,7 +47,7 @@ from ctdl_validate.validator import build_session
 
 from .conftest import fixture_path, load_fixture
 from .schema_check import check
-from .test_every_rule_fires import codes_in_source
+from .test_every_rule_fires import rule_codes_in_source
 from .test_report_schema import SCHEMA
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -105,7 +105,7 @@ def test_no_code_is_both_suggestible_and_refused() -> None:
 def test_every_code_named_either_way_is_a_code_the_source_can_emit() -> None:
     """A suggester or a refusal for a rule that no longer exists is a rule
     nobody is enforcing, dressed as one somebody is."""
-    emitted = codes_in_source()
+    emitted = rule_codes_in_source()
     assert set(SUGGESTERS) <= emitted, set(SUGGESTERS) - emitted
     assert set(NEVER_SUGGESTED) <= emitted, set(NEVER_SUGGESTED) - emitted
 

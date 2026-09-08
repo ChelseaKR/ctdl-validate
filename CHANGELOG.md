@@ -10,6 +10,30 @@ and this project adheres to
 
 ### Added
 
+- **`test_every_rule_fires.py` now counts the whole package, and says so.** It
+  read its universe from `src/ctdl_validate/checks/*.py`, which is **28 of the
+  48** finding codes `src/` constructs. The other 20 are extraction notes under
+  `extract/`, and one of them — `JSONLD_CONTEXT_UNRESOLVED` — appeared in
+  exactly one file in the repository: its own emit site. Deleting its branch
+  left the whole suite green.
+
+  There are now two tripwire tables. `EXTRACT_TRIPWIRES` holds **20 HTML
+  pages**, one per extraction note, each run through `extract_from_html` and
+  asserted to produce that note at its documented severity — the same four
+  directions `TRIPWIRES` is held to, including a README table
+  (*What extraction reports*) that must name exactly the codes `extract/`
+  emits. `test_every_finding_code_in_the_package_is_inside_one_of_these_tables`
+  walks `src/ctdl_validate/` whole and fails on any code neither universe
+  covers, so a new module that starts emitting findings cannot shrink the
+  denominator in silence. A module that builds a code at run time — `compare.py`
+  reconstructs one from a report it is handed — carries a written reason in
+  `CODE_IS_NOT_A_DECLARATION`, which fails both on an undeclared site and on an
+  entry that no longer exempts anything.
+
+  The census (`28 of 28`, `20 of 20`, `48 of 48`) is printed by
+  `tests/conftest.py` on every run, passing or failing. A green line that does
+  not state its denominator is how this went unnoticed.
+
 - **`--suggest`: the correction, where the payload determines it.** Four codes
   name a defect whose repair is not a search — the corrected value is already
   written in the run's own input. `CTID_UPPERCASE` offers the same CTID in
