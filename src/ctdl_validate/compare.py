@@ -197,6 +197,16 @@ def findings_from_report(payload: Any) -> list[Finding]:
     A partial read of evidence is the thing this whole comparison is meant not
     to publish: a report truncated halfway would otherwise diff as a document
     whose second half was repaired.
+
+    **``suggestions`` is read and deliberately dropped.** A report saved under
+    ``--suggest`` may carry candidate re-spellings; they are not part of a
+    finding's identity (see :func:`finding_key`), they say nothing about what
+    changed between two runs, and ``Comparison.to_dict`` renders findings with
+    ``Finding.to_dict`` -- so reconstructing them here would put a candidate
+    into one side of a diff whose other side, validated on the spot without the
+    flag, can never have one. That would read as a change where there is none.
+    Pinned by ``tests/test_suggest.py``; a future reader tempted to "fix" the
+    round trip should read that test's reason first.
     """
     if not is_report(payload):
         raise ReportError("not a saved ctdl-validate JSON report")

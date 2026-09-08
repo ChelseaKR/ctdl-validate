@@ -38,6 +38,7 @@ import pytest
 
 from ctdl_validate import Rule, Severity, validate_document
 from ctdl_validate import __version__ as tool_version
+from ctdl_validate.compare import findings_from_report
 from ctdl_validate.findings import Finding, render_findings_json, render_findings_text
 from ctdl_validate.sarif import render_findings_sarif
 from ctdl_validate.session import Session
@@ -469,6 +470,53 @@ def test_the_default_sarif_log_is_byte_identical_with_the_flag_off() -> None:
     plain = render_findings_sarif(_findings(payload), tool_version, document)
     assert "suggestions" not in plain
     assert plain != render_findings_sarif(_findings(payload, suggest=True), tool_version, document)
+
+
+# -- what `diff` does with a report that carries them ---------------------------
+
+
+def test_a_saved_suggested_report_reads_back_without_its_candidates() -> None:
+    """`diff` compares runs, and a suggestion is not part of what changed.
+
+    `findings_from_report` drops the key on purpose: one side of a diff is
+    frequently a payload validated on the spot, which never carries a
+    candidate, so reconstructing them would render as a change where there is
+    none. The drop is stated in that function's docstring; this is the pin.
+    """
+    payload = load_fixture("ctid_warnings.json")
+    report = json.loads(render_findings_json(_findings(payload, suggest=True), tool_version))
+    assert any("suggestions" in f for f in report["findings"]), "the fixture must carry one"
+    rebuilt = findings_from_report(report)
+    assert [f.code for f in rebuilt] == [f.code for f in _findings(payload)]
+    assert all(f.suggestions == () for f in rebuilt)
+
+
+def test_diffing_a_suggested_report_against_its_own_payload_finds_nothing(
+    tmp_path: Path,
+) -> None:
+    saved = tmp_path / "before.json"
+    saved.write_text(
+        render_findings_json(
+            _findings(load_fixture("ctid_warnings.json"), suggest=True), tool_version
+        ),
+        encoding="utf-8",
+    )
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ctdl_validate",
+            "diff",
+            str(saved),
+            str(fixture_path("ctid_warnings.json")),
+        ],
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert b"added: present after, absent before (0)" in completed.stdout
+    assert b"removed: present before, absent after (0)" in completed.stdout
+    assert b"suggested:" not in completed.stdout
 
 
 # -- through the CLI -----------------------------------------------------------
