@@ -22,6 +22,7 @@ vendored retrieval date it actually used.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 from collections.abc import Sequence
@@ -31,7 +32,7 @@ from typing import Any
 
 from . import __version__
 from .compare import Comparison, ReportError, compare, findings_from_report, is_report
-from .findings import SEVERITY_ORDER, Finding
+from .findings import SEVERITY_ORDER, Finding, Severity
 from .graph import DocumentError
 from .report import REPORT_SCHEMA_VERSION
 from .rules import RETRIEVED as VENDOR_RETRIEVED
@@ -96,12 +97,24 @@ def load_side(path: Path, resolve: list[Path]) -> Side:
 def provenance_notes(before: Side, after: Side) -> list[str]:
     """Every reason these two sides may not be comparable, stated up front.
 
-    A diff between runs made by different tool versions, or against different
-    vendored snapshots, can show a finding appearing because the tool changed
-    rather than because the payload did. That does not make the diff useless
-    and it is not an error, so the comparison still runs -- it makes the diff
-    something the reader has to interpret, which they can only do if they are
-    told.
+    A diff between runs made by different tool versions can show a finding
+    appearing because the tool changed rather than because the payload did.
+    That does not make the diff useless and it is not an error, so the
+    comparison still runs -- it makes the diff something the reader has to
+    interpret, which they can only do if they are told.
+
+    **There is deliberately no "the two snapshots differ" note.** There was
+    one, and it could not fire: a side validated here is stamped with the
+    running process's own :data:`VENDOR_RETRIEVED`, and a saved report is
+    stamped :data:`UNRECORDED`, so two *known* snapshots are the same
+    constant read twice and can never disagree. It read as a provenance guard
+    and was a branch nothing could reach.
+    :func:`ctdl_validate.snapshot.identity` is what a report would have to
+    carry for the question to become answerable -- SARIF already carries it,
+    a ``--format json`` report does not --- and
+    ``tests/test_diff.py::test_a_validated_side_is_always_stamped_with_the_running_snapshot``
+    fails on the day that changes, which is the day this note has something
+    to say.
     """
     notes: list[str] = []
     if before.tool_version != after.tool_version:
@@ -117,9 +130,71 @@ def provenance_notes(before: Side, after: Side) -> list[str]:
             "it, so whether both sides were produced against the same schema and context "
             "documents cannot be determined here."
         )
-    elif before.snapshot != after.snapshot:
-        notes.append(f"vendored CTDL snapshot differs: {before.snapshot} -> {after.snapshot}.")
     return notes
+
+
+#: The fields of a :class:`~ctdl_validate.findings.Finding` that
+#: :data:`~ctdl_validate.compare.IDENTITY` holds equal across a changed pair.
+#: Named here so :func:`comparable_fields` can be the *remainder* rather than a
+#: second hand-kept list beside it.
+IDENTICAL_ACROSS_A_CHANGED_PAIR = ("code", "entity", "prop", "rule")
+
+
+def comparable_fields() -> tuple[str, ...]:
+    """Every field a ``changed`` pair can actually differ on.
+
+    Derived from the dataclass, not listed. A list would go stale exactly
+    where it hurts: ``message`` was a field this report could not show, and
+    ``suggestions`` was added to ``Finding`` later and would have been the
+    next one. Deriving it means a new field is named by the report the moment
+    it exists, and ``tests/test_diff.py`` asserts that this and
+    :data:`IDENTICAL_ACROSS_A_CHANGED_PAIR` together account for every field
+    of ``Finding``, so neither half can quietly stop covering it.
+    """
+    fields = tuple(
+        field.name
+        for field in dataclasses.fields(Finding)
+        if field.name not in IDENTICAL_ACROSS_A_CHANGED_PAIR
+    )
+    assert fields, "a changed pair would have no field to differ on, so nothing could be reported"
+    return fields
+
+
+def _shown(value: object) -> str:
+    """One field of a finding, as a reader sees it."""
+    if isinstance(value, Severity):
+        return value.value
+    if isinstance(value, tuple):
+        return ", ".join(f"{item.value} ({item.difference})" for item in value) or "(none)"
+    return str(value)
+
+
+def _differences(old: Finding, new: Finding) -> list[str]:
+    """What a changed pair really differs on, field by field.
+
+    This is the half of the report that was missing. ``_line`` prints the
+    severity, the code, the entity, the property, the value and the citation
+    --- deliberately not the message, because a diff is scanned rather than
+    read --- and the only other line printed for a changed pair was
+    ``was: <value> / <severity>``. So a pair that differed **only in its
+    wording** rendered as a change followed by two identical strings, and the
+    message appeared nowhere on either side. That is the ordinary case for
+    this verb rather than an exotic one: the header note says in terms that
+    "a finding may have appeared or disappeared because the tool changed",
+    and a reworded message under an unchanged identity is what a tool-version
+    bump most often produces.
+
+    Naming each differing field also takes away the reader's other job, which
+    was to work out which half of ``a / b`` had moved.
+    """
+    lines: list[str] = []
+    for field in comparable_fields():
+        was, now = _shown(getattr(old, field)), _shown(getattr(new, field))
+        if was == now:
+            continue
+        lines.append(f"      {field} now: {now}")
+        lines.append(f"      {field} was: {was}")
+    return lines
 
 
 def _line(finding: Finding) -> str:
@@ -144,7 +219,7 @@ def render_text(before: Side, after: Side, result: Comparison) -> str:
     lines.append(f"changed: same finding, different value or message ({len(result.changed)})")
     for old, new in result.changed:
         lines.append(_line(new))
-        lines.append(f"      was: {old.value} / {old.severity.value}")
+        lines += _differences(old, new)
     if not result.changed:
         lines.append("  (none)")
     lines.append("")

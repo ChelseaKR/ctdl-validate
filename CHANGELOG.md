@@ -96,6 +96,48 @@ and this project adheres to
 
 ### Fixed
 
+- **`diff`'s text report announced a change it could not show.** A finding is
+  the same finding across two runs when its code, entity, property and rule
+  citation match, so what a `changed` pair differs on is its severity, its
+  value or its **message** — and the README says so in terms. The text report
+  printed one line about a changed pair, `was: <value> / <severity>`, and
+  `_line` deliberately omits the message. A pair that differed **only in its
+  wording** therefore rendered as a heading saying something changed followed
+  by two identical strings, with neither message anywhere on the page.
+
+  That is the ordinary case for this verb rather than an exotic one. The
+  header note beside it says a finding "may have appeared or disappeared
+  because the tool changed", and a reworded message under an unchanged
+  identity is what a tool-version bump most often produces. Reproduced against
+  `origin/main` before the fix, on two saved reports differing in one
+  message: `changed: ... (1)`, then `was: ce-B55F88E3-… / WARNING`, with the
+  new wording and the old both absent.
+
+  The report now names each field that actually differs, on both sides
+  (`message now:` / `message was:`), and names only those, so the reader no
+  longer has to work out which half of `a / b` moved. The set of fields it can
+  name is **derived from the `Finding` dataclass** rather than listed:
+  `message` was the field this report could not show, `suggestions` was added
+  to `Finding` later and would have been the next one, and
+  `test_every_field_a_changed_pair_can_differ_on_is_named_by_the_report`
+  fails if the identity fields and the reported fields ever stop accounting
+  for the whole record between them.
+
+  The whole `changed` and `moved` rendering had **never executed** — 0 of the
+  branch, in a module at 87% — which is how a report that shows nothing sat
+  beside a test file asserting the comparison in detail.
+
+- **`provenance_notes` carried a snapshot guard that could not fire.** A side
+  is stamped either "not recorded in a saved report" or the running process's
+  own `rules.RETRIEVED`, so two *known* snapshots were one module constant
+  read twice and `before.snapshot != after.snapshot` was unreachable. It read
+  as a provenance check and was a dead branch. Removed, with the reason in the
+  docstring and the condition that would bring it back written as a test:
+  `test_a_validated_side_is_always_stamped_with_the_running_snapshot` fails on
+  the day a saved report carries its own snapshot — `snapshot.identity()` is
+  already in every SARIF log and is what a `--format json` report would have
+  to grow — which is the day the note has a real question to answer.
+
 - **The Action treated a severity it did not know as a count of zero, and
   annotated it as a notice.** `docs/API.md` permits `Severity` to gain a member
   within a major version and says a consumer "must not treat an unknown

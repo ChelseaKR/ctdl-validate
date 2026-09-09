@@ -36,8 +36,18 @@ from ctdl_validate.compare import (
     findings_from_report,
     is_report,
 )
-from ctdl_validate.diff import UNRECORDED, load_side, main, provenance_notes, render_json
+from ctdl_validate.diff import (
+    IDENTICAL_ACROSS_A_CHANGED_PAIR,
+    UNRECORDED,
+    comparable_fields,
+    load_side,
+    main,
+    provenance_notes,
+    render_json,
+    render_text,
+)
 from ctdl_validate.findings import Finding, Rule, Severity, render_findings_json
+from ctdl_validate.rules import RETRIEVED as VENDOR_RETRIEVED
 
 from .conftest import FIXTURES, fixture_path, load_fixture
 
@@ -314,6 +324,123 @@ def test_two_validated_sides_agree_on_the_snapshot_and_say_nothing_about_it() ->
     left = load_side(fixture_path("clean_framework.json"), [])
     right = load_side(fixture_path("bug_class_252_wrong_framework_identifier.json"), [])
     assert provenance_notes(left, right) == []
+
+
+def test_a_validated_side_is_always_stamped_with_the_running_snapshot() -> None:
+    """Why there is no "the two snapshots differ" note, and when there must be.
+
+    ``provenance_notes`` carried one and it could not fire: every side is
+    stamped either :data:`UNRECORDED` (a saved report, which records no
+    snapshot) or ``rules.RETRIEVED`` (validated here, in this process), so
+    two *known* snapshots are one module constant read twice. An unreachable
+    refusal reads as a guard and never is one, so it was removed.
+
+    This test is the expiry date on that removal. The day a saved report
+    carries its own snapshot -- ``ctdl_validate.snapshot.identity()`` is
+    already emitted in SARIF and is what a ``--format json`` report would
+    have to grow -- ``load_side`` stops returning one constant here, this
+    fails, and the note has a real question to answer.
+    """
+    stamped = {
+        load_side(fixture_path(name), []).snapshot
+        for name in ("clean_framework.json", "ctid_warnings.json", "domain_violation.json")
+    }
+    assert stamped == {VENDOR_RETRIEVED}, (
+        "a validated side no longer always carries the running snapshot, so two known "
+        "snapshots can now disagree and provenance_notes has to say so again"
+    )
+    assert UNRECORDED != VENDOR_RETRIEVED, "the two stamps must stay distinguishable"
+
+
+# -- what a changed pair differs on --------------------------------------------
+
+
+def _rendered_change(before: Finding, after: Finding) -> str:
+    """The text report for one changed pair, as a reader sees it."""
+    side = load_side(fixture_path("clean_framework.json"), [])
+    return render_text(side, side, compare([before], [after]))
+
+
+def test_a_message_only_change_names_the_message_on_both_sides() -> None:
+    """The defect this fixes.
+
+    ``IDENTITY`` leaves value and message out, so a finding reworded between
+    two tool versions is *changed* with an identical value and an identical
+    severity -- and the text report's only line about a changed pair was
+    ``was: <value> / <severity>``. It announced a change and then printed two
+    identical strings, with the message shown nowhere on either side, while
+    the README says in terms that a finding "whose value or message moved
+    under that identity is *changed*".
+    """
+    old = _finding(message="the wording an older release used")
+    new = _finding(message="the wording this release uses")
+    assert finding_key(old) == finding_key(new), (
+        "these must be the same finding, or nothing changed"
+    )
+
+    text = _rendered_change(old, new)
+    assert "changed: same finding, different value or message (1)" in text
+    assert "message now: the wording this release uses" in text
+    assert "message was: the wording an older release used" in text
+    # Only the field that moved is named: a report that listed every field
+    # would put the reader back where they started.
+    assert "value now:" not in text
+    assert "severity now:" not in text
+
+
+def test_a_value_change_names_the_value_and_leaves_the_message_alone() -> None:
+    text = _rendered_change(_finding(value="ce-OLD"), _finding(value="ce-new"))
+    assert "value now: ce-new" in text
+    assert "value was: ce-OLD" in text
+    assert "message now:" not in text
+
+
+def test_a_severity_change_is_named_rather_than_left_to_be_spotted() -> None:
+    text = _rendered_change(_finding(severity=Severity.ERROR), _finding(severity=Severity.WARNING))
+    assert "severity now: WARNING" in text
+    assert "severity was: ERROR" in text
+
+
+def test_every_field_a_changed_pair_can_differ_on_is_named_by_the_report() -> None:
+    """The floor under the two lists, so neither can stop covering ``Finding``.
+
+    ``message`` was a field the report could not show; ``suggestions`` was
+    added to ``Finding`` afterwards and would have been the next one. Deriving
+    the comparable set from the dataclass is what stops that recurring, and
+    this asserts the derivation still accounts for the whole record: a field
+    added to ``Finding`` is either held equal by the identity key or named by
+    the report, and there is no third place for it to go.
+    """
+    declared = {field.name for field in dataclasses.fields(Finding)}
+    named = set(comparable_fields())
+    identical = set(IDENTICAL_ACROSS_A_CHANGED_PAIR)
+    assert identical <= declared, (
+        f"identity names a field Finding does not have: {identical - declared}"
+    )
+    assert named, "a changed pair would have no field to differ on"
+    unaccounted = declared - named - identical
+    assert not unaccounted, (
+        f"Finding has fields this report neither holds equal nor names: {unaccounted}"
+    )
+    assert not named & identical, "a field cannot be both held equal and reported as differing"
+    assert "message" in named, "the field the report could not show must stay in the compared set"
+
+
+def test_the_identity_fields_are_the_ones_the_comparison_actually_holds_equal() -> None:
+    """``IDENTICAL_ACROSS_A_CHANGED_PAIR`` is a claim about ``compare``, so it
+    is checked against ``compare`` rather than against a second list."""
+    old = _finding()
+    moved_one_field: tuple[tuple[str, Finding], ...] = (
+        ("code", _finding("OTHER_CODE")),
+        ("entity", _finding(entity="urn:elsewhere")),
+        ("prop", _finding(prop="ceterms:description")),
+        ("rule", _finding(rule=OTHER)),
+    )
+    assert {field for field, _ in moved_one_field} == set(IDENTICAL_ACROSS_A_CHANGED_PAIR)
+    for field, new in moved_one_field:
+        result = compare([old], [new], pair_moves=False)
+        assert not result.changed, f"{field} moved and the pair was still called changed"
+        assert result.removed and result.added
 
 
 def test_resolve_is_refused_on_a_saved_report_rather_than_ignored(tmp_path: Path) -> None:
