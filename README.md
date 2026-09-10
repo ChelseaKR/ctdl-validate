@@ -245,6 +245,61 @@ in every format are what they were. In `--format json` a finding carries a
 so a report never spells "nothing was derived" the same way as "nothing was
 asked". [docs/API.md](docs/API.md) states the shape and the version rule.
 
+### `repair --draft`: those corrections, written out
+
+`--suggest` names a correction. `repair --draft` applies the ones the payload
+determines to a **copy**, re-validates the copy with the same deterministic
+engine, and reports what moved.
+
+```console
+$ ctdl-validate repair credential.json --draft --out draft.json --patch-out patch.json
+draft written to draft.json
+
+applied (1)
+  WARNING      CTID_UPPERCASE  entity=$.@graph[0]
+      ceterms:ctid = ce-B55F88E3-DFD4-430B-AB47-3E5F9986E1E4
+      -> ce-b55f88e3-dfd4-430b-ab47-3e5f9986e1e4   at /@graph/0/ceterms:ctid
+
+not applied (1)
+  WARNING      CTID_NOT_UUIDV4  entity=$.@graph[1]
+      ceterms:ctid = ce-59e8d15f-7895-1346-a5a8-7a0739a3d344
+      left alone: no correction this payload determines
+
+resolved (1) … introduced (0) … untouched: 1
+```
+
+**The input is never written.** An `--out` that is the input, or that is any
+`--resolve` path, is refused before anything is opened — compared by resolved
+path, so `./x.json` and `x.json` are the one file they are on disk.
+
+**`replace` operations only**, and `--patch-out` writes them as an RFC 6902
+patch. These four codes are re-spellings of a value already written, so there
+is nothing to add and nothing to remove; a patch of `replace` operations
+cannot change the document's shape.
+
+**The counts come from re-running the checks**, not from the patcher. So a
+draft that resolves nothing says so, and one that *introduces* a finding says
+that too, with the finding — which is not hypothetical. A `ceterms:ownedBy`
+written as a bare CTID is `REF_BARE_CTID`, and the correction is the `@id` of
+the entity declaring that CTID. Once the reference resolves, the range check
+can finally see what it points at, and an ERROR the unresolvable reference had
+been hiding appears. The re-spelling is right and the document reads worse.
+**That is the reason this writes a draft rather than a repair**, and why
+`--draft` is required rather than defaulted.
+
+A finding becomes an operation only when the run derived **exactly one**
+candidate *and* **exactly one** place in the source carries the reported
+value. The second condition is not redundant: an `@id` declared by two objects
+is a defect this tool reports rather than refuses to read, so a finding against
+that identifier can name a value written in two places, and patching one would
+be a guess about which the finding meant. Every finding that fails either
+condition is printed under *not applied* with the reason.
+
+Exit is 0 when the draft was written and 2 when the input could not be read or
+an output path was refused. **Not 1 for "the draft still has ERRORs"**: the
+exit code that gates a publication is the validator's, run over whatever a
+person decides to keep.
+
 ## Resolving references against documents you already have
 
 CTDL payloads reference other payloads by URI as a matter of routine: a

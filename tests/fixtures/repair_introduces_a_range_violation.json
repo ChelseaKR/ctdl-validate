@@ -1,0 +1,25 @@
+{
+  "@context": "https://credreg.net/ctdl/schema/context/json",
+  "@id": "https://credentialengineregistry.org/graph/ce-2f0a3f19-6c7e-4a63-9c2f-8b1d4e5a7c30",
+  "@graph": [
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-2f0a3f19-6c7e-4a63-9c2f-8b1d4e5a7c30",
+      "@type": "ceterms:Certification",
+      "ceterms:ctid": "ce-2f0a3f19-6c7e-4a63-9c2f-8b1d4e5a7c30",
+      "ceterms:name": {
+        "en-US": "A Certification whose owner is written as a bare CTID"
+      },
+      "ceterms:subjectWebpage": "https://example.org/certifications/owned-by-a-bare-ctid",
+      "ceterms:ownedBy": "ce-8d4b1c07-52ae-4f38-9a6d-3e0c7b21f945"
+    },
+    {
+      "@id": "https://credentialengineregistry.org/resources/ce-8d4b1c07-52ae-4f38-9a6d-3e0c7b21f945",
+      "@type": "ceterms:Certification",
+      "ceterms:ctid": "ce-8d4b1c07-52ae-4f38-9a6d-3e0c7b21f945",
+      "ceterms:name": {
+        "en-US": "The entity that CTID names, which is not an organization"
+      },
+      "ceterms:subjectWebpage": "https://example.org/certifications/not-an-organization"
+    }
+  ]
+}
