@@ -10,6 +10,59 @@ and this project adheres to
 
 ### Added
 
+- **`repair --draft`: the determined corrections, written out.** The other
+  half of #64. `--suggest` names a correction beside a finding; this applies
+  the ones the payload determines to a **copy**, re-validates the copy with
+  the same engine, and reports what moved.
+
+  Three properties are enforced rather than promised. **The input is never
+  written** — an `--out` that is the input or any `--resolve` path is refused
+  before anything is opened, compared by resolved path so `./x.json` and
+  `x.json` are one file. **Nothing is invented** — every value comes from
+  `suggest.py`, which reads a re-spelling out of the run's own input; this
+  module adds one refusal and no candidates. **The report is what the
+  validator found**, from re-running the checks over the written copy and
+  comparing finding sets with `compare.finding_key`, the same identity `diff`
+  uses.
+
+  `replace` operations only, and `--patch-out` writes them as an RFC 6902
+  patch. These codes are re-spellings of a value already written, so a patch
+  cannot change the document's shape.
+
+  **The refusal this adds** is about *position*, not about candidates. A
+  finding names its entity by `@id` where it has one, and an `@id` may be
+  declared by more than one object — a defect this tool reports
+  (`ID_DECLARED_MORE_THAN_ONCE`) rather than refuses to read — so the value a
+  finding is about can be written in two places. Patching one is a guess about
+  which the finding meant; patching both is a second guess that they are the
+  same mistake. Neither is determined, so the finding is skipped and the reason
+  is printed with it, as `suggest.py`'s refusals are.
+
+  **A draft can be honest and still read worse**, and the acceptance case for
+  it is a real payload rather than a contrived one. A `ceterms:ownedBy` written
+  as a bare CTID is `REF_BARE_CTID`/WARNING; the correction is the `@id` of the
+  entity declaring that CTID. Once the reference resolves, the range check can
+  see what it points at — a `ceterms:Certification` where `ceterms:ownedBy`
+  requires an organization — and raises the ERROR the unresolvable reference
+  had been hiding. `resolved: 1, introduced: 1`, and the copy is still written.
+  That is why `--draft` is required rather than defaulted, and why the exit
+  code is 0: the code that gates a publication is the validator's, run over
+  whatever a person keeps.
+
+  **Four of the module's own lines were unexecuted on its first complete run,
+  and three were gaps rather than untested refusals**: a value inside a nested
+  inline object, a bare-array document, and a `replace` on an element of a
+  list. All three are shapes `graph.py` handles, and a locator that disagrees
+  with the walk fails *silently* — every finding is skipped as "not in the
+  source" and the draft is the document. They have tests now, and
+  `repair.py` is at 100% line and branch coverage.
+
+  Dispatched by name like `extract` and `diff`, and imported by a literal
+  module path for the same reason. `ctdl_validate.__all__` is unchanged: this
+  is a CLI surface, not a Python one. The default command's bytes are what they
+  were, in every format, and a test asserts it.
+
+
 - **`test_every_rule_fires.py` now counts the whole package, and says so.** It
   read its universe from `src/ctdl_validate/checks/*.py`, which is **28 of the
   48** finding codes `src/` constructs. The other 20 are extraction notes under

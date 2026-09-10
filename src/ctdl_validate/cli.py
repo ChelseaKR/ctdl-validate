@@ -56,6 +56,14 @@ EXTRACT_COMMAND = "extract"
 #: argument, so the first word of a command line never names a module.
 DIFF_COMMAND = "diff"
 
+#: The third verb dispatched by name, for the same reason as the other two: the
+#: default parser takes a file as its first positional, so a verb name would be
+#: read as a filename. Like ``diff`` it is offline and deterministic; unlike
+#: either of the others it *writes* -- to a path the caller names, never to the
+#: input, which :func:`ctdl_validate.repair._refuse_output` enforces before
+#: anything is opened.
+REPAIR_COMMAND = "repair"
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
@@ -67,6 +75,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         diff_cli = importlib.import_module("ctdl_validate.diff")
         verdict: int = diff_cli.main(args[1:])
         return verdict
+    if args and args[0] == REPAIR_COMMAND:
+        repair_cli = importlib.import_module("ctdl_validate.repair")
+        drafted: int = repair_cli.main(args[1:])
+        return drafted
     return validate_main(args)
 
 
