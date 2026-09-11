@@ -40,6 +40,7 @@ from ctdl_validate.repair import (
     positions,
 )
 from ctdl_validate.schema import load_schema
+from ctdl_validate.session import collect_paths
 from ctdl_validate.validator import build_session, validate
 
 from .conftest import FIXTURES, fixture_path, load_fixture
@@ -192,7 +193,17 @@ def test_writing_over_the_input_is_refused_before_anything_is_read(
 def test_writing_over_a_resolve_path_is_refused(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    supplied = RESOLVE / "owner_organization.json"
+    """A copy, for the reason the test above gives, measured here too.
+
+    This used to point ``--out`` at the tracked fixture itself. Running the
+    negative control for this refusal -- deleting the ``target == supplied``
+    comparison -- wrote the draft of ``external_reference.json`` over
+    ``tests/fixtures/resolve/owner_organization.json``, 8 lines changed, and
+    the harness's clean-tree check is what noticed. The rule the sibling test
+    states applies to every write-guard test in this file.
+    """
+    supplied = tmp_path / "owner_organization.json"
+    supplied.write_bytes((RESOLVE / "owner_organization.json").read_bytes())
     before = hashlib.sha256(supplied.read_bytes()).hexdigest()
     code = main(
         [
@@ -208,6 +219,57 @@ def test_writing_over_a_resolve_path_is_refused(
     assert code == 2
     assert "--resolve" in capsys.readouterr().err
     assert hashlib.sha256(supplied.read_bytes()).hexdigest() == before
+
+
+def test_writing_inside_a_resolve_directory_is_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A ``--resolve`` directory protects its members, not only its own name.
+
+    ``session.expand`` opens a directory argument into the ``.json`` files one
+    level inside it, so every one of those is a supplied document. Comparing
+    ``--out`` only against the arguments let ``--resolve supplied/ --out
+    supplied/other.json`` through: exit 0, "draft written to ...", and a
+    supplied document replaced by the draft of a different file. Measured
+    before the fix on a scratch tree; the bytes changed and nothing said so.
+
+    The copy is deliberate, for the reason the test above records: a
+    write-guard test must not be the thing that exercises the write on a
+    tracked fixture.
+    """
+    supplied_dir = tmp_path / "supplied"
+    supplied_dir.mkdir()
+    member = supplied_dir / "owner_organization.json"
+    member.write_bytes((RESOLVE / "owner_organization.json").read_bytes())
+    before = hashlib.sha256(member.read_bytes()).hexdigest()
+    code = main(
+        [
+            "repair",
+            str(fixture_path("external_reference.json")),
+            "--draft",
+            "--out",
+            str(member),
+            "--resolve",
+            str(supplied_dir),
+        ]
+    )
+    assert code == 2
+    assert "--resolve" in capsys.readouterr().err
+    assert hashlib.sha256(member.read_bytes()).hexdigest() == before
+
+
+def test_a_resolve_directory_really_does_supply_its_members(tmp_path: Path) -> None:
+    """The premise of the test above, asserted rather than assumed.
+
+    If a directory argument stopped being expanded, the refusal would be
+    protecting files that are not supplied documents, and the test above would
+    still pass.
+    """
+    supplied_dir = tmp_path / "supplied"
+    supplied_dir.mkdir()
+    member = supplied_dir / "owner_organization.json"
+    member.write_bytes((RESOLVE / "owner_organization.json").read_bytes())
+    assert collect_paths([supplied_dir]) == [member]
 
 
 def test_the_refusal_compares_paths_and_not_strings(tmp_path: Path) -> None:
