@@ -18,6 +18,10 @@ section H added).
 - **C Privacy / DPIA:** applies in a narrow form. Validation processes only
   the local file it is pointed at, entirely in process, with no network
   calls, no telemetry, and no persistence beyond its printed report.
+  `repair --draft` is the one verb that persists more than a report: it
+  writes a patched copy of the payload to the `--out` path the caller names,
+  and refuses an `--out` that is the input or any document supplied with
+  `--resolve`, including one inside a `--resolve` directory.
   Credential data can describe real people and organizations; it never leaves
   the machine the publisher runs the tool on. Extraction makes one outbound
   request the operator asked for, which is visible in the fetched site's

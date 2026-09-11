@@ -424,6 +424,15 @@ def _refuse_output(out: Path, source: Path, resolve: list[Path]) -> str | None:
     Compared by resolved path rather than by string, so ``./x.json`` and
     ``x.json`` are one file here as they are on disk. A relative path that does
     not exist yet still resolves, which is the ordinary case for an output.
+
+    A ``--resolve`` argument may be a **directory**, which
+    :func:`ctdl_validate.session.expand` opens into the ``.json`` files one
+    level inside it. Comparing the target only with the arguments therefore
+    missed every one of those members: ``--resolve supplied/ --out
+    supplied/other.json`` wrote the draft over a supplied document, silently
+    and with exit 0. So a directory argument protects everything under it,
+    which is the claim the README already makes ("an ``--out`` that is ... any
+    ``--resolve`` path, is refused before anything is opened").
     """
     target = out.resolve()
     if target == source.resolve():
@@ -432,10 +441,17 @@ def _refuse_output(out: Path, source: Path, resolve: list[Path]) -> str | None:
             "than over it: the original is the thing a reader checks the draft against."
         )
     for path in resolve:
-        if target == path.resolve():
+        supplied = path.resolve()
+        if target == supplied:
             return (
                 f"--out is {path}, which was supplied with --resolve. A supplied document "
                 "is never validated and never patched by this run."
+            )
+        if supplied.is_dir() and target.is_relative_to(supplied):
+            return (
+                f"--out is inside {path}, a directory supplied with --resolve, so it is "
+                "one of the supplied documents. A supplied document is never validated "
+                "and never patched by this run."
             )
     return None
 
