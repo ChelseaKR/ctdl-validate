@@ -97,6 +97,80 @@
       name="twitter:image"
       content="https://chelseakr.github.io/ctdl-validate/social-card.png"
     />
+    <!--
+      WHAT THIS BLOCK IS, AND WHAT IT IS NOT.
+
+      This is the only schema.org markup on the page, and its subject is THE
+      PAGE: a free tool that checks CTDL JSON-LD in the reader's own browser.
+
+      The page carries a second, much larger body of JSON-LD, and the two are
+      not the same kind of thing. The other one is `#rule-corpus` at the foot
+      of the body: CTDL example payloads, written in ceterms: and ceasn:,
+      which are the documents the playground validates. They are the subject
+      matter. This node is the description of the tool that reads them. A
+      sweep that counts JSON-LD on this page and stops there will report that
+      the page describes itself, and before this block it did not: it
+      described several example credentials and said nothing at all about what
+      a visitor had arrived at.
+
+      Getting that backwards is a defect in both directions -- read this node
+      as a third CTDL example and it is nonsense, delete it as one and the
+      page goes back to being anonymous to a machine -- so three things keep
+      them apart. This one is in the head, before every example. It carries an
+      @id and an element id of its own. And the page reaches its examples with
+      getElementById("rule-corpus"), never by selecting on a script element's
+      type, so nothing added here can be picked up as a payload.
+      tests/test_playground_catalogue.py holds all three, and holds that both
+      kinds are still present and neither sweep is empty.
+
+      WHY THESE FIELDS AND NOT MORE.
+
+      Every value below is already in this head, in the <html lang> attribute,
+      or in pyproject.toml, and the test file named above fails if one stops
+      matching its source. What is absent is the more interesting half, and it
+      is absent on purpose:
+
+        softwareVersion   the running version is read off the wheel at boot
+                          (see footerVersion far below) because main is
+                          routinely ahead of the last tag. A number typed here
+                          would be served for as long as nobody noticed, and
+                          nothing in this repository could notice.
+        datePublished,    nothing derives either one for this page. A date
+        dateModified      kept by hand is the same defect wearing a date.
+        aggregateRating,  there is no rating, no review and no download count
+        review,           to state. Stating one anyway is precisely the thing
+        interactionCount  this repository exists to catch in other people's
+                          documents.
+        featureList       would be a hand-written list of rules on a page whose
+                          whole design is that it never writes one down; see
+                          the comment above #rule-corpus.
+
+      The single URL here that this project does not own is the Apache licence
+      that pyproject.toml declares. It is a data value and not a subresource:
+      the Content-Security-Policy above is default-src 'none', so this page
+      requests nothing from it, and nothing new is loaded by adding it.
+    -->
+    <script type="application/ld+json" id="page-schema">
+      {
+        "@context": "https://schema.org",
+        "@id": "https://chelseakr.github.io/ctdl-validate/#playground",
+        "@type": "WebApplication",
+        "name": "ctdl-validate playground",
+        "url": "https://chelseakr.github.io/ctdl-validate/",
+        "description": "Structural validation for CTDL JSON-LD, run before you publish to the Credential Registry. Nothing is uploaded: the validator runs in your browser via WebAssembly.",
+        "applicationCategory": "DeveloperApplication",
+        "browserRequirements": "Requires WebAssembly",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "sameAs": "https://github.com/ChelseaKR/ctdl-validate"
+      }
+    </script>
     <!-- Inline, because without it every visitor's browser requests
          /favicon.ico, gets a 404, and logs a console error. A tool whose
          argument is that it tells the truth about itself can afford not to

@@ -10,6 +10,43 @@ and this project adheres to
 
 ### Added
 
+- **The playground's head now says what the page is.** The page carried
+  `@graph` after `@graph` of CTDL — `ceterms:Certification`,
+  `ceterms:Organization`, `ceasn:Competency` — and none of it was about the
+  page. Those are the *example payloads the playground validates*: its subject
+  matter, in `#rule-corpus`. Nothing on the site described the tool, so a
+  machine reader came away with a rich account of several sample credentials
+  and no idea what it had arrived at. A sweep that counts JSON-LD could not see
+  this, and scored the page as self-describing the whole time.
+
+  `web/index.html` now carries one schema.org `WebApplication` node,
+  `#page-schema`, in the head: free, running entirely in the reader's browser,
+  with a category, a licence and an offer priced at zero.
+
+  **Every field traces to something already committed.** The name comes from
+  the `<title>`, the description is the meta description byte for byte, the
+  language from `<html lang>`, the repository and the licence from
+  `pyproject.toml`. `tests/test_playground_catalogue.py` fails when any of them
+  stops matching its source.
+
+  **The fields left out are the point.** No rating, no review, no download
+  count, no date, no `featureList`, and no `softwareVersion` — that last one is
+  genuinely knowable and still absent, because `main` is routinely ahead of the
+  last tag and the page already shows the running version in its footer from
+  the wheel it loaded. A number typed into a head tag is served for as long as
+  nobody happens to look, in the one part of the page no visitor reads. A test
+  holds the whole list out.
+
+  **The two kinds of JSON-LD are kept apart by construction, not by care.** The
+  examples are `application/json`, addressed by `getElementById`; the node is
+  `application/ld+json` in the head with an `@id` and an element id of its own.
+  A test asserts the page selects no script element by type or tag name, which
+  is what makes it safe to put a second kind of JSON-LD on this page at all —
+  otherwise the head's description of the tool would be loaded as a payload and
+  handed to the validator. One gate sweeps for both kinds, derives the expected
+  examples from the check modules rather than a list beside them, and asserts
+  each sweep is non-empty before comparing, so two empty sets cannot agree.
+
 - **`repair --draft`: the determined corrections, written out.** The other
   half of #64. `--suggest` names a correction beside a finding; this applies
   the ones the payload determines to a **copy**, re-validates the copy with
