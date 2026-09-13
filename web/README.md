@@ -50,6 +50,39 @@ source no longer emits, if a document stops producing the code it is filed
 under, or if the page's scan and the test suite's scan disagree. Each of those
 was broken on purpose and watched go red.
 
+## Two kinds of JSON-LD on one page
+
+The page carries JSON-LD twice, for two different readers, and the difference
+is not visible to anything that counts blocks.
+
+- **`#rule-corpus`, at the foot of the body.** The CTDL example payloads
+  described above, in `ceterms:` and `ceasn:`. They are the subject matter:
+  the documents the playground validates.
+- **`#page-schema`, in the head.** One schema.org `WebApplication` node whose
+  subject is *this page* — a free tool that checks CTDL JSON-LD in the
+  reader's own browser.
+
+Until 2026-09-13 only the first existed, so a machine reader got a detailed
+description of several example credentials and no statement at all of what the
+page was. A discoverability sweep that counts JSON-LD scored the site as
+self-describing throughout, which is why the corpus is `application/json` and
+the node is `application/ld+json`: the two are told apart by type, by element
+id, and by position, not by a count.
+
+Every value in the node traces to something already committed — the `<title>`,
+the meta description, `<html lang>`, and `pyproject.toml`'s repository and
+licence — and `tests/test_playground_catalogue.py` fails when one stops
+matching its source. It states no rating, no review, no download count, no
+date and no version. The version is the interesting omission: the page shows
+the running one in its footer, read off the wheel it actually loaded, because
+`main` is routinely ahead of the last tag and a number typed into the head
+would be served for as long as nobody looked.
+
+Nothing on this page reaches for a `<script>` element by type or tag name —
+the corpus is addressed by `getElementById`, and a test holds that — so a
+second kind of JSON-LD in the head can never be swept up and validated as a
+CTDL payload.
+
 ## How it is gated
 
 `.github/workflows/accessibility.yml` audits two URLs on every pull request

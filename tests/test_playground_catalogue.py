@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import json
 import re
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -359,4 +360,326 @@ def test_the_card_is_described_for_a_reader_who_cannot_see_it() -> None:
     assert head_meta("twitter:card") == "summary_large_image", (
         "the card is 1200x630, which is the large-image layout; declaring 'summary' crops "
         "it to a square thumbnail"
+    )
+
+
+# -- the page says what it is, as well as what it validates --------------------
+#
+# The page carries two kinds of JSON-LD for two different audiences, and the
+# whole difficulty is that a sweep cannot tell them apart by counting.
+#
+#   `#rule-corpus`, above: CTDL example payloads in ceterms: and ceasn:. They
+#   are the subject matter -- the documents the playground validates.
+#
+#   `#page-schema`, in the head: one schema.org node whose subject is this
+#   page. Before it, nothing on the site stated what a visitor had arrived at;
+#   a machine reader got a rich description of several example credentials and
+#   no statement at all about the tool. The page still scored as "has
+#   structured data" to anything that counts JSON-LD, which is the trap.
+#
+# So these tests sweep for both, assert each sweep is non-empty before
+# comparing anything, and derive the expected examples from the check modules
+# rather than from a second list kept beside them.
+
+#: The schema.org node's element id, its `@id`, and the type it declares.
+#: Written out rather than read back out of the page, for the same reason
+#: PUBLISHED_AT is: an expectation parsed out of the thing under test moves
+#: with the mistake and stays green.
+SCHEMA_ELEMENT_ID = "page-schema"
+SCHEMA_NODE_ID = f"{PUBLISHED_AT}#playground"
+SCHEMA_CONTEXT = "https://schema.org"
+SCHEMA_TYPE = "WebApplication"
+SCHEMA_CATEGORY = "DeveloperApplication"
+
+#: SPDX identifier -> the licence text it denotes. One entry, because the
+#: project declares one licence. Relicensing to something this map does not
+#: know about fails here, rather than quietly leaving the old URL on the page.
+LICENCE_URLS = {"Apache-2.0": "https://www.apache.org/licenses/LICENSE-2.0"}
+
+#: Fields that would have to be a hand-kept copy of a number, a date or a
+#: judgement that nothing derives for this page. The running version is read
+#: off the wheel at boot, because `main` is routinely ahead of the last tag;
+#: the rest do not exist at all. Any of them appearing in the node is this
+#: portfolio's dominant defect -- a figure served long after the value moved,
+#: with nothing able to notice -- installed in the one place on the page a
+#: human reader never sees.
+UNDERIVED_FIELDS = frozenset(
+    {
+        "aggregateRating",
+        "dateCreated",
+        "dateModified",
+        "datePublished",
+        "downloadUrl",
+        "fileSize",
+        "featureList",
+        "interactionCount",
+        "interactionStatistic",
+        "ratingCount",
+        "ratingValue",
+        "review",
+        "reviewCount",
+        "softwareVersion",
+        "version",
+    }
+)
+
+
+def ld_json_blocks() -> list[str]:
+    """Every ``application/ld+json`` block in the page, in document order."""
+    return re.findall(
+        r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>',
+        page_source(),
+        re.DOTALL,
+    )
+
+
+def page_schema() -> dict[str, Any]:
+    """The one schema.org node, parsed.
+
+    Parsed rather than pattern-matched, because "well formed" is the claim: a
+    node a crawler cannot load says exactly as much as no node at all, and a
+    regex over it would pass on JSON that does not parse.
+    """
+    blocks = ld_json_blocks()
+    assert len(blocks) == 1, (
+        f"web/index.html carries {len(blocks)} application/ld+json blocks; exactly one "
+        "belongs there. A second would be a second statement about what this page is, "
+        "and the CTDL examples are not written in that type for exactly this reason."
+    )
+    loaded: Any = json.loads(blocks[0])
+    assert isinstance(loaded, dict), (
+        f"the schema.org block is a {type(loaded).__name__}, not an object"
+    )
+    return loaded
+
+
+def project_metadata() -> dict[str, Any]:
+    manifest: dict[str, Any] = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    project: dict[str, Any] = manifest["project"]
+    return project
+
+
+def keys_anywhere(value: Any) -> set[str]:
+    """Every key in a nested structure, so a banned field cannot hide in `offers`."""
+    if isinstance(value, dict):
+        found = set(value)
+        for nested in value.values():
+            found |= keys_anywhere(nested)
+        return found
+    if isinstance(value, list):
+        found = set()
+        for item in value:
+            found |= keys_anywhere(item)
+        return found
+    return set()
+
+
+def test_the_page_carries_both_kinds_of_json_ld_and_neither_sweep_is_empty() -> None:
+    """The gate for this page's structured data, both halves in one place.
+
+    Both sweeps are asserted non-empty *before* anything is compared. The
+    failure worth guarding against is a sweep that finds nothing and reports
+    agreement: an empty set equals an empty set, so a page that had lost every
+    example would sail through a test that only checked the two matched.
+    """
+    described = ld_json_blocks()
+    assert described, (
+        "web/index.html carries no application/ld+json block, so nothing on this page "
+        "states what the page is. The CTDL documents below it describe example "
+        "credentials; they say nothing about this tool, and a reader that counts JSON-LD "
+        "will score the page as self-describing anyway."
+    )
+
+    examples = set(corpus())
+    assert examples, (
+        "web/index.html ships no CTDL example documents. The playground validates the "
+        "documents in its own corpus to build its rule list, so an empty corpus is an "
+        "empty page."
+    )
+
+    expected = rule_codes_in_source()
+    assert expected, (
+        "the check modules emit no finding codes, so the comparison below is two empty "
+        "sets agreeing and proves nothing about either"
+    )
+    assert examples == expected, (
+        f"the page's CTDL examples and the codes the source emits disagree: only on the "
+        f"page {sorted(examples - expected)}, only in the source {sorted(expected - examples)}"
+    )
+
+    node = page_schema()
+    assert node.get("@type") == SCHEMA_TYPE, (
+        f"the schema.org node declares @type {node.get('@type')!r}, expected "
+        f"{SCHEMA_TYPE!r}. This page is a tool, and the node is what says so."
+    )
+    serialised = json.dumps(node)
+    assert "ceterms:" not in serialised and "ceasn:" not in serialised, (
+        "the schema.org node names a CTDL vocabulary. The two kinds of JSON-LD on this "
+        "page have been confused for each other: this one describes the page, the corpus "
+        "describes credentials."
+    )
+
+
+def test_the_schema_org_node_is_addressable_and_sits_ahead_of_the_examples() -> None:
+    """Three things keep a reader from mistaking the node for a third CTDL example."""
+    html = page_source()
+    node = page_schema()
+
+    assert node.get("@context") == SCHEMA_CONTEXT, (
+        f"the node's @context is {node.get('@context')!r}. Without schema.org's context "
+        "its terms resolve to nothing and a crawler reads an untyped blob."
+    )
+    assert node.get("@id") == SCHEMA_NODE_ID, (
+        f"the node's @id is {node.get('@id')!r}, expected {SCHEMA_NODE_ID!r}. A node with "
+        "no stable identifier cannot be referred to, merged or superseded."
+    )
+    assert f'id="{SCHEMA_ELEMENT_ID}"' in html, (
+        f"the node's script element has no id={SCHEMA_ELEMENT_ID!r}, which is how the "
+        "next person tells it from the corpus without reading the JSON"
+    )
+    assert html.index(f'id="{SCHEMA_ELEMENT_ID}"') < html.index('id="rule-corpus"'), (
+        "the schema.org node is below the CTDL corpus. It belongs in the head, with the "
+        "rest of what this page says about itself, and the ordering is half of what makes "
+        "the difference legible in the source."
+    )
+
+
+def test_the_page_finds_its_examples_by_id_and_never_by_element_type() -> None:
+    """What makes it safe to put a second kind of JSON-LD on this page at all.
+
+    The corpus is addressed by element id. Were the page ever to reach for its
+    examples by selecting on a script element's type instead, the head's
+    description of the tool would be loaded as a CTDL payload and handed to
+    the validator as a document to check.
+    """
+    html = page_source()
+    assert 'document.getElementById("rule-corpus")' in html, (
+        "the page no longer reads its example corpus by element id. Whatever replaced it "
+        "has to be checked against the schema.org node in the head before this passes."
+    )
+    selectors = re.findall(r'querySelectorAll?\(\s*"([^"]*script[^"]*)"', html)
+    assert selectors == [], (
+        f"the page selects script elements by CSS: {selectors}. That is how the "
+        "application/ld+json node in the head gets swept up as a CTDL example."
+    )
+    assert "getElementsByTagName" not in html, (
+        "the page collects elements by tag name, which is the other way the head's "
+        "schema.org node ends up in the corpus"
+    )
+
+
+def test_the_schema_org_node_repeats_only_what_the_head_already_says() -> None:
+    """Every claim traced back to the committed thing that already makes it.
+
+    A head tag is served long after anyone reads it, so the only safe claim in
+    one is a claim something else in the repository is responsible for. These
+    are the six, and each is pinned to its source rather than to a copy.
+    """
+    node = page_schema()
+    html = page_source()
+
+    title_match = re.search(r"<title>([^<]*)</title>", html)
+    assert title_match is not None, "the page has no <title>"
+    expected_name = title_match.group(1).split(":")[0].strip()
+    assert node.get("name") == expected_name, (
+        f"the node names this page {node.get('name')!r}; the title calls it "
+        f"{expected_name!r}. One page, one name."
+    )
+
+    assert node.get("description") == head_meta("description"), (
+        "the node's description and the meta description disagree. They are two "
+        "statements of the same sentence to two readers, and web/a11y/audit.mjs holds "
+        "the meta description to what the page can actually claim -- a second copy "
+        "drifting out from under that is how a claim nobody vetted gets published."
+    )
+
+    assert node.get("url") == PUBLISHED_AT, (
+        f"the node's url is {node.get('url')!r}, expected {PUBLISHED_AT!r}. Five sibling "
+        "projects publish under this origin and the bare origin is a 404, so an address "
+        "without /ctdl-validate/ names another project or nothing."
+    )
+
+    lang_match = re.search(r'<html lang="([^"]*)"', html)
+    assert lang_match is not None, "the document declares no language"
+    assert node.get("inLanguage") == lang_match.group(1), (
+        f"the node says inLanguage {node.get('inLanguage')!r} and the document declares "
+        f"lang {lang_match.group(1)!r}"
+    )
+
+    repository = project_metadata()["urls"]["Repository"]
+    assert node.get("sameAs") == repository, (
+        f"the node's sameAs is {node.get('sameAs')!r}; pyproject.toml declares the "
+        f"repository as {repository!r}"
+    )
+    assert f'href="{repository}"' in html, (
+        "the page's footer no longer links the repository the node points at, so the two "
+        "routes to the source have come apart"
+    )
+
+    assert node.get("applicationCategory") == SCHEMA_CATEGORY, (
+        f"the node's applicationCategory is {node.get('applicationCategory')!r}, expected "
+        f"{SCHEMA_CATEGORY!r}"
+    )
+    requirements = node.get("browserRequirements")
+    assert isinstance(requirements, str) and "WebAssembly" in requirements, (
+        f"the node states browserRequirements {requirements!r}. The page compiles a "
+        "WebAssembly Python runtime and cannot run without one, which is the requirement "
+        "worth stating."
+    )
+    assert "WebAssembly" in (head_meta("description") or ""), (
+        "the description no longer says the tool runs on WebAssembly, so the node's "
+        "browserRequirements is now a claim the page does not otherwise make"
+    )
+
+
+def test_the_schema_org_node_states_the_licence_pyproject_declares() -> None:
+    """The licence is the one claim here that is not already in the head."""
+    declared = project_metadata()["license"]["text"]
+    assert declared in LICENCE_URLS, (
+        f"pyproject.toml declares the licence {declared!r} and this test knows no URL for "
+        "it. Add it to LICENCE_URLS deliberately; a relicensed project quietly serving "
+        "the old licence to every machine reader is the failure this guards."
+    )
+    assert page_schema().get("license") == LICENCE_URLS[declared], (
+        f"the node's license is {page_schema().get('license')!r}; pyproject.toml declares "
+        f"{declared!r}, which is {LICENCE_URLS[declared]!r}"
+    )
+    assert (ROOT / "LICENSE").is_file(), "the repository ships no LICENSE file"
+
+
+def test_the_node_says_free_in_both_places_or_in_neither() -> None:
+    """schema.org states a price two ways, and a reader may believe either one."""
+    node = page_schema()
+    offers = node.get("offers")
+    assert isinstance(offers, dict), f"the node's offers is {offers!r}, expected an object"
+    assert offers.get("@type") == "Offer", f"offers declares @type {offers.get('@type')!r}"
+    assert offers.get("price") == "0", (
+        f"the node offers this page at {offers.get('price')!r}. It runs entirely in the "
+        "reader's browser off a static page; there is nothing to charge for."
+    )
+    assert offers.get("priceCurrency"), (
+        "a price with no currency is not a price schema.org will read"
+    )
+    assert node.get("isAccessibleForFree") is True, (
+        f"isAccessibleForFree is {node.get('isAccessibleForFree')!r} beside a price of "
+        f"{offers.get('price')!r}. The two say the same thing to different readers and "
+        "cannot be allowed to disagree."
+    )
+
+
+def test_the_schema_org_node_states_no_figure_nothing_derives() -> None:
+    """The fields left out, held out.
+
+    Not a style preference. A rating, a review count, a download count, a
+    release date or a version number written here would be served for as long
+    as nobody happened to look, and no gate in this repository could tell. The
+    version in particular is genuinely knowable -- and is read off the wheel at
+    boot, in the footer, which is why it is not typed here.
+    """
+    present = sorted(keys_anywhere(page_schema()) & UNDERIVED_FIELDS)
+    assert present == [], (
+        f"the schema.org node states {present}. Nothing in this repository derives those "
+        "for this page, so each one is a value typed once and served until someone "
+        "notices -- in the one part of the page no visitor ever reads. The running "
+        "version is shown in the footer, from the wheel the page actually loaded."
     )
