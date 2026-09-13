@@ -37,12 +37,38 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # full clone; this is a whole-history scan, not a diff
+          # Necessary, not sufficient. `fetch-depth: 0` decides how much history
+          # lands on DISK; what the scanner READS is decided by how it is
+          # invoked (see `base:`/`head:` below). This repository ran with
+          # `fetch-depth: 0` the whole time its push and pull_request runs were
+          # scanning a diff.
+          fetch-depth: 0
           persist-credentials: false
       - name: TruffleHog (full history, all result tiers)
         uses: trufflesecurity/trufflehog@363923b901c911a9164f50b6c423f47c15372b1c # v3.97.4
         with:
           path: ./
+          # These two inputs, not the checkout depth, are what make this a
+          # history scan. The action picks its range from the triggering event
+          # unless BASE or HEAD is set: on `push` it runs
+          # `--since-commit <event.before> --branch <event.after>`, on
+          # `pull_request` `--since-commit <base.sha> --branch <head.sha>` --
+          # a diff either way -- and only on `schedule`/`workflow_dispatch`
+          # does it set BASE="" HEAD="" and walk everything. So the weekly cron
+          # and a manual dispatch did read full history while every push and
+          # every pull_request run -- the ones that gate a merge -- read the
+          # event's diff and reported under the name
+          # "full-history secret scan (all result tiers)".
+          #
+          # Setting `head` non-empty takes the action's explicit-range branch on
+          # EVERY event, which runs `--since-commit '' --branch HEAD`, i.e. the
+          # whole history. `base: ''` alone does not: the action's guard is
+          # `if [ -n "$BASE" ] || [ -n "$HEAD" ]`, so with both empty it falls
+          # through to the event logic unchanged. `HEAD` rather than a branch
+          # name because a `pull_request` checkout is a detached merge ref and
+          # has no local branch to name.
+          base: ''
+          head: HEAD
           # Pinned, and it must equal the version comment on the `uses:` line
           # above. The action's `version:` input defaults to "latest" and it
           # runs `ghcr.io/trufflesecurity/trufflehog:${VERSION}`, so the SHA
