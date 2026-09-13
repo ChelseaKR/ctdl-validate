@@ -21,7 +21,15 @@ uvx pre-commit install   # optional but recommended: ruff/mypy/gitleaks on commi
 
 ## The merge gate
 
-A change merges when the full gate is green. Reproduce it locally with:
+CI runs the full gate on every pull request, and a change is meant to merge only
+when it is green. That is a convention this project holds itself to, not a
+control: `main` carries a `protect-main` ruleset that blocks deletion and
+non-fast-forward pushes, and **no status check is required**, so a red run does
+not mechanically stop a merge. Making `ci.yml`'s jobs required status checks is a
+live repository setting and the intent here; until it is applied, read a red
+check as a reason not to merge rather than as something that stops you.
+
+Reproduce the gate locally with:
 
 ```sh
 make verify
