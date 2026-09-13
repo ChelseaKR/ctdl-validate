@@ -1,0 +1,151 @@
+# Is the playground a visitor gets the playground this repository has?
+#
+# `pages.yml` publishes only on a push to `main` that touches `web/**`,
+# `src/**`, `pyproject.toml` or `pages.yml` itself. That filter is the
+# publishing contract, and it is the reason nothing else here can answer the
+# question: on a push it does not match, the publisher leaves no run, no
+# annotation and no failure -- an unpublished change and a change that needed
+# no publish look identical from the outside. Every gate in this repository
+# stays green either way, because none of them is asking.
+#
+# This workflow asks, weekly, by reading the `github-pages` deployment record:
+# a deployment exists only because bytes were uploaded, and it names the commit
+# they were built from. `tools/deploy_staleness.py` then counts the commits
+# between that commit and `main` which touched something the build reads --
+# including `README.md` and `LICENSE`, which `uv build --wheel` embeds in the
+# published wheel and which the path filter does not name. See that module's
+# docstring; the discrepancy is deliberate and documented, and this workflow
+# does not change the filter.
+#
+# It publishes NOTHING. No `pages: write`, no `id-token: write`, no deploy
+# credential of any kind, and it dispatches nothing. Whether a given commit
+# should be published is what `pages.yml`'s filter decides and this file does
+# not touch it; it only reports the distance.
+#
+# The output is an issue, not a red run. A scheduled workflow that fails
+# whenever a deploy is overdue would sit red until someone pushed an unrelated
+# change, and a check that is permanently red is a check nobody reads. This run
+# goes red only when the comparison cannot be made at all: no github-pages
+# deployment in the history, none reporting a successful status, a deployed
+# commit this clone does not contain, or a history that has diverged. A
+# detector that cannot tell must look broken rather than report a comfortable
+# zero.
+#
+# Every action is pinned to a full 40-char commit SHA already in use elsewhere
+# in this repository.
+name: deploy staleness sentinel
+
+on:
+  schedule:
+    # Mondays, 15:26 UTC. Off the hour and off every other cron in this
+    # portfolio, and weekly rather than hourly because the answer changes at
+    # the speed commits land, not at the speed a runner can ask.
+    - cron: "26 15 * * 1"
+  workflow_dispatch:
+    inputs:
+      max_age_days:
+        description: "Days an unpublished visitor-visible commit may wait before this reports"
+        required: false
+        default: "14"
+        type: string
+
+# Least privilege at the workflow level; the one job grants itself what it
+# needs, matching the posture ci.yml and pages.yml already take.
+permissions: {}
+
+# This workflow writes (files, updates or closes one issue): never cancel a run
+# mid-write, and never let a manual dispatch race the Monday schedule onto the
+# same issue.
+concurrency:
+  group: deploy-staleness
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: measure how far the published playground is behind main
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read # the checkout, and the git history the comparison walks
+      deployments: read # which commit the published build was made from
+      issues: write # the report itself; nothing here writes anywhere else
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Required, not incidental. On a shallow clone a commit from three
+          # weeks ago is simply absent, `git log <deployed>..origin/main`
+          # prints nothing, and the site reads as up to date.
+          # tools/deploy_staleness.py refuses that case rather than reporting
+          # it as zero -- this is what keeps it from having to.
+          fetch-depth: 0
+          persist-credentials: false # this job only reads; it never pushes
+
+      - name: Measure the distance
+        id: measure
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAX_AGE_DAYS: ${{ inputs.max_age_days || '14' }}
+          REPOSITORY: ${{ github.repository }}
+        # Deliberately a bare `python3` and no `uv sync`: the module imports
+        # only the standard library and nothing from this repository, not even
+        # `ctdl_validate`, so the sentinel needs no dependency resolution and
+        # cannot be broken by one. `|| true` so a refusal reaches the reporting
+        # step, which turns it into the red run, rather than ending the job
+        # here with no explanation attached.
+        run: |
+          set -euo pipefail
+          python3 tools/deploy_staleness.py \
+            --repo "$REPOSITORY" \
+            --head origin/main \
+            --max-age-days "$MAX_AGE_DAYS" \
+            > "$RUNNER_TEMP/report.txt" 2> "$RUNNER_TEMP/error.txt" || true
+          cat "$RUNNER_TEMP/report.txt" "$RUNNER_TEMP/error.txt"
+
+      - name: File, update or close the report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MEASURED: ${{ steps.measure.outputs.measured }}
+          OVERDUE: ${{ steps.measure.outputs.overdue }}
+          TITLE: "The published playground is behind main"
+        run: |
+          set -euo pipefail
+
+          existing=$(gh issue list --repo "$REPOSITORY" --state open \
+            --json number,title --jq "[.[] | select(.title == env.TITLE)] | .[0].number // empty")
+
+          if [ "$MEASURED" != "true" ]; then
+            echo "::error::the staleness comparison could not be made; see the report above"
+            exit 1
+          fi
+
+          if [ "$OVERDUE" != "true" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --repo "$REPOSITORY" --reason completed \
+                --comment "The published playground is no longer overdue. ${RUN_URL}"
+              echo "closed #$existing"
+            else
+              echo "not overdue; no open report to close"
+            fi
+            exit 0
+          fi
+
+          {
+            echo '```'
+            cat "$RUNNER_TEMP/report.txt"
+            echo '```'
+            echo
+            echo "Publishing is what \`pages.yml\`'s path filter decides; this sentinel does"
+            echo "not deploy and does not change that filter."
+            echo "Measured by \`tools/deploy_staleness.py\` in ${RUN_URL}."
+          } > "$RUNNER_TEMP/body.md"
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$REPOSITORY" --body-file "$RUNNER_TEMP/body.md"
+            echo "updated #$existing"
+          else
+            gh issue create --repo "$REPOSITORY" --title "$TITLE" \
+              --body-file "$RUNNER_TEMP/body.md"
+          fi
