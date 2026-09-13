@@ -9,7 +9,16 @@ name: Publish to PyPI
 #   Owner:              ChelseaKR
 #   Repository name:    ctdl-validate
 #   Workflow name:      pypi-publish.yml
-#   Environment name:   (leave blank)
+#   Environment name:   pypi
+#
+# The environment name is NOT optional, and the order matters. Registered
+# blank, PyPI accepts a token from this workflow whatever environment it ran
+# in, so no environment protection rule can ever apply -- the provenance of
+# the 2026-09-06 registration reads `"environment": null`. Naming it here
+# first is safe (PyPI ignores an environment claim it was not configured to
+# require); re-registering on PyPI first is not, because PyPI would then
+# demand a claim this workflow does not send and every publish would fail.
+# So: land this file, then re-register.
 #
 # Mirrors tods-validate's publish path, which is the one already working
 # against PyPI:
@@ -145,6 +154,13 @@ jobs:
     needs: [verify-tag, verify]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # Names the environment the OIDC token carries, so PyPI's trusted
+    # publisher can be bound to it and a protection rule on this environment
+    # can actually gate a publish. Without it the token carries no
+    # environment claim and every rule configured here is decorative.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/ctdl-validate
     permissions:
       contents: write # attach the SBOM to the GitHub release
       id-token: write # OIDC for PyPI Trusted Publishing + provenance
