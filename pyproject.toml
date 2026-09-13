@@ -22,6 +22,15 @@ classifiers = [
 ]
 dependencies = []
 
+# The links PyPI shows beside the package. Without them the project page
+# carries no route to the source, the documentation or the issue tracker,
+# which is the only page a reader arriving from `pip` ever sees.
+[project.urls]
+Homepage = "https://chelseakr.github.io/ctdl-validate/"
+Repository = "https://github.com/ChelseaKR/ctdl-validate"
+Issues = "https://github.com/ChelseaKR/ctdl-validate/issues"
+Changelog = "https://github.com/ChelseaKR/ctdl-validate/blob/main/CHANGELOG.md"
+
 [dependency-groups]
 dev = [
   # Only the SARIF suite uses it: the OASIS SARIF 2.1.0 schema is draft-04
