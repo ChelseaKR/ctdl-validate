@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Content-Security-Policy: this page runs no validator, so it needs none of
+      the playground's runtime origins. What is left is Google Analytics 4,
+      with the same minimum set of Google origins as index.html and for the
+      same reason, and the inline script and style below.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline' https://www.googletagmanager.com; style-src 'unsafe-inline'; connect-src https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; img-src data: https://*.google-analytics.com https://www.googletagmanager.com;"
+    />
+    <!--
+      The analytics script is a byte-for-byte copy of the one in index.html,
+      so the opt-out button below works on this page as well.
+      tests/test_playground_analytics.py fails if the two copies differ.
+    -->
+    <script id="analytics">
+      (function () {
+        "use strict";
+        var GA4_ID = "G-QQV001MBJ7";
+        var PUBLISHED_HOST = "chelseakr.github.io";
+        var PUBLISHED_PATH = "/ctdl-validate/";
+        var OPT_OUT_KEY = "ctdl-validate:analytics-opt-out";
+        var DENIED_REGIONS = [
+          "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE",
+          "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT",
+          "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO", "GB", "CH"
+        ];
+        var w = window, n = navigator, d = document, l = w.location;
+        if (!/^G-[A-Z0-9]+$/.test(GA4_ID)) return;
+        if (l.protocol !== "https:" || l.hostname !== PUBLISHED_HOST) return;
+        if (l.pathname !== "/ctdl-validate" && l.pathname.indexOf(PUBLISHED_PATH) !== 0) return;
+        var dnt = n.doNotTrack || w.doNotTrack || n.msDoNotTrack;
+        var signal = n.globalPrivacyControl === true || dnt === "1" || dnt === "yes";
+        var optedOut = false;
+        try { optedOut = w.localStorage.getItem(OPT_OUT_KEY) === "1"; } catch (e) {}
+
+        // The footer's opt-out control. It stays hidden unless this runs.
+        d.addEventListener("DOMContentLoaded", function () {
+          var box = d.getElementById("analytics-choice");
+          var button = d.getElementById("analytics-opt-out");
+          var status = d.getElementById("analytics-status");
+          if (!box || !button || !status) return;
+          box.hidden = false;
+          if (signal) {
+            status.textContent = "Analytics is off: your browser sends Global Privacy Control or Do Not Track.";
+            return;
+          }
+          function show(message) {
+            button.textContent = optedOut ? "Opt back in" : "Opt out of analytics";
+            status.textContent = message;
+          }
+          button.hidden = false;
+          show(optedOut ? "Analytics is off on this device." : "");
+          button.addEventListener("click", function () {
+            optedOut = !optedOut;
+            w["ga-disable-" + GA4_ID] = optedOut;
+            try {
+              if (optedOut) w.localStorage.setItem(OPT_OUT_KEY, "1");
+              else w.localStorage.removeItem(OPT_OUT_KEY);
+            } catch (e) {
+              show("Your browser would not save this choice, so it lasts only until you leave this page.");
+              return;
+            }
+            show(optedOut ? "Analytics is off on this device." : "Analytics is back on from the next page you open.");
+          });
+        });
+
+        if (n.globalPrivacyControl === true) return;
+        if (dnt === "1" || dnt === "yes") return;
+        if (optedOut) return;
+        w.dataLayer = w.dataLayer || [];
+        function gtag() { w.dataLayer.push(arguments); }
+        gtag("consent", "default", {
+          ad_storage: "denied",
+          ad_user_data: "denied",
+          ad_personalization: "denied",
+          analytics_storage: "granted"
+        });
+        gtag("consent", "default", {
+          ad_storage: "denied",
+          ad_user_data: "denied",
+          ad_personalization: "denied",
+          analytics_storage: "denied",
+          region: DENIED_REGIONS
+        });
+        gtag("js", new Date());
+        gtag("config", GA4_ID, {
+          page_location: l.origin + l.pathname,
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false
+        });
+        var s = d.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA4_ID);
+        d.head.appendChild(s);
+      })();
+    </script>
+    <title>Privacy: ctdl-validate playground</title>
+    <meta
+      name="description"
+      content="What leaves your browser when you use the ctdl-validate playground: the payload never does; page views go to Google Analytics 4."
+    />
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity
+         rel="canonical" names this page's address for a crawler; the browser
+         fetches nothing from it, so there is nothing for an integrity hash to
+         cover. The same suppression, for the same reason, as index.html. -->
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -->
+    <link rel="canonical" href="https://chelseakr.github.io/ctdl-validate/privacy.html" />
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity
+         The icon is inline in the attribute, as on index.html, so there is no
+         fetch and no 404 for /favicon.ico. -->
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%9C%93%3C/text%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --background: #ffffff;
+        --foreground: #111827;
+        --muted: #4b5563;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #111827;
+          --foreground: #f9fafb;
+          --muted: #d1d5db;
+        }
+      }
+      body {
+        font: 16px/1.5 system-ui, sans-serif;
+        max-width: 44rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: var(--foreground);
+        background: var(--background);
+      }
+      a { color: inherit; }
+      code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+      .lede { color: var(--muted); }
+      footer { margin-top: 2rem; color: var(--muted); font-size: 0.9rem; }
+      button.link-button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        min-height: 24px;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy</h1>
+      <p class="lede">
+        The <a href="./">ctdl-validate playground</a> checks CTDL JSON-LD in
+        your browser. This page says what leaves your browser when you use it,
+        and where it goes.
+      </p>
+
+      <h2>What you validate stays in your browser</h2>
+      <p>
+        The payload you paste, the files you load, the documents you add to
+        resolve references against, the report and the share link are never
+        sent anywhere: not to this site, not to Google, not to anyone. The
+        validator runs in your browser through Pyodide (WebAssembly). A share
+        link carries the payload after the <code>#</code> in the address.
+        Browsers do not send that part to a server, and the analytics below is
+        given the page address without it.
+      </p>
+
+      <h2>Google Analytics</h2>
+      <p>
+        This site counts visits with Google Analytics 4 (GA4), which Google
+        runs for the site's author. For each page you open, GA4 receives:
+      </p>
+      <ul>
+        <li>the page address, without anything after a <code>#</code> or <code>?</code></li>
+        <li>the address of the page that linked you here, if your browser sends it</li>
+        <li>
+          your browser, operating system, screen size and language, and a
+          rough location that Google works out from your IP address (GA4 does
+          not store the IP address itself)
+        </li>
+        <li>
+          when you scroll to the bottom of a page, click a link to another
+          site or download a file
+        </li>
+        <li>
+          a random ID kept in two first-party cookies, <code>_ga</code> and
+          <code>_ga_QQV001MBJ7</code>, for up to two years, so that a return
+          visit can be told apart from a new one. <code>_ga</code> is shared by
+          every site under chelseakr.github.io.
+        </li>
+      </ul>
+      <p>
+        Google signals and ad personalisation are off, and the advertising
+        consent signals are denied, so nothing here is used for advertising.
+        There are no accounts and no user IDs.
+      </p>
+      <p>
+        In the European Economic Area, the UK and Switzerland, analytics
+        cookies are off by default, so GA4 does not set its cookies there.
+        Google still receives a cookieless ping for each page view, with no ID
+        that links one visit to another.
+      </p>
+      <p>
+        Google keeps this data for 14 months and then deletes it. Google
+        processes it in the United States, as described in
+        <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites that use its services</a>.
+      </p>
+
+      <h2>When analytics does not load</h2>
+      <p>
+        The page makes no request to Google and sets no Google cookie when any
+        of these is true:
+      </p>
+      <ul>
+        <li>your browser sends Global Privacy Control or Do Not Track</li>
+        <li>you opted out on this device, with the button below or the one in the playground's footer</li>
+        <li>JavaScript is off</li>
+      </ul>
+
+      <h2>Opting out on this device</h2>
+      <p>
+        The opt-out button stores <code>ctdl-validate:analytics-opt-out</code>
+        in this browser's local storage. That is not a cookie, and it is never
+        sent anywhere. "Opt back in" removes it, and so does clearing this
+        site's data. Opting out does not delete <code>_ga</code> cookies you
+        already have, because other chelseakr.github.io sites share them. They
+        expire on their own, and this site sends nothing to Google while you
+        are opted out. Google also offers a
+        <a href="https://tools.google.com/dlpage/gaoptout">browser add-on</a>
+        that turns Google Analytics off everywhere.
+      </p>
+
+      <h2>Hosting</h2>
+      <p>
+        GitHub Pages hosts this site, and GitHub may log visitors' IP
+        addresses; see the
+        <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a>.
+        The validator's runtime is downloaded from cdn.jsdelivr.net, which sees
+        an ordinary request for it.
+      </p>
+
+      <h2>Questions</h2>
+      <p>
+        Open an issue at
+        <a href="https://github.com/ChelseaKR/ctdl-validate/issues">github.com/ChelseaKR/ctdl-validate</a>.
+      </p>
+    </main>
+
+    <footer>
+      <p>
+        <a href="./">Back to the playground</a>
+        <span id="analytics-choice" hidden>
+          ·
+          <button type="button" id="analytics-opt-out" class="link-button" hidden>Opt out of analytics</button>
+          <span id="analytics-status" role="status"></span>
+        </span>
+      </p>
+    </footer>
+  </body>
+</html>

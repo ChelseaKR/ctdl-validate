@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!--
-      Content-Security-Policy: the playground needs exactly two network
+      Content-Security-Policy: the validator needs exactly two network
       origins. cdn.jsdelivr.net serves the Pyodide runtime and its wasm; 'self'
       serves the ctdl-validate wheel built by this repo's own Pages workflow.
       There is deliberately no pypi.org or files.pythonhosted.org here: unlike
@@ -17,11 +17,129 @@
       startWorker(). Note what is still absent: 'unsafe-eval'. The worker is
       built from bytes this page fetched and hashed itself, not from a string
       handed to eval or new Function.
+
+      The Google origins are for Google Analytics 4 and nothing else (see the
+      script right below and docs/adr/0007-playground-analytics.md): the
+      gtag.js loader from www.googletagmanager.com, and the measurement
+      endpoints it sends page views to. They are the minimum GA4 needs with
+      Google signals off, so www.google.com and doubleclick.net are absent and
+      anything gtag.js tries to send there is refused by this policy.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; worker-src blob:; child-src blob:;"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cdn.jsdelivr.net https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; img-src 'self' data: https://*.google-analytics.com https://www.googletagmanager.com; worker-src blob:; child-src blob:;"
     />
+    <!--
+      Google Analytics 4 (docs/adr/0007-playground-analytics.md). The only
+      script here that talks to anyone but jsDelivr and this origin, and it
+      loads nothing unless all four of these hold:
+
+        1. a measurement ID is set. GA4_ID below; "" turns analytics off.
+        2. this is the published page, https://chelseakr.github.io/ctdl-validate/.
+           A local server, a CI runner (the accessibility and performance
+           gates serve this file from 127.0.0.1) and a fork's Pages site all
+           fail this and load nothing.
+        3. the browser sends neither Global Privacy Control nor Do Not Track.
+        4. the visitor has not opted out with the footer button. That choice
+           is a localStorage flag on this device. Its key names this project,
+           because every chelseakr.github.io project site shares one origin
+           and so one localStorage; a sibling site's flag is not this one.
+
+      gtag.js is added by script after those checks, never by a static
+      <script src>, so a failed check means no dataLayer, no request to Google
+      and no cookie. page_location is the origin and path only: a share link
+      carries the payload in its #p= fragment, and Google is never handed a
+      fragment or a query string. Nothing in this script reads the payload,
+      the loaded files or the report.
+
+      Consent Mode v2 defaults: the three ad signals are denied everywhere;
+      analytics_storage is denied in the EEA, the UK and Switzerland (the
+      region-specific default wins there, and GA sends cookieless pings) and
+      granted elsewhere. Google signals and ad personalisation are off.
+      tests/test_playground_analytics.py runs this script under Node.
+    -->
+    <script id="analytics">
+      (function () {
+        "use strict";
+        var GA4_ID = "G-QQV001MBJ7";
+        var PUBLISHED_HOST = "chelseakr.github.io";
+        var PUBLISHED_PATH = "/ctdl-validate/";
+        var OPT_OUT_KEY = "ctdl-validate:analytics-opt-out";
+        var DENIED_REGIONS = [
+          "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE",
+          "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT",
+          "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO", "GB", "CH"
+        ];
+        var w = window, n = navigator, d = document, l = w.location;
+        if (!/^G-[A-Z0-9]+$/.test(GA4_ID)) return;
+        if (l.protocol !== "https:" || l.hostname !== PUBLISHED_HOST) return;
+        if (l.pathname !== "/ctdl-validate" && l.pathname.indexOf(PUBLISHED_PATH) !== 0) return;
+        var dnt = n.doNotTrack || w.doNotTrack || n.msDoNotTrack;
+        var signal = n.globalPrivacyControl === true || dnt === "1" || dnt === "yes";
+        var optedOut = false;
+        try { optedOut = w.localStorage.getItem(OPT_OUT_KEY) === "1"; } catch (e) {}
+
+        // The footer's opt-out control. It stays hidden unless this runs.
+        d.addEventListener("DOMContentLoaded", function () {
+          var box = d.getElementById("analytics-choice");
+          var button = d.getElementById("analytics-opt-out");
+          var status = d.getElementById("analytics-status");
+          if (!box || !button || !status) return;
+          box.hidden = false;
+          if (signal) {
+            status.textContent = "Analytics is off: your browser sends Global Privacy Control or Do Not Track.";
+            return;
+          }
+          function show(message) {
+            button.textContent = optedOut ? "Opt back in" : "Opt out of analytics";
+            status.textContent = message;
+          }
+          button.hidden = false;
+          show(optedOut ? "Analytics is off on this device." : "");
+          button.addEventListener("click", function () {
+            optedOut = !optedOut;
+            w["ga-disable-" + GA4_ID] = optedOut;
+            try {
+              if (optedOut) w.localStorage.setItem(OPT_OUT_KEY, "1");
+              else w.localStorage.removeItem(OPT_OUT_KEY);
+            } catch (e) {
+              show("Your browser would not save this choice, so it lasts only until you leave this page.");
+              return;
+            }
+            show(optedOut ? "Analytics is off on this device." : "Analytics is back on from the next page you open.");
+          });
+        });
+
+        if (n.globalPrivacyControl === true) return;
+        if (dnt === "1" || dnt === "yes") return;
+        if (optedOut) return;
+        w.dataLayer = w.dataLayer || [];
+        function gtag() { w.dataLayer.push(arguments); }
+        gtag("consent", "default", {
+          ad_storage: "denied",
+          ad_user_data: "denied",
+          ad_personalization: "denied",
+          analytics_storage: "granted"
+        });
+        gtag("consent", "default", {
+          ad_storage: "denied",
+          ad_user_data: "denied",
+          ad_personalization: "denied",
+          analytics_storage: "denied",
+          region: DENIED_REGIONS
+        });
+        gtag("js", new Date());
+        gtag("config", GA4_ID, {
+          page_location: l.origin + l.pathname,
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false
+        });
+        var s = d.createElement("script");
+        s.async = true;
+        s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA4_ID);
+        d.head.appendChild(s);
+      })();
+    </script>
     <title>ctdl-validate playground: check CTDL JSON-LD in your browser</title>
     <!--
       The description and the Open Graph block below say what the lede says,
@@ -351,6 +469,20 @@
       .tally li { color: var(--muted); }
       footer { margin-top: 2rem; color: var(--muted); font-size: 0.9rem; }
       footer a { color: inherit; }
+      /* The analytics opt-out changes a setting rather than going anywhere,
+         so it is a button, drawn like the footer's links. min-height keeps
+         the target at 24px (WCAG 2.2 SC 2.5.8). */
+      button.link-button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        min-height: 24px;
+        text-decoration: underline;
+        cursor: pointer;
+      }
       a { color: inherit; }
     </style>
   </head>
@@ -467,6 +599,16 @@
         read out of, with the date that document was retrieved. Source and issue
         tracker:
         <a href="https://github.com/ChelseaKR/ctdl-validate">github.com/ChelseaKR/ctdl-validate</a>.
+      </p>
+      <p>
+        This page counts visits with Google Analytics. What you paste, load or
+        validate is never part of that.
+        <a href="privacy.html">Privacy</a>
+        <span id="analytics-choice" hidden>
+          ·
+          <button type="button" id="analytics-opt-out" class="link-button" hidden>Opt out of analytics</button>
+          <span id="analytics-status" role="status"></span>
+        </span>
       </p>
     </footer>
 
@@ -1722,6 +1864,12 @@ self.onmessage = async (event) => {
           "Static accessibility audit mode: the validator is not loaded and these findings are examples.";
         footerVersion.textContent =
           "Static accessibility audit mode · the validator is not loaded on this page.";
+        // The footer's analytics opt-out only appears on the published page
+        // (see the analytics script in the head), and this audit always runs
+        // on 127.0.0.1. Shown here so that its contrast and target size are
+        // audited too: a control the gate cannot see is one it does not grade.
+        document.getElementById("analytics-choice").hidden = false;
+        document.getElementById("analytics-opt-out").hidden = false;
       } else {
         runBtn.setAttribute("aria-disabled", "true");
         readFragment().then((fromLink) => {

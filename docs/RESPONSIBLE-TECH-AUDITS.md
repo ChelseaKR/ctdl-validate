@@ -26,7 +26,9 @@ section H added).
   the machine the publisher runs the tool on. Extraction makes one outbound
   request the operator asked for, which is visible in the fetched site's
   logs; nothing is sent anywhere else, and the extract is written to the
-  operator's own stdout.
+  operator's own stdout. The published playground page is the exception
+  to "no collection": it counts visits with Google Analytics 4, never the
+  payload (section C, ADR 0007).
 - **D Transparency:** applies and is the design center: every finding and
   every extraction note carries the rule citation, source URL, and retrieval
   date it enforces.
@@ -105,8 +107,8 @@ Terms outside the CTDL namespaces are explicitly not judged.
 
 ## C. Privacy
 
-No collection, no transmission, no retention. The DPIA-style answer is
-short because the data flow is short: file in, findings out, process ends.
+For the tool itself: no collection, no transmission, no retention. The
+DPIA-style answer is short because the data flow is short: file in, findings out, process ends.
 Findings quote payload values back to the operator (necessary for a usable
 report); operators handling sensitive payloads should treat the report with
 the same care as the payload. The JSON report contains nothing that was not
@@ -117,6 +119,18 @@ for robots.txt and a GET for the page the operator named, carrying nothing but
 the tool's own User-Agent. No payload, no telemetry, no identifier of the
 operator beyond what any HTTP request carries. The site sees a request; the
 operator sees the extract. Nothing is stored between the two.
+
+The published playground page is the one place with a collection: since
+2026-09-17 it counts visits with Google Analytics 4 (ADR 0007). That is a flow
+about the page, never about the payload. The analytics script reads nothing
+from the payload, the loaded files or the report, and sends `page_location` as
+the origin and path only, so a share link's `#p=` fragment never reaches
+Google. It loads nothing under Global Privacy Control or Do Not Track, after
+the footer opt-out, or anywhere but the published address. Google signals and
+ad personalisation are off, `analytics_storage` is denied by default in the
+EEA, the UK and Switzerland, and retention is 14 months. `web/privacy.html`
+is the visitor-facing account. The command-line tool, the GitHub Action and
+the pre-commit hook carry no analytics.
 
 ## D. Transparency
 

@@ -10,6 +10,25 @@ and this project adheres to
 
 ### Added
 
+- **The published playground counts visits with Google Analytics 4**, per the
+  owner's 2026-09-17 decision that every public site gets GA4 with its privacy
+  claims updated to match ([ADR-0007](docs/adr/0007-playground-analytics.md)).
+  An inline script in the head of `web/index.html` loads gtag.js for
+  `G-QQV001MBJ7` only on `https://chelseakr.github.io/ctdl-validate/`, and
+  never under Global Privacy Control, Do Not Track, or after the new footer
+  "Opt out of analytics" button (localStorage key
+  `ctdl-validate:analytics-opt-out`). Google signals and ad personalisation are
+  off, the ad consent signals are denied, `analytics_storage` is denied by
+  default in the EEA, the UK and Switzerland, and `page_location` is the origin
+  and path only, so a share link's `#p=` payload never reaches Google. Nothing
+  in the script reads the payload. The Content-Security-Policy gains only
+  `www.googletagmanager.com`, `*.google-analytics.com` and
+  `*.analytics.google.com`. A new `web/privacy.html`, linked from the footer
+  and published by `pages.yml`, says what GA4 receives. The command-line tool,
+  the Action and the hook carry no analytics.
+  `tests/test_playground_analytics.py` runs the script under Node for every
+  guard, with negative controls that assert their sabotage landed.
+
 - **The playground's head now says what the page is.** The page carried
   `@graph` after `@graph` of CTDL — `ceterms:Certification`,
   `ceterms:Organization`, `ceasn:Competency` — and none of it was about the
