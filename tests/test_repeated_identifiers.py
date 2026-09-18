@@ -78,7 +78,7 @@ def test_the_issue_33_false_positive_is_gone() -> None:
     )
 
 
-def _judgements(document: dict[str, Any]) -> list[Any]:
+def _judgments(document: dict[str, Any]) -> list[Any]:
     """Every finding that judges the document.
 
     The merge disclosure is excluded on purpose. Its message names the paths
@@ -93,7 +93,7 @@ def _judgements(document: dict[str, Any]) -> list[Any]:
 
 def test_the_verdict_does_not_depend_on_graph_array_order() -> None:
     payload = _issue_33_payload("ceterms:Organization")
-    assert _judgements(payload) == _judgements(_reordered(payload))
+    assert _judgments(payload) == _judgments(_reordered(payload))
 
 
 def test_the_merge_disclosure_says_the_same_thing_from_either_order() -> None:
@@ -230,11 +230,11 @@ def test_a_repeated_blank_node_is_one_node_and_is_reported() -> None:
     assert not [f for f in findings if f.code == "REF_UNRESOLVED_BNODE"]
 
 
-def test_the_json_rendering_of_the_judgements_is_stable_too() -> None:
+def test_the_json_rendering_of_the_judgments_is_stable_too() -> None:
     """The JSON rendering is the machine-readable contract; hold it as well."""
     payload = _issue_33_payload("ceterms:Organization")
-    first = json.dumps(_judgements(payload), sort_keys=True)
-    second = json.dumps(_judgements(_reordered(payload)), sort_keys=True)
+    first = json.dumps(_judgments(payload), sort_keys=True)
+    second = json.dumps(_judgments(_reordered(payload)), sort_keys=True)
     assert first == second
 
 

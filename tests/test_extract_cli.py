@@ -133,7 +133,7 @@ def test_help_for_the_subcommand_is_its_own(capsys: pytest.CaptureFixture[str]) 
 #
 # --from-file existed to make a run reproducible offline: "same page bytes,
 # same output, byte for byte" (README). It hard-coded UTF-8 while the fetch
-# path honoured the markup's declared charset, so the two paths disagreed on
+# path honored the markup's declared charset, so the two paths disagreed on
 # the same bytes, and a non-UTF-8 saved page raised UnicodeDecodeError -- a
 # ValueError, caught by neither handler -- and exited 1, the code reserved for
 # "read fine, publishes no CTDL".
@@ -175,12 +175,12 @@ def test_a_non_utf8_saved_page_is_read_rather_than_crashing(
     assert "Collège" in names, "the accented byte survived the round trip"
 
 
-def test_a_saved_page_whose_bytes_defy_its_declared_charset_is_labelled_not_lost(
+def test_a_saved_page_whose_bytes_defy_its_declared_charset_is_labeled_not_lost(
     tmp_path: Any, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # Bytes are windows-1252 but the page claims UTF-8, so the declared codec
     # cannot decode them. The fetch path replaces and says so; so must this one.
-    saved = tmp_path / "page_mislabelled.html"
+    saved = tmp_path / "page_mislabeled.html"
     saved.write_bytes(_page_bytes("Collège Example Welding", "utf-8", "windows-1252"))
 
     code, payload = _run_json(

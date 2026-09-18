@@ -48,7 +48,7 @@ is not in the page at all: the Python in `#py-bootstrap` walks the AST of the
 check modules inside the wheel it just unpacked, which is the same scan
 `tests/test_every_rule_fires.py` uses and for the same reason.
 
-`tests/test_playground_catalogue.py` holds it up. It reads those two blocks
+`tests/test_playground_catalog.py` holds it up. It reads those two blocks
 out of this file, executes the page's own Python rather than a copy of it, and
 fails if a code has no document, if a document is filed under a code the
 source no longer emits, if a document stops producing the code it is filed
@@ -76,7 +76,7 @@ id, and by position, not by a count.
 
 Every value in the node traces to something already committed — the `<title>`,
 the meta description, `<html lang>`, and `pyproject.toml`'s repository and
-licence — and `tests/test_playground_catalogue.py` fails when one stops
+license — and `tests/test_playground_catalog.py` fails when one stops
 matching its source. It states no rating, no review, no download count, no
 date and no version. The version is the interesting omission: the page shows
 the running one in its footer, read off the wheel it actually loaded, because
@@ -94,15 +94,15 @@ CTDL payload.
 that touches `web/`, and neither boots Pyodide.
 
 - `index.html?a11y-static` renders the post-run state: one finding of each
-  severity through the same `renderFinding()` a real run uses, one catalogue
-  row of each severity through the same `renderCatalogueRow()`, and the report
+  severity through the same `renderFinding()` a real run uses, one catalog
+  row of each severity through the same `renderCatalogRow()`, and the report
   actions and share field visible.
 - `index.html?a11y-static=loading` renders the startup state, with the
   progress element and the status line.
 
 All of that matters. Scanning the page as it first loads audits a textarea and
 a few buttons and never sees the report, which is where nearly all of the
-markup is and the only place the severity colours appear; that is how a reflow
+markup is and the only place the severity colors appear; that is how a reflow
 failure at 320 CSS px survived until 2026-08-15. Auditing only the post-run
 state never sees the thirty seconds a visitor spends before it. And not
 booting means the audit fetches nothing, so a merge never depends on a CDN.
@@ -161,7 +161,7 @@ the wheel's filename and the page follows it with no edit here.
 `og:image` names, and it is served from this origin rather than linked from
 somewhere else so that a link preview breaks only when this deploy breaks. The
 workflow fails if the head names a card the artifact does not carry, and
-`tests/test_playground_catalogue.py` fails, without a runner, if the head and
+`tests/test_playground_catalog.py` fails, without a runner, if the head and
 the file disagree about the address, the dimensions or the alt text. The card
 says the title and the description already in the head and nothing more: no
 rule count, no conformance claim, nothing about Credential Engine.
@@ -171,7 +171,7 @@ two network origins: `cdn.jsdelivr.net` for the Pyodide runtime, and `'self'`
 for the wheel. There is no PyPI call at any point, and the validator running in
 the browser is always the code published beside it. The page's
 Content-Security-Policy also names the Google Analytics origins, and nothing
-else: see [Analytics](#analytics). `tests/test_playground_catalogue.py` asserts
+else: see [Analytics](#analytics). `tests/test_playground_catalog.py` asserts
 that policy directive by directive, with the validator's origins and the
 analytics origins listed apart, including that `'unsafe-eval'` is absent, and
 fails if the page ever mentions `sendBeacon`, `XMLHttpRequest`, `WebSocket`,
@@ -207,7 +207,7 @@ these hold:
 When it does load, it sets Consent Mode v2 defaults (the three ad signals
 denied everywhere; `analytics_storage` denied in the EEA, the UK and
 Switzerland, where GA sends cookieless pings, and granted elsewhere), turns off
-Google signals and ad personalisation, and sends `page_location` as the origin
+Google signals and ad personalization, and sends `page_location` as the origin
 and path only, so no fragment or query string reaches Google. Nothing in the
 script reads the payload. `tests/test_playground_analytics.py` runs the script
 under Node for each of those cases, including negative controls that remove a

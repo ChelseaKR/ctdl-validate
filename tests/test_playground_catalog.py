@@ -21,7 +21,7 @@ That leaves two things a test has to hold.
    payloads and not strings: an entry can only stay green while the rule it
    names still does something.
 
-2. **The page's own derivation has to work.** The catalogue is built by Python
+2. **The page's own derivation has to work.** The catalog is built by Python
    embedded in the page, which enumerates finding codes out of the check
    modules by AST. If that scan silently under-reports, the page silently omits
    rules, which is the failure this repository spends its time hunting. So the
@@ -124,7 +124,7 @@ def script_block(element_id: str) -> str:
     )
     assert match is not None, (
         f"the page has no <script id={element_id!r}> block. The playground's rule "
-        "catalogue is built out of it, so it cannot have moved without this failing."
+        "catalog is built out of it, so it cannot have moved without this failing."
     )
     return match.group(1)
 
@@ -177,13 +177,13 @@ def test_no_document_on_the_page_outlives_the_rule_it_was_written_for() -> None:
 def test_the_page_document_still_produces_the_code_it_is_filed_under(
     code: str, tmp_path: Path
 ) -> None:
-    """The behavioural half: each document is validated, not just named."""
+    """The behavioral half: each document is validated, not just named."""
     entry = corpus()[code]
     resolve = None
     if entry.get("resolve") is not None:
-        neighbour = tmp_path / "neighbour.json"
-        neighbour.write_text(json.dumps(entry["resolve"]), encoding="utf-8")
-        resolve = [neighbour]
+        neighbor = tmp_path / "neighbor.json"
+        neighbor.write_text(json.dumps(entry["resolve"]), encoding="utf-8")
+        resolve = [neighbor]
     findings = validate_document(entry["document"], resolve)
     hits = [f for f in findings if f.code == code]
     assert hits, (
@@ -222,7 +222,7 @@ def test_the_page_would_render_a_derived_row_for_every_rule(
 ) -> None:
     """End to end: the rows the visitor sees, produced by the code that produces them."""
     monkeypatch.chdir(tmp_path)
-    derived = json.loads(page_python()["catalogue"](json.dumps(corpus())))
+    derived = json.loads(page_python()["catalog"](json.dumps(corpus())))
     rows = derived["rows"]
     assert derived["unreadable"] == 0
     assert {row["code"] for row in rows} == rule_codes_in_source()
@@ -246,7 +246,7 @@ def test_the_static_accessibility_fixture_names_rules_the_page_can_load() -> Non
     assert codes, "the static accessibility fixture names no finding codes"
     unloadable = sorted(codes - set(corpus()))
     assert unloadable == [], (
-        "the static accessibility fixture renders a catalogue row with a 'load the payload' "
+        "the static accessibility fixture renders a catalog row with a 'load the payload' "
         f"button for these, and the page ships no payload for them: {unloadable}"
     )
 
@@ -416,13 +416,13 @@ SCHEMA_CONTEXT = "https://schema.org"
 SCHEMA_TYPE = "WebApplication"
 SCHEMA_CATEGORY = "DeveloperApplication"
 
-#: SPDX identifier -> the licence text it denotes. One entry, because the
-#: project declares one licence. Relicensing to something this map does not
+#: SPDX identifier -> the license text it denotes. One entry, because the
+#: project declares one license. Relicensing to something this map does not
 #: know about fails here, rather than quietly leaving the old URL on the page.
-LICENCE_URLS = {"Apache-2.0": "https://www.apache.org/licenses/LICENSE-2.0"}
+LICENSE_URLS = {"Apache-2.0": "https://www.apache.org/licenses/LICENSE-2.0"}
 
 #: Fields that would have to be a hand-kept copy of a number, a date or a
-#: judgement that nothing derives for this page. The running version is read
+#: judgment that nothing derives for this page. The running version is read
 #: off the wheel at boot, because `main` is routinely ahead of the last tag;
 #: the rest do not exist at all. Any of them appearing in the node is this
 #: portfolio's dominant defect -- a figure served long after the value moved,
@@ -537,8 +537,8 @@ def test_the_page_carries_both_kinds_of_json_ld_and_neither_sweep_is_empty() -> 
         f"the schema.org node declares @type {node.get('@type')!r}, expected "
         f"{SCHEMA_TYPE!r}. This page is a tool, and the node is what says so."
     )
-    serialised = json.dumps(node)
-    assert "ceterms:" not in serialised and "ceasn:" not in serialised, (
+    serialized = json.dumps(node)
+    assert "ceterms:" not in serialized and "ceasn:" not in serialized, (
         "the schema.org node names a CTDL vocabulary. The two kinds of JSON-LD on this "
         "page have been confused for each other: this one describes the page, the corpus "
         "describes credentials."
@@ -657,17 +657,17 @@ def test_the_schema_org_node_repeats_only_what_the_head_already_says() -> None:
     )
 
 
-def test_the_schema_org_node_states_the_licence_pyproject_declares() -> None:
-    """The licence is the one claim here that is not already in the head."""
+def test_the_schema_org_node_states_the_license_pyproject_declares() -> None:
+    """The license is the one claim here that is not already in the head."""
     declared = project_metadata()["license"]["text"]
-    assert declared in LICENCE_URLS, (
-        f"pyproject.toml declares the licence {declared!r} and this test knows no URL for "
-        "it. Add it to LICENCE_URLS deliberately; a relicensed project quietly serving "
-        "the old licence to every machine reader is the failure this guards."
+    assert declared in LICENSE_URLS, (
+        f"pyproject.toml declares the license {declared!r} and this test knows no URL for "
+        "it. Add it to LICENSE_URLS deliberately; a relicensed project quietly serving "
+        "the old license to every machine reader is the failure this guards."
     )
-    assert page_schema().get("license") == LICENCE_URLS[declared], (
+    assert page_schema().get("license") == LICENSE_URLS[declared], (
         f"the node's license is {page_schema().get('license')!r}; pyproject.toml declares "
-        f"{declared!r}, which is {LICENCE_URLS[declared]!r}"
+        f"{declared!r}, which is {LICENSE_URLS[declared]!r}"
     )
     assert (ROOT / "LICENSE").is_file(), "the repository ships no LICENSE file"
 

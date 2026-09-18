@@ -4,13 +4,13 @@ name: Accessibility
 # page, and until this workflow existed nothing checked it. The repository's
 # own declarations said the opposite: the README's Standards Conformance table
 # recorded Accessibility as "N/A (no graphical or web surface)" while a page
-# with a heading, a labelled textarea, four buttons, a file input and a live
+# with a heading, a labeled textarea, four buttons, a file input and a live
 # status region was published from this repository and linked at the top of
 # that same README.
 #
 # What runs here:
 #
-# - `web/a11y/audit.mjs` runs axe-core against the page in both colour schemes
+# - `web/a11y/audit.mjs` runs axe-core against the page in both color schemes
 #   and checks reflow at 320 CSS px. That is A11Y-01 (0 violations of
 #   critical/serious/moderate at wcag2a,wcag2aa,wcag22aa), A11Y-05 (contrast,
 #   an axe rule) and A11Y-09 (reflow) from the portfolio accessibility
@@ -23,7 +23,7 @@ name: Accessibility
 #   says a repository that clears a higher bar enforces the higher one.
 #
 # Both audit the page's two static states. `?a11y-static` renders the post-run
-# state, the findings report and the derived rule catalogue, and
+# state, the findings report and the derived rule catalog, and
 # `?a11y-static=loading` renders the startup, with its progress element and the
 # status line that has to account for a 5.6 MB download. Neither boots Pyodide:
 # see the comment on that branch in web/index.html for why the rendered states
@@ -32,7 +32,7 @@ name: Accessibility
 #
 # What is NOT gated here, said plainly rather than left to look covered:
 # A11Y-03 (pa11y-ci) is not wired, because pa11y 8 bundles axe-core 4.8, which
-# reports a colour-contrast violation on this page's textarea that axe-core
+# reports a color-contrast violation on this page's textarea that axe-core
 # 4.13 does not and that the computed styles disprove (#111827 on #ffffff,
 # about 16:1). Running the current axe directly is the same rule engine
 # without the stale rule set. A11Y-04 is React lint and there is no React
@@ -42,11 +42,11 @@ name: Accessibility
 #
 # What web/a11y/audit.mjs checks beyond axe, and why each is written down
 # rather than trusted: that the report rendered at all four severities, that
-# the rule catalogue did, that every control the post-run state adds is on the
+# the rule catalog did, that every control the post-run state adds is on the
 # page and visible, and that the startup state shows a named progress element,
 # a non-empty status line, and a Validate button that says it is not ready yet.
 # Every one of those is there because UI a gate cannot see is UI a gate does
-# not audit, and this page grew a rule catalogue, a share field and a startup
+# not audit, and this page grew a rule catalog, a share field and a startup
 # indicator in one change.
 
 on:
@@ -66,8 +66,8 @@ permissions:
 
 # A push to main falls through to the second operand, so keying it on
 # `github.ref` put every commit on main into one group `...-refs/heads/main`.
-# Two pushes landing close together then cancelled the older run, and that
-# commit stayed on main with no verdict: a cancelled run reports `cancelled`,
+# Two pushes landing close together then canceled the older run, and that
+# commit stayed on main with no verdict: a canceled run reports `cancelled`,
 # not a failure, so nothing goes red and nobody is told it went unchecked.
 # `github.sha` gives each commit its own group. Pull requests are unaffected --
 # they still key on the PR number and still collapse to one run.
@@ -114,7 +114,7 @@ jobs:
 
       # Two states, because the page has two that a visitor meets and only one
       # of them used to be scanned. `?a11y-static` is the post-run state: the
-      # findings report and the derived rule catalogue. `?a11y-static=loading`
+      # findings report and the derived rule catalog. `?a11y-static=loading`
       # is the startup, which docs/RESPONSIBLE-TECH-AUDITS.md section H
       # recorded as unscanned residual risk while the page spends tens of
       # seconds in it. Neither boots Pyodide, so neither fetches anything.

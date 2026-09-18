@@ -20,7 +20,7 @@ profile names the learning opportunity it requires. Validating one real
 published Registry document on 2026-08-15
 (`credentialengineregistry.org/graph/ce-e8a41a52-6ff6-48f0-9872-889c87b093b7`)
 produced exactly three findings: three `REF_OUTSIDE_PAYLOAD`, all pointing at
-the same neighbouring resource. The tool's whole report on a real document was
+the same neighboring resource. The tool's whole report on a real document was
 "I cannot tell", three times, about one document nobody had asked for.
 
 `ChelseaKR/oscal-validate` had already met the same problem and named the
@@ -40,12 +40,12 @@ or directories of `.json`. Four constraints:
    no socket in any code path, with or without it, and
    `tests/test_offline_guarantee.py` proves it by removing `socket.socket`,
    `socket.create_connection` and `socket.getaddrinfo` and running a resolved
-   validation anyway. Whoever obtained the neighbouring documents made that
+   validation anyway. Whoever obtained the neighboring documents made that
    choice outside the validator, the same way `extract` is a separate command
    with its own posture.
 2. **Supplied documents are indexed, never validated.** They populate a side
    index of `@id` to declared class in `ctdl_validate.session`. They are not
-   merged into the graph being checked, so adding a neighbour cannot change
+   merged into the graph being checked, so adding a neighbor cannot change
    how many entities the report is about and cannot put someone else's
    document's defects in your report.
 3. **An unresolved reference stays UNVERIFIABLE.** This is where the tool
@@ -57,7 +57,7 @@ or directories of `.json`. Four constraints:
    non-answer into a failure.
 4. **Every resolution is reported.** A reference that resolves in a supplied
    document produces `REF_RESOLVED_SUPPLIED` (INFO) naming the file and the
-   class it found, because every subsequent judgement about that target rests
+   class it found, because every subsequent judgment about that target rests
    on that file having been supplied. An UNVERIFIABLE finding in a run that
    supplied documents names them too, so a reader can tell "you did not give
    me the document" from "the documents you gave me do not contain it."
@@ -81,7 +81,7 @@ disagreement visible rather than silent.
 - The severity contract is unchanged. UNVERIFIABLE still never gates the exit
   code, and the set of things that can produce an ERROR is the same set as
   before; only the set of references those checks can reach has grown.
-- Default behaviour changes in one visible way: with no `--resolve`, a
+- Default behavior changes in one visible way: with no `--resolve`, a
   `REF_OUTSIDE_PAYLOAD` message now ends "Pass it with --resolve to settle
   this." The finding, code and severity are identical.
 - A survey of published Registry records stops being bounded by the tool. Run

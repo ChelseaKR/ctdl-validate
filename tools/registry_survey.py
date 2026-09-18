@@ -51,7 +51,7 @@ and counts, and one example location per code. Every recorded value passes
 credreg.net IRI, or a prefixed term is kept, and anything else is replaced by
 its length. It holds no name, description, price, address, contact detail, or
 any other value from anybody's record, and no third-party URL. Publishers are
-labelled ``P001, P002, ...`` in order of first appearance so concentration can
+labeled ``P001, P002, ...`` in order of first appearance so concentration can
 be measured without recording who anyone is. Registry documents do carry
 personal contact details, and a survey about structural validity has no
 business republishing them. The fetched documents themselves are written to a
@@ -62,7 +62,7 @@ page numbers) and the fetch outcomes (request count, every failure with its
 message) are written to ``<cache>/provenance.json`` as they happen, so
 ``--from-dir`` re-derives the whole evidence file from the cache, byte for
 byte, with no network. A cache written before this file existed can be
-re-analysed with ``--provenance <earlier evidence json>``.
+re-analyzed with ``--provenance <earlier evidence json>``.
 
     uv run python tools/registry_survey.py --sample 1200 --seed 20260821 \\
         --cache .registry-cache-2026-08-21 --out docs/findings/<name>.json
@@ -100,7 +100,7 @@ JSON_TYPES = ("application/json", "application/ld+json")
 PROVENANCE = "provenance.json"
 
 #: The only reasons a drawn page may be absent from the validated sample. Fixed
-#: before any draw is analysed; a page that fits none of them is a bug in this
+#: before any draw is analyzed; a page that fits none of them is a bug in this
 #: harness, not a silent omission.
 EXCLUSION_REASONS = {
     "fetch-failed": "the envelope page could not be fetched (message recorded)",
@@ -340,40 +340,41 @@ def bank_requests(
     write_json(provenance_path, provenance)
 
 
-def fetch_neighbours(
+def fetch_neighbors(
     fetcher: RegistryFetcher, cache: Path, provenance: dict[str, Any], wanted: list[str], cap: int
 ) -> None:
     """Fetch the documents the sample's references name, up to ``cap``."""
-    neighbours = cache / "neighbours"
+    # "neighbours" (dir and evidence keys) keeps its spelling: committed survey evidence uses it.
+    neighbors = cache / "neighbours"
     failed: dict[str, str] = provenance["fetch"].setdefault("neighbours_failed", {})
     provenance["fetch"].setdefault("neighbours", {})["cap"] = cap
     for iri in wanted[:cap]:
-        destination = neighbours / cache_name(iri)
+        destination = neighbors / cache_name(iri)
         if destination.exists() or iri in failed:
             continue
         try:
             result = fetcher.fetch(iri)
             destination.write_text(result.text, encoding="utf-8")
         except (FetchError, OSError) as exc:
-            print(f"  neighbour {iri}: {exc}", file=sys.stderr)
+            print(f"  neighbor {iri}: {exc}", file=sys.stderr)
             failed[iri] = str(exc)
         bank_requests(provenance, cache / PROVENANCE, fetcher)
     bank_requests(provenance, cache / PROVENANCE, fetcher)
 
 
-def screen_neighbours(
-    neighbours: Path, schema: SchemaIndex
+def screen_neighbors(
+    neighbors: Path, schema: SchemaIndex
 ) -> tuple[list[Path], list[dict[str, str]]]:
-    """Split cached neighbours into the ones the validator can index and the rest.
+    """Split cached neighbors into the ones the validator can index and the rest.
 
     ``build_supplied`` treats an unreadable supplied document as a hard stop,
     which is right for an operator and wrong for a survey: one malformed
-    neighbour must not abort the resolved pass for 1,200 documents. The
+    neighbor must not abort the resolved pass for 1,200 documents. The
     rejected ones are recorded by CTID and reason, never silently dropped.
     """
     accepted: list[Path] = []
     rejected: list[dict[str, str]] = []
-    for path in sorted(neighbours.glob("*.json")) if neighbours.is_dir() else []:
+    for path in sorted(neighbors.glob("*.json")) if neighbors.is_dir() else []:
         try:
             parse_document(read_json(path), schema)
         except (DocumentError, json.JSONDecodeError, UnicodeDecodeError) as exc:
@@ -383,7 +384,7 @@ def screen_neighbours(
     return accepted, rejected
 
 
-class Labeller:
+class Labeler:
     """Opaque publisher labels, assigned in order of first appearance."""
 
     def __init__(self) -> None:
@@ -455,12 +456,12 @@ def classify_page(
 
 
 def survey(cache: Path, provenance: dict[str, Any], resolve: bool) -> dict[str, Any]:
-    """Validate every drawn page, alone and then with neighbours in hand."""
+    """Validate every drawn page, alone and then with neighbors in hand."""
     schema = load_schema()
-    accepted, rejected = screen_neighbours(cache / "neighbours", schema)
+    accepted, rejected = screen_neighbors(cache / "neighbours", schema)
     run = Run(schema=schema, supplied=build_supplied(accepted, schema) if resolve else None)
     failed: dict[str, str] = provenance["fetch"].get("pages_failed", {})
-    labeller = Labeller()
+    labeler = Labeler()
     seen: dict[str, int] = {}
     documents: list[dict[str, Any]] = []
     exclusions: list[dict[str, Any]] = []
@@ -476,7 +477,7 @@ def survey(cache: Path, provenance: dict[str, Any], resolve: bool) -> dict[str, 
             exclusions.append(exclusion(page, "unreadable", str(exc)))
             continue
         record = document_row(run, page, ctid, envelope, graph)
-        record["publisher"] = labeller.label(envelope.get("published_by"))
+        record["publisher"] = labeler.label(envelope.get("published_by"))
         documents.append(record)
     supplied = run.supplied
     return {
@@ -523,7 +524,7 @@ def by_type(documents: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def neighbour_block(
+def neighbor_block(
     provenance: dict[str, Any], cache: Path, documents: list[dict[str, Any]]
 ) -> dict[str, Any]:
     """What the one resolve hop asked for, and what the cache actually holds.
@@ -549,7 +550,7 @@ def neighbour_block(
 
 
 def request_block(
-    provenance: dict[str, Any], cache: Path, neighbours: dict[str, Any]
+    provenance: dict[str, Any], cache: Path, neighbors: dict[str, Any]
 ) -> dict[str, Any]:
     """The recorded request count, beside the floor the cache can prove.
 
@@ -561,8 +562,8 @@ def request_block(
     number it can defend instead of a counter it cannot.
     """
     fetch = provenance["fetch"]
-    documents = len(list((cache / "pages").glob("*.json"))) + neighbours["fetched"]
-    failures = len(fetch.get("pages_failed", {})) + neighbours["failed"]
+    documents = len(list((cache / "pages").glob("*.json"))) + neighbors["fetched"]
+    failures = len(fetch.get("pages_failed", {})) + neighbors["failed"]
     return {
         "recorded": fetch.get("requests"),
         "implied_by_the_cache": documents + failures + 1,
@@ -574,7 +575,7 @@ def access_block(
 ) -> dict[str, Any]:
     draw = provenance["draw"]
     fetch = provenance["fetch"]
-    neighbours = neighbour_block(provenance, cache, documents)
+    neighbors = neighbor_block(provenance, cache, documents)
     return {
         "from_cache": from_cache,
         "corpus_envelopes": draw["corpus_envelopes"],
@@ -582,8 +583,8 @@ def access_block(
         "seed": draw["seed"],
         "pages_drawn": len(draw["pages"]),
         "pages_failed": len(fetch.get("pages_failed", {})),
-        "requests": request_block(provenance, cache, neighbours),
-        "neighbours": neighbours,
+        "requests": request_block(provenance, cache, neighbors),
+        "neighbours": neighbors,
         "carried_from": provenance.get("carried_from"),
     }
 
@@ -602,15 +603,15 @@ def legacy_provenance(cache: Path, evidence: Path) -> dict[str, Any]:
     cached = sorted(int(p.stem) for p in (cache / "pages").glob("*.json"))
     if cached != pages:
         raise SystemExit(f"{cache} holds pages that are not the draw {evidence} describes")
-    # The legacy record counts neighbour failures without naming them, and a
+    # The legacy record counts neighbor failures without naming them, and a
     # count cannot be re-attributed to the IRIs it belonged to. Carrying it as
     # though the failures were known would let a later run report a document
     # as unresolved that this one had recorded as broken, so a legacy record
     # that has any is refused rather than approximated.
     if access.get("failed"):
         raise SystemExit(
-            f"{evidence} records {access['failed']} neighbour failures but not which IRIs "
-            "they were; that cache cannot be re-analysed faithfully"
+            f"{evidence} records {access['failed']} neighbor failures but not which IRIs "
+            "they were; that cache cannot be re-analyzed faithfully"
         )
     return {
         "draw": {
@@ -670,8 +671,8 @@ def main(argv: list[str] | None = None) -> int:
         wanted = sorted(
             {iri for d in first_pass["documents"] for iri in d.get("registry_references", [])}
         )
-        print(f"fetching up to {args.resolve_cap} of {len(wanted)} neighbours...", file=sys.stderr)
-        fetch_neighbours(fetcher, cache, provenance, wanted, args.resolve_cap)
+        print(f"fetching up to {args.resolve_cap} of {len(wanted)} neighbors...", file=sys.stderr)
+        fetch_neighbors(fetcher, cache, provenance, wanted, args.resolve_cap)
 
     result = survey(cache, provenance, resolve=True)
     documents = result["documents"]

@@ -70,7 +70,7 @@ def _wrong_scheme(
             f"{term} is a concept the encoding declares in {', '.join(sorted(declared))}, "
             f"and {prop} draws from {', '.join(sorted(wanted))}. Both declarations are in "
             "the vendored snapshot, so this is a term from the wrong vocabulary for this "
-            "property rather than a term the tool does not recognise. Reported as a "
+            "property rather than a term the tool does not recognize. Reported as a "
             "warning, not an error, because no published Credential Engine document says "
             "the Registry enforces meta:targetScheme on ingest."
         ),

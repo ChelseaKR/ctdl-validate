@@ -75,7 +75,7 @@ class _Target:
     label: str
     types: tuple[str, ...]
     #: Empty for an in-payload target; names the supplied file otherwise, so
-    #: every judgement says which document it rests on.
+    #: every judgment says which document it rests on.
     origin: str
     #: What to print as the finding's value: the reference as written where
     #: there is one, the target's own label for a nested node.

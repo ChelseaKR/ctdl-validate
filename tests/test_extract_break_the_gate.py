@@ -93,7 +93,7 @@ def test_the_source_page_is_never_asserted_as_a_property_of_the_entity() -> None
 def test_removing_an_equivalence_from_the_crosswalk_removes_the_mapping(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # The crosswalk is the only thing licensing a mapping. Take the licence
+    # The crosswalk is the only thing licensing a mapping. Take the license
     # away and the mapping must disappear, not fall back to a guess.
     crosswalk = load_crosswalk()
     without_course = replace(

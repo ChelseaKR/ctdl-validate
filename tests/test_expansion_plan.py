@@ -70,7 +70,7 @@ LANGUAGE_PROBE = {
 
 #: The class and property TERM_STATUS_PROBE is built from. Named here so
 #: ``test_the_term_status_probe_names_terms_the_snapshot_calls_unstable`` can
-#: hold them to the snapshot: a probe whose terms have since been stabilised
+#: hold them to the snapshot: a probe whose terms have since been stabilized
 #: would stop exercising the declaration and say nothing about it.
 #:
 #: The probe this replaced named ``ceterms:audienceLevelType`` and
@@ -250,7 +250,7 @@ def test_the_two_contexts_do_not_disagree() -> None:
 #: Row label -> the key a check would have to name in its own source to read
 #: that declaration. Only consulted for a row whose "Read by a check today"
 #: column still claims zero; a row that has moved off zero is held to the
-#: behavioural probe below instead, which is the stronger instrument.
+#: behavioral probe below instead, which is the stronger instrument.
 SOURCE_KEYS: dict[str, str] = {
     "Concepts declaring `skos:inScheme`": "skos:inScheme",
     "Terms declaring `vs:term_status`": "vs:term_status",

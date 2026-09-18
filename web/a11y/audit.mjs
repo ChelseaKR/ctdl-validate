@@ -4,16 +4,16 @@
 //
 // 1. **It audits the page in the state a visitor reaches.** `?a11y-static`
 //    renders one finding of each severity through the same code path a real
-//    run uses, so the four severity colours and the whole dl/dt/dd report
+//    run uses, so the four severity colors and the whole dl/dt/dd report
 //    structure are in the DOM. Auditing the empty page passed cleanly and
 //    missed a reflow failure that only the rendered report has.
-// 2. **It audits both colour schemes.** The page ships a light and a dark
+// 2. **It audits both color schemes.** The page ships a light and a dark
 //    palette behind `prefers-color-scheme`. A scanner that only sees one has
 //    checked half the contrast decisions.
 // 3. **It checks reflow, which no static scanner does.** SC 1.4.10 is a
 //    viewport property, not a markup property.
 // 4. **It runs current axe.** pa11y 8 bundles axe-core 4.8, which reports a
-//    colour-contrast violation on this page's `<textarea>` that axe-core 4.13
+//    color-contrast violation on this page's `<textarea>` that axe-core 4.13
 //    does not, and that the computed styles disprove outright: the element
 //    renders #111827 on #ffffff, about 16:1. Pinning axe here keeps the gate
 //    from being trained on a false positive.
@@ -46,7 +46,7 @@ const BLOCKING_IMPACTS = ["critical", "serious", "moderate"];
 // heading levels that do not skip (`heading-order`), exactly one `<main>` and
 // one `<h1>`, every region inside a landmark, no duplicate ids. The page
 // cleared all of them when first measured on 2026-08-21 (39 rules passed in
-// each colour scheme, up from 25), so they are held rather than watched.
+// each color scheme, up from 25), so they are held rather than watched.
 const TAGS = ["wcag2a", "wcag2aa", "wcag22aa", "best-practice"];
 // A11Y-09 / SC 1.4.10: no horizontal scroll at 320 CSS px.
 const REFLOW_VIEWPORT = { width: 320, height: 256 };
@@ -82,8 +82,8 @@ const EXPECTED_SEVERITIES = ["ERROR", "WARNING", "INFO", "UNVERIFIABLE"];
 
 // The page has two static states, and this script audits whichever one the URL
 // asks for. `?a11y-static` is the post-run state: the report and the rule
-// catalogue, which between them hold nearly all of this page's markup and all
-// four severity colours. `?a11y-static=loading` is the startup state, which
+// catalog, which between them hold nearly all of this page's markup and all
+// four severity colors. `?a11y-static=loading` is the startup state, which
 // docs/RESPONSIBLE-TECH-AUDITS.md section H recorded as unscanned: a progress
 // element, a status line, and a Validate button that is not yet a Validate
 // button. Neither state boots Pyodide, so neither fetches anything.
@@ -257,14 +257,14 @@ async function requireTheReportRendered(page, scheme) {
     };
     return {
       findings: severities(".finding .sev"),
-      catalogue: severities(".rulecard .sev"),
+      catalog: severities(".rulecard .sev"),
       present: Object.fromEntries(ids.map((id) => [id, shown(id)])),
     };
   }, REQUIRED_IN_REPORT_STATE);
 
   for (const [what, rendered] of [
     ["report", state.findings],
-    ["rule catalogue", state.catalogue],
+    ["rule catalog", state.catalog],
   ]) {
     const missing = EXPECTED_SEVERITIES.filter((s) => !rendered.includes(s));
     if (missing.length) {

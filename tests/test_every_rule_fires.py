@@ -214,7 +214,7 @@ class Tripwire:
 
     severity: Severity
     payload: Any
-    #: A neighbouring document, written to a file and passed with ``--resolve``.
+    #: A neighboring document, written to a file and passed with ``--resolve``.
     #: Only the resolution rules need one.
     resolve: Any = field(default=None)
 
@@ -580,9 +580,9 @@ TRIPWIRES: dict[str, Tripwire] = {
 def _findings(tripwire: Tripwire, tmp_path: Path) -> list[Any]:
     resolve = None
     if tripwire.resolve is not None:
-        neighbour = tmp_path / "neighbour.json"
-        neighbour.write_text(json.dumps(tripwire.resolve), encoding="utf-8")
-        resolve = [neighbour]
+        neighbor = tmp_path / "neighbor.json"
+        neighbor.write_text(json.dumps(tripwire.resolve), encoding="utf-8")
+        resolve = [neighbor]
     return validate_document(tripwire.payload, resolve)
 
 
@@ -609,7 +609,7 @@ def test_no_tripwire_outlives_the_rule_it_was_written_for() -> None:
 
 @pytest.mark.parametrize("code", sorted(TRIPWIRES))
 def test_the_rule_fires_at_the_severity_it_is_documented_at(code: str, tmp_path: Path) -> None:
-    """Direction 3: the behavioural half. Each rule is run, not just named."""
+    """Direction 3: the behavioral half. Each rule is run, not just named."""
     tripwire = TRIPWIRES[code]
     findings = _findings(tripwire, tmp_path)
     hits = [f for f in findings if f.code == code]

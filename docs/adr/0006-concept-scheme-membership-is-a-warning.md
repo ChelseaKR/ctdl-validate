@@ -50,7 +50,7 @@ skipped.
 2. **The encoding declares the term, in some other scheme.**
    `CONCEPT_OUTSIDE_SCHEME`, **WARNING**. Both declarations are in the
    vendored files, so this is a term from the wrong vocabulary rather than a
-   term the tool does not recognise. It is a WARNING and not an ERROR because
+   term the tool does not recognize. It is a WARNING and not an ERROR because
    the README defines WARNING as "a cited signal that something is very likely
    wrong, where the rule is not absolute or Registry enforcement of it is not
    documented", and no published Credential Engine document says the Registry

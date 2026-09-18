@@ -117,7 +117,7 @@ RESOLUTION_POLICY = Rule(
         "ctdl-validate policy: --resolve is additive and is reported. A reference that "
         "resolves in a document supplied on the command line is checked against the "
         "property's declared range exactly as an in-payload reference is, and the "
-        "document it resolved in is named, because every judgement that follows rests "
+        "document it resolved in is named, because every judgment that follows rests "
         "on that document having been supplied."
     ),
     url="docs/adr/0004-resolution-is-additive.md",

@@ -21,7 +21,7 @@ Three properties of this design are load-bearing and are enforced by tests:
   removed from ``sys.modules``.
 - **Supplied documents are never validated.** They go into a side index of
   ``@id`` to class, not into the graph being checked. Findings are reported
-  against the primary payload only, so adding a neighbour can never change how
+  against the primary payload only, so adding a neighbor can never change how
   many entities the report is about, nor put someone else's document's defects
   in your report.
 - **An unresolved reference stays UNVERIFIABLE.** Supplying documents can turn
