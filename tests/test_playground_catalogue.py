@@ -57,13 +57,24 @@ PAGE = ROOT / "web" / "index.html"
 PUBLISHED_AT = "https://chelseakr.github.io/ctdl-validate/"
 CARD_FILENAME = "social-card.png"
 
-#: The two network origins the page is allowed to name, and the reason each is
-#: there. Written out rather than parsed back out of the page, which is the
+#: The two network origins the validator is allowed to name, and the reason
+#: each is there. Written out rather than parsed back out of the page, which is the
 #: whole point: an expectation read out of the thing under test moves with the
 #: mistake and stays green.
 ALLOWED_ORIGINS = {
     "'self'": "the wheel, built from this commit by the Pages workflow",
     "https://cdn.jsdelivr.net": "the Pyodide runtime",
+}
+
+#: The Google origins the page's analytics may reach, and nothing else Google
+#: serves (docs/adr/0007-playground-analytics.md). They belong to the page, not
+#: to the validator, and are listed apart so that neither set can grow by
+#: hiding in the other. www.google.com and doubleclick.net are absent on
+#: purpose: with Google signals off, GA4 does not need them.
+ANALYTICS_ORIGINS = {
+    "https://www.googletagmanager.com": "the gtag.js loader",
+    "https://*.google-analytics.com": "GA4's measurement endpoint",
+    "https://*.analytics.google.com": "GA4's other measurement endpoint",
 }
 
 #: Ways a page sends something somewhere that a Content-Security-Policy
@@ -256,21 +267,35 @@ def content_security_policy() -> dict[str, list[str]]:
     return directives
 
 
-def test_the_policy_names_two_origins_and_no_others() -> None:
-    """The playground's promise is that no payload leaves the tab. This is the control."""
+def test_the_policy_names_its_origins_and_no_others() -> None:
+    """The playground's promise is that no payload leaves the tab. This is the control.
+
+    The validator's two origins, plus the analytics origins and nothing more.
+    The analytics script is guarded and reads nothing from the payload, but a
+    script origin is still a party who can change what runs on this page, so
+    each one is named here and a third cannot arrive unnoticed.
+    """
     policy = content_security_policy()
     assert policy["default-src"] == ["'none'"], (
         "default-src is what closes every fetch directive this policy does not name; "
         f"it reads {policy['default-src']}"
     )
-    assert set(policy["connect-src"]) == set(ALLOWED_ORIGINS), (
-        f"connect-src is {policy['connect-src']}. Exactly two origins belong there: "
-        + ", ".join(f"{origin} ({why})" for origin, why in sorted(ALLOWED_ORIGINS.items()))
+    assert set(policy["connect-src"]) == set(ALLOWED_ORIGINS) | set(ANALYTICS_ORIGINS), (
+        f"connect-src is {policy['connect-src']}. Exactly these origins belong there: "
+        + ", ".join(
+            f"{origin} ({why})"
+            for origin, why in sorted({**ALLOWED_ORIGINS, **ANALYTICS_ORIGINS}.items())
+        )
     )
     hosts = [token for token in policy["script-src"] if "://" in token]
-    assert hosts == ["https://cdn.jsdelivr.net"], (
-        f"script-src names {hosts}. A second script origin is a second party who can "
-        "change what runs against a payload the visitor has not published."
+    assert hosts == ["https://cdn.jsdelivr.net", "https://www.googletagmanager.com"], (
+        f"script-src names {hosts}. The Pyodide runtime and the gtag.js loader are the "
+        "only scripts from elsewhere; another script origin is another party who can "
+        "change what runs beside a payload the visitor has not published."
+    )
+    img_hosts = {token for token in policy["img-src"] if "://" in token}
+    assert img_hosts <= set(ANALYTICS_ORIGINS), (
+        f"img-src names {sorted(img_hosts)}; only the analytics origins may appear there"
     )
     assert "'unsafe-eval'" not in policy["script-src"], (
         "'unsafe-eval' is not needed: the worker is built from bytes the page fetched and "

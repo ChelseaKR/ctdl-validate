@@ -4,10 +4,15 @@
 Pyodide from jsDelivr, unpacks a `ctdl-validate` wheel built from the same
 commit, and calls `validate_document` on whatever payload you give it.
 
-Nothing is uploaded. The validation runs in the browser's own WebAssembly
-sandbox, which is the point: CTDL payloads are usually unpublished when they
-most need checking, and a hosted validator would mean sending unreleased
-credential and competency data to someone else's server.
+Nothing you validate is uploaded. The validation runs in the browser's own
+WebAssembly sandbox, which is the point: CTDL payloads are usually unpublished
+when they most need checking, and a hosted validator would mean sending
+unreleased credential and competency data to someone else's server.
+
+The published page does count visits, with Google Analytics 4. That is covered
+in [Analytics](#analytics) below, and in `privacy.html`, which the footer links
+to. The payload, the loaded files, the report and the share link's `#p=`
+fragment are never part of it.
 
 The playground is the validator only. `ctdl-validate extract` fetches a page,
 which needs a robots.txt check and a rate limit against the site's real
@@ -161,14 +166,52 @@ the file disagree about the address, the dimensions or the alt text. The card
 says the title and the description already in the head and nothing more: no
 rule count, no conformance claim, nothing about Credential Engine.
 
-Because the wheel is served from the same origin, the page's
-Content-Security-Policy allows exactly two network origins: `cdn.jsdelivr.net`
-for the Pyodide runtime, and `'self'` for the wheel. There is no PyPI call at
-any point, and the validator running in the browser is always the code
-published beside it. `tests/test_playground_catalogue.py` asserts that policy
-directive by directive, including that `'unsafe-eval'` is absent, and fails if
-the page ever mentions `sendBeacon`, `XMLHttpRequest`, `WebSocket`,
+Because the wheel is served from the same origin, the validator needs exactly
+two network origins: `cdn.jsdelivr.net` for the Pyodide runtime, and `'self'`
+for the wheel. There is no PyPI call at any point, and the validator running in
+the browser is always the code published beside it. The page's
+Content-Security-Policy also names the Google Analytics origins, and nothing
+else: see [Analytics](#analytics). `tests/test_playground_catalogue.py` asserts
+that policy directive by directive, with the validator's origins and the
+analytics origins listed apart, including that `'unsafe-eval'` is absent, and
+fails if the page ever mentions `sendBeacon`, `XMLHttpRequest`, `WebSocket`,
 `EventSource` or a `<form`.
+
+`pages.yml` publishes `privacy.html` beside the page, and fails if the footer
+stops linking it or the file is missing from the artifact.
+
+## Analytics
+
+The published page counts visits with Google Analytics 4, measurement ID
+`G-QQV001MBJ7` (GA4 property 554869909: 14-month retention, Google signals off).
+The owner decided on 2026-09-17 that every public site gets GA4, with its
+privacy pages and claims updated to match;
+[ADR 0007](../docs/adr/0007-playground-analytics.md) records it for this repo.
+
+The ID is the `GA4_ID` constant in the `<script id="analytics">` block in the
+head of `index.html`, and `privacy.html` carries a byte-for-byte copy of that
+block so its footer can offer the same opt-out. Set it to `""` to turn
+analytics off. The script loads nothing, not even a `dataLayer`, unless all of
+these hold:
+
+- a measurement ID is set;
+- the page is `https://chelseakr.github.io/ctdl-validate/` (so a local server,
+  the accessibility and performance gates on 127.0.0.1, and a fork's Pages site
+  never load it);
+- the browser sends neither Global Privacy Control nor Do Not Track;
+- the visitor has not opted out with the footer's "Opt out of analytics"
+  button. That sets `ctdl-validate:analytics-opt-out` in localStorage; the key
+  names this project because every `chelseakr.github.io` project site shares
+  one origin, and so one localStorage.
+
+When it does load, it sets Consent Mode v2 defaults (the three ad signals
+denied everywhere; `analytics_storage` denied in the EEA, the UK and
+Switzerland, where GA sends cookieless pings, and granted elsewhere), turns off
+Google signals and ad personalisation, and sends `page_location` as the origin
+and path only, so no fragment or query string reaches Google. Nothing in the
+script reads the payload. `tests/test_playground_analytics.py` runs the script
+under Node for each of those cases, including negative controls that remove a
+guard and assert both that the removal landed and that GA then loads.
 
 One-time repository setup: **Settings → Pages → Source: "GitHub Actions"**.
 
@@ -176,14 +219,15 @@ One-time repository setup: **Settings → Pages → Source: "GitHub Actions"**.
 
 ```sh
 uv build --wheel --out-dir dist
-mkdir -p site && cp web/index.html web/social-card.png site/ && cp dist/*.whl site/
+mkdir -p site && cp web/index.html web/privacy.html web/social-card.png site/ && cp dist/*.whl site/
 printf '{"wheel": "%s", "version": "%s"}\n' "$(basename dist/*.whl)" "$(uv version --short)" > site/wheel.json
 python -m http.server -d site 8899
 ```
 
 Then open <http://localhost:8899/>. It must be served over HTTP; opening the
 file directly with `file://` fails, because `fetch` cannot read the wheel from
-a file URL.
+a file URL. Analytics never loads there: localhost is not the published
+address.
 
 ## Updating Pyodide
 

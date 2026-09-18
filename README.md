@@ -45,11 +45,16 @@ in [Pointed at the Registry](#pointed-at-the-registry) and under
 
 **Try it without installing anything:**
 [chelseakr.github.io/ctdl-validate](https://chelseakr.github.io/ctdl-validate/)
-runs the validator in your browser via WebAssembly. Nothing is uploaded, which
-matters here: payloads usually need checking while they are still unpublished.
-The page also lists every rule this build can report, with a payload behind
-each one, derived by running the validator rather than written down beside it.
-See [`web/README.md`](web/README.md) for how it is built and gated.
+runs the validator in your browser via WebAssembly. Nothing you validate is
+uploaded, which matters here: payloads usually need checking while they are
+still unpublished. The page also lists every rule this build can report, with a
+payload behind each one, derived by running the validator rather than written
+down beside it. The page counts visits with Google Analytics 4 (not loaded under
+Global Privacy Control or Do Not Track, ad features off, opt-out in the footer);
+the payload is never part of that. See
+[`web/README.md`](web/README.md#analytics) and the page's
+[privacy notice](https://chelseakr.github.io/ctdl-validate/privacy.html).
+[`web/README.md`](web/README.md) also covers how the page is built and gated.
 
 ```
 $ ctdl-validate my-framework.json
