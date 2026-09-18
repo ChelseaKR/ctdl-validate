@@ -757,7 +757,7 @@ def test_a_draft_that_cannot_be_written_is_exit_two(
     assert "cannot write" in capsys.readouterr().err
 
 
-def test_supplying_a_neighbour_can_settle_a_reference_without_patching_anything(
+def test_supplying_a_neighbor_can_settle_a_reference_without_patching_anything(
     tmp_path: Path,
 ) -> None:
     """ADR 0004 in this verb: resolution is additive. Supplying the owner turns

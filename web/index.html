@@ -55,7 +55,7 @@
       Consent Mode v2 defaults: the three ad signals are denied everywhere;
       analytics_storage is denied in the EEA, the UK and Switzerland (the
       region-specific default wins there, and GA sends cookieless pings) and
-      granted elsewhere. Google signals and ad personalisation are off.
+      granted elsewhere. Google signals and ad personalization are off.
       tests/test_playground_analytics.py runs this script under Node.
     -->
     <script id="analytics">
@@ -196,7 +196,7 @@
       description that are already in this head and nothing else: no rule
       count, no conformance claim, no Credential Engine mark. A card that said
       more than the page would be a claim nothing checks.
-      tests/test_playground_catalogue.py holds the image, its dimensions and
+      tests/test_playground_catalog.py holds the image, its dimensions and
       the alt text to the rest of the head.
     -->
     <meta
@@ -238,7 +238,7 @@
       @id and an element id of its own. And the page reaches its examples with
       getElementById("rule-corpus"), never by selecting on a script element's
       type, so nothing added here can be picked up as a payload.
-      tests/test_playground_catalogue.py holds all three, and holds that both
+      tests/test_playground_catalog.py holds all three, and holds that both
       kinds are still present and neither sweep is empty.
 
       WHY THESE FIELDS AND NOT MORE.
@@ -263,7 +263,7 @@
                           whole design is that it never writes one down; see
                           the comment above #rule-corpus.
 
-      The single URL here that this project does not own is the Apache licence
+      The single URL here that this project does not own is the Apache license
       that pyproject.toml declares. It is a data value and not a subresource:
       the Content-Security-Policy above is default-src 'none', so this page
       requests nothing from it, and nothing new is loaded by adding it.
@@ -372,9 +372,9 @@
       }
       button.primary {
         /* Inverting the two body tokens rather than introducing a brand
-           colour: whatever contrast the body text has, this button has, in
-           both colour schemes, and there is no fifth palette entry to keep
-           in step with the four severity colours. */
+           color: whatever contrast the body text has, this button has, in
+           both color schemes, and there is no fifth palette entry to keep
+           in step with the four severity colors. */
         background: var(--foreground);
         color: var(--background);
         border-color: var(--foreground);
@@ -386,7 +386,7 @@
       .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.75rem; }
       :focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
       #status { color: var(--muted); margin: 0.75rem 0 0; }
-      #action-status, #catalogue-status { color: var(--muted); }
+      #action-status, #catalog-status { color: var(--muted); }
       /* The file control keeps the native input: a styled <label> wrapping a
          visually hidden input is the usual trick and it costs the keyboard
          affordance the native control already has. ::file-selector-button is
@@ -455,7 +455,7 @@
          edge. Measured at 320x256 in headless Chrome; the empty page passed,
          so only the state a visitor actually reaches was ever broken.
          `anywhere` rather than `break-word` because a 39-character CTID has no
-         break opportunity in it at all. The rule catalogue carries the same
+         break opportunity in it at all. The rule catalog carries the same
          two long-string shapes, so it is held to the same rule. */
       .finding dd,
       .finding h3,
@@ -577,8 +577,8 @@
         </div>
       </section>
 
-      <section class="panel" aria-labelledby="catalogue-heading">
-        <h2 id="catalogue-heading">Every rule this build can report</h2>
+      <section class="panel" aria-labelledby="catalog-heading">
+        <h2 id="catalog-heading">Every rule this build can report</h2>
         <p class="hint">
           Not a list written by hand. Every entry below was produced by running
           this build of the validator over a document that trips that rule, so
@@ -586,9 +586,9 @@
           in a report. The code list itself is read out of the check modules in
           the wheel this page loaded, so a rule cannot be missing from it.
         </p>
-        <p id="catalogue-status" role="status">The rule list appears once the validator has started.</p>
-        <ul class="tally" id="catalogue-tally"></ul>
-        <div id="catalogue"></div>
+        <p id="catalog-status" role="status">The rule list appears once the validator has started.</p>
+        <ul class="tally" id="catalog-tally"></ul>
+        <div id="catalog"></div>
       </section>
     </main>
 
@@ -613,10 +613,10 @@
     </footer>
 
     <!--
-      The documents behind the rule catalogue, and behind every "load the
+      The documents behind the rule catalog, and behind every "load the
       payload that reports this" button. They are data, not markup and not
       script: a <script type="application/json"> block is not executed, and
-      tests/test_playground_catalogue.py reads these exact bytes back out of
+      tests/test_playground_catalog.py reads these exact bytes back out of
       this file and asserts that each one still produces the code it is filed
       under, at the severity the tool gives it. That is what keeps this from
       being a hand-maintained copy of the rule set that can drift: nothing here
@@ -1104,7 +1104,7 @@ def run(text, resolve_text):
     )
 
 
-def catalogue(corpus_json):
+def catalog(corpus_json):
     """Derive the rule list by running the validator, never by describing it.
 
     For each code the source can emit, the corpus supplies a document that
@@ -1122,7 +1122,7 @@ def catalogue(corpus_json):
             continue
         resolve = None
         if entry.get("resolve") is not None:
-            resolve = _supplied(json.dumps(entry["resolve"]), "catalogue_supplied.json")
+            resolve = _supplied(json.dumps(entry["resolve"]), "catalog_supplied.json")
         hits = [f for f in validate_document(entry["document"], resolve) if f.code == code]
         if not hits:
             rows.append({"code": code, "example": False})
@@ -1135,7 +1135,7 @@ def catalogue(corpus_json):
 
     <!--
       The worker thread. Pyodide's boot is about eight seconds of WebAssembly
-      compilation and Python initialisation, and on the main thread that is
+      compilation and Python initialization, and on the main thread that is
       eight seconds in which the page cannot scroll, cannot take a keystroke,
       and cannot repaint the status line it just changed. Measured before this
       moved: Lighthouse total blocking time 7,710 ms, performance 0.70. The
@@ -1166,7 +1166,7 @@ async function boot(message) {
   // any call to PyPI.
   await py.unpackArchive(wheel, "zip");
   py.runPython(message.pySource);
-  api = { run: py.globals.get("run"), catalogue: py.globals.get("catalogue") };
+  api = { run: py.globals.get("run"), catalog: py.globals.get("catalog") };
   post({ type: "ready", version: py.runPython("__import__('ctdl_validate').__version__") });
 }
 
@@ -1177,8 +1177,8 @@ self.onmessage = async (event) => {
       await boot(message);
     } else if (message.type === "validate") {
       post({ type: "result", id: message.id, payload: api.run(message.text, message.resolveText) });
-    } else if (message.type === "catalogue") {
-      post({ type: "result", id: message.id, payload: api.catalogue(message.corpus) });
+    } else if (message.type === "catalog") {
+      post({ type: "result", id: message.id, payload: api.catalog(message.corpus) });
     }
   } catch (err) {
     const detail = String((err && err.message) || err);
@@ -1212,9 +1212,9 @@ self.onmessage = async (event) => {
 
       const statusEl = document.getElementById("status");
       const actionStatus = document.getElementById("action-status");
-      const catalogueStatus = document.getElementById("catalogue-status");
-      const catalogueEl = document.getElementById("catalogue");
-      const catalogueTally = document.getElementById("catalogue-tally");
+      const catalogStatus = document.getElementById("catalog-status");
+      const catalogEl = document.getElementById("catalog");
+      const catalogTally = document.getElementById("catalog-tally");
       const runBtn = document.getElementById("run");
       const payload = document.getElementById("payload");
       const resolveBox = document.getElementById("resolve");
@@ -1236,7 +1236,7 @@ self.onmessage = async (event) => {
       // Kept verbatim from tests/fixtures/ so the samples stay honest: these
       // are the same documents the test suite asserts against, including the
       // two bug classes found in real published data. The other twenty-three
-      // samples on this page are the rule catalogue's own documents, which
+      // samples on this page are the rule catalog's own documents, which
       // #rule-corpus holds and a test gates.
       const SAMPLES = {
         clean: {
@@ -1331,10 +1331,10 @@ self.onmessage = async (event) => {
           </div>`;
       }
 
-      // A catalogue row and a finding are the same shape, because a catalogue
+      // A catalog row and a finding are the same shape, because a catalog
       // row *is* a finding: the one this build produces when it is run over
       // the document filed under that code.
-      function renderCatalogueRow(row) {
+      function renderCatalogRow(row) {
         const code = escapeHtml(row.code);
         if (!row.example) {
           return `
@@ -1357,18 +1357,18 @@ self.onmessage = async (event) => {
           </div>`;
       }
 
-      function renderCatalogue(rows, unreadable) {
+      function renderCatalog(rows, unreadable) {
         const shown = rows.filter((row) => row.example);
         const counts = SEVERITY_ORDER.map((sev) => [
           sev,
           shown.filter((row) => row.severity === sev).length,
         ]).filter(([, n]) => n > 0);
-        catalogueTally.innerHTML = counts
+        catalogTally.innerHTML = counts
           .map(([sev, n]) => `<li><span class="sev ${sev}">${sev}</span> ${n}</li>`)
           .join("");
-        catalogueEl.innerHTML = rows.map(renderCatalogueRow).join("");
+        catalogEl.innerHTML = rows.map(renderCatalogRow).join("");
         const missing = rows.length - shown.length;
-        catalogueStatus.textContent =
+        catalogStatus.textContent =
           `${rows.length} rule${rows.length === 1 ? "" : "s"}, each shown as this build reports it.` +
           (missing ? ` ${missing} of them has no example document on this page.` : "") +
           (unreadable
@@ -1464,7 +1464,7 @@ self.onmessage = async (event) => {
               pySource: PY_SOURCE,
             }),
           validate: (text, resolveText) => ask({ type: "validate", text, resolveText }),
-          catalogue: (corpus) => ask({ type: "catalogue", corpus }),
+          catalog: (corpus) => ask({ type: "catalog", corpus }),
         };
       }
 
@@ -1496,11 +1496,11 @@ self.onmessage = async (event) => {
         await py.unpackArchive(wheel, "zip");
         py.runPython(PY_SOURCE);
         const run = py.globals.get("run");
-        const catalogue = py.globals.get("catalogue");
+        const catalog = py.globals.get("catalog");
         return {
           version: py.runPython("__import__('ctdl_validate').__version__"),
           validate: async (text, resolveText) => run(text, resolveText),
-          catalogue: async (corpus) => catalogue(corpus),
+          catalog: async (corpus) => catalog(corpus),
         };
       }
 
@@ -1525,7 +1525,7 @@ self.onmessage = async (event) => {
           worker.onProgress((step) => setStage(step));
           worker.start();
           const version = await worker.ready;
-          engine = { version, validate: worker.validate, catalogue: worker.catalogue };
+          engine = { version, validate: worker.validate, catalog: worker.catalog };
         } else {
           onMainThread = true;
           engine = await startOnMainThread((step) =>
@@ -1550,16 +1550,16 @@ self.onmessage = async (event) => {
           queuedRun = false;
           validateNow();
         }
-        loadCatalogue();
+        loadCatalog();
       }
 
-      async function loadCatalogue() {
-        catalogueStatus.textContent = "Running the validator over one document per rule…";
+      async function loadCatalog() {
+        catalogStatus.textContent = "Running the validator over one document per rule…";
         try {
-          const derived = JSON.parse(await engine.catalogue(JSON.stringify(CORPUS)));
-          renderCatalogue(derived.rows, derived.unreadable);
+          const derived = JSON.parse(await engine.catalog(JSON.stringify(CORPUS)));
+          renderCatalog(derived.rows, derived.unreadable);
         } catch (err) {
-          catalogueStatus.textContent = `The rule list could not be derived: ${err.message}`;
+          catalogStatus.textContent = `The rule list could not be derived: ${err.message}`;
         }
       }
 
@@ -1604,7 +1604,7 @@ self.onmessage = async (event) => {
         }
         // Not ready yet. A disabled button is not focusable, so a keyboard
         // user never meets it at all during the wait; this one takes the
-        // click and honours it the moment the validator exists.
+        // click and honors it the moment the validator exists.
         queuedRun = true;
         statusEl.textContent =
           "Queued. This will validate as soon as the validator has finished loading.";
@@ -1620,7 +1620,7 @@ self.onmessage = async (event) => {
         });
       }
 
-      catalogueEl.addEventListener("click", (event) => {
+      catalogEl.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-example]");
         if (!btn) return;
         const entry = CORPUS[btn.dataset.example];
@@ -1765,12 +1765,12 @@ self.onmessage = async (event) => {
       // ?a11y-static renders the page in a state a visitor reaches, without
       // booting Pyodide, and it is what CI audits. Two reasons it exists.
       //
-      // The findings list and the rule catalogue are where nearly all of this
-      // page's markup lives and the only places the four severity colours
+      // The findings list and the rule catalog are where nearly all of this
+      // page's markup lives and the only places the four severity colors
       // appear, so a scanner that only ever sees the empty page has audited
       // the least interesting half. One finding of each severity is rendered
-      // here, through the same renderFinding() and renderCatalogueRow() a real
-      // run uses, so the colours and the dl/dt/dd structure are the ones a
+      // here, through the same renderFinding() and renderCatalogRow() a real
+      // run uses, so the colors and the dl/dt/dd structure are the ones a
       // visitor gets.
       //
       // ?a11y-static=loading renders the other state a visitor meets, and the
@@ -1850,13 +1850,13 @@ self.onmessage = async (event) => {
         payload.value = JSON.stringify(SAMPLES.framework, null, 2);
         startup.hidden = true;
         renderReport(A11Y_SAMPLE);
-        // The same four rows the report is built from, through the catalogue's
+        // The same four rows the report is built from, through the catalog's
         // own renderer: one card per severity, each with its example button.
-        renderCatalogue(
+        renderCatalog(
           A11Y_SAMPLE.map((f) => ({ ...f, example: true })),
           0,
         );
-        catalogueStatus.textContent =
+        catalogStatus.textContent =
           "Static accessibility audit mode: these four rules are examples, not the derived list.";
         shareRow.hidden = false;
         shareField.value = `${window.location.href.split("?")[0]}#p=example-share-link-not-a-real-payload`;
@@ -1877,7 +1877,7 @@ self.onmessage = async (event) => {
           boot().catch((err) => {
             startup.hidden = true;
             statusEl.textContent = "Failed to load the validator: " + err.message;
-            catalogueStatus.textContent =
+            catalogStatus.textContent =
               "The rule list is derived by running the validator, which did not load.";
           });
         });

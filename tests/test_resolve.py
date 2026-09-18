@@ -55,14 +55,14 @@ def test_a_supplied_document_settles_the_reference() -> None:
 
 
 def test_the_same_reference_is_an_error_once_its_target_is_the_wrong_class() -> None:
-    """The paired case: unverifiable without the neighbour, caught with it."""
+    """The paired case: unverifiable without the neighbor, caught with it."""
     payload = load_fixture("external_reference.json")
     without = validate_document(payload)
     assert codes(without) == {"REF_OUTSIDE_PAYLOAD"}
     assert not any(f.severity is Severity.ERROR for f in without)
 
-    with_neighbour = validate_document(payload, [VARIANTS / "owner_is_not_an_organization.json"])
-    violation = [f for f in with_neighbour if f.code == "RANGE_VIOLATION"]
+    with_neighbor = validate_document(payload, [VARIANTS / "owner_is_not_an_organization.json"])
+    violation = [f for f in with_neighbor if f.code == "RANGE_VIOLATION"]
     assert len(violation) == 1
     assert violation[0].severity is Severity.ERROR
     assert "ceterms:Certification" in violation[0].message
@@ -85,7 +85,7 @@ def test_the_prompt_to_resolve_appears_when_nothing_was_supplied() -> None:
 
 
 def test_supplied_documents_are_never_themselves_validated() -> None:
-    """A defect in a neighbour is that neighbour's problem, not this report's."""
+    """A defect in a neighbor is that neighbor's problem, not this report's."""
     alone = validate_document(load_fixture("resolve/variants/owner_with_a_bare_uuid_ctid.json"))
     assert "CTID_BARE_UUID" in codes(alone), "fixture must actually be defective"
 
@@ -215,13 +215,13 @@ def test_an_unreadable_supplied_document_exits_two(capsys: pytest.CaptureFixture
     assert "cannot read" in capsys.readouterr().err
 
 
-def test_a_supplied_neighbour_can_settle_a_reference_into_a_disposition(
+def test_a_supplied_neighbor_can_settle_a_reference_into_a_disposition(
     tmp_path: Path,
 ) -> None:
     """Resolution is additive in both directions: it can settle into INFO, not only ERROR.
 
     Most of the 2026-08-21 survey's version-property findings only became
-    judgeable at all once the neighbour was supplied: 19 of them were visible
+    judgeable at all once the neighbor was supplied: 19 of them were visible
     document-by-document and 61 with the sample supplied to itself. The
     finding still names the file it rests on.
     """

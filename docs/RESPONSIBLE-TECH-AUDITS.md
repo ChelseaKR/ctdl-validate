@@ -127,7 +127,7 @@ from the payload, the loaded files or the report, and sends `page_location` as
 the origin and path only, so a share link's `#p=` fragment never reaches
 Google. It loads nothing under Global Privacy Control or Do Not Track, after
 the footer opt-out, or anywhere but the published address. Google signals and
-ad personalisation are off, `analytics_storage` is denied by default in the
+ad personalization are off, `analytics_storage` is denied by default in the
 EEA, the UK and Switzerland, and retention is 14 months. `web/privacy.html`
 is the visitor-facing account. The command-line tool, the GitHub Action and
 the pre-commit hook carry no analytics.
@@ -194,7 +194,7 @@ passed** in each. Lighthouse: **accessibility 1.00**, both locally and against
 the published page. Reflow at 320x256: clean, **after a fix**.
 
 **Re-measured on 2026-08-21, with a wider rule set.** The same axe-core 4.13
-run with the `best-practice` tag added to the three WCAG tags, in both colour
+run with the `best-practice` tag added to the three WCAG tags, in both color
 schemes: **0 violations, 0 incomplete, 39 rules passed** in each. The added
 rules are the ones no WCAG success criterion names outright and the issue
 that opened this section asked about by name: heading levels that do not skip
@@ -216,12 +216,12 @@ accessibility audit of this page that loads it and scans it audits an input
 box and three buttons, and misses the part where all the content is. The gate
 therefore renders one finding of each severity before scanning, through the
 same code path a real run uses, which is also the only way the four severity
-colours get their contrast checked at all.
+colors get their contrast checked at all.
 
 **Re-measured on 2026-08-29, after the page roughly tripled in markup.** The
-playground gained a derived rule catalogue, three report actions, a share
+playground gained a derived rule catalog, three report actions, a share
 field, a second payload box for `--resolve`, and a startup progress element.
-axe-core 4.13 at the same four tags, both colour schemes: **0 violations, 0
+axe-core 4.13 at the same four tags, both color schemes: **0 violations, 0
 incomplete, 42 rules passed** in the post-run state and **39** in the new
 startup state. Lighthouse accessibility **1.00** in both. Reflow at 320x256
 clean in all four combinations.
@@ -247,7 +247,7 @@ page during the wait never met the control at all. It is now focusable, marked
 validation the moment the runtime is ready, rather than doing nothing.
 
 **Controls now in place.** `.github/workflows/accessibility.yml`,
-merge-blocking, no advisory mode: axe-core in both colour schemes across both
+merge-blocking, no advisory mode: axe-core in both color schemes across both
 static states, the 320 px reflow check in each, and a Lighthouse accessibility
 score that must be 1.00 rather than the standard's 0.90 floor, because the
 page measured 1.00 and the standard says a repository clearing a higher bar
@@ -258,7 +258,7 @@ deterministic and does not make a merge depend on a CDN being up.
 absent or invisible. That is not an accessibility rule; it is the gate
 refusing to grade a page that is missing the parts it was extended to grade.
 New UI that the audit cannot see is UI the audit does not audit, and this page
-grew a rule catalogue, three buttons and a share field in one change.
+grew a rule catalog, three buttons and a share field in one change.
 
 **REVIEW gate, still open.** A keyboard and screen-reader walkthrough by a
 human. The four-stage announcement and the queueing button are better than one

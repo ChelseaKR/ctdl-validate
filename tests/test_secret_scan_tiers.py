@@ -86,7 +86,7 @@ _HEAD_LITERAL = re.compile(r"^\s*head:\s*HEAD\s*$", re.MULTILINE)
 
 
 def _strip_yaml_comments(text: str) -> str:
-    """Drop YAML comments, honouring quotes so a `#` inside a scalar survives.
+    """Drop YAML comments, honoring quotes so a `#` inside a scalar survives.
 
     A comment starts at an unquoted `#` that begins the line or follows
     whitespace. Assertions about what the workflow *does* must not be

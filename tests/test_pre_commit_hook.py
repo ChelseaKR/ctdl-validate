@@ -179,7 +179,7 @@ def test_an_unreadable_file_reports_no_findings_of_its_own(tmp_path: Path) -> No
 def test_resolve_settles_a_reference_the_staged_file_cannot_see(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Without the neighbour the reference is UNVERIFIABLE; with it, answered.
+    """Without the neighbor the reference is UNVERIFIABLE; with it, answered.
 
     Asserted on the severity the run reports rather than on the two outputs
     merely differing: "the strings are not equal" is satisfied by any
@@ -193,8 +193,8 @@ def test_resolve_settles_a_reference_the_staged_file_cannot_see(
     assert "1 finding(s): 0 ERROR, 0 WARNING, 0 INFO, 1 UNVERIFIABLE" in without
 
     assert main([str(competency), "--resolve", str(framework)]) == 0
-    with_neighbour = capsys.readouterr().out
-    assert "1 finding(s): 0 ERROR, 0 WARNING, 1 INFO, 0 UNVERIFIABLE" in with_neighbour
+    with_neighbor = capsys.readouterr().out
+    assert "1 finding(s): 0 ERROR, 0 WARNING, 1 INFO, 0 UNVERIFIABLE" in with_neighbor
 
 
 # -- the hooks file is a contract with other repositories ---------------------

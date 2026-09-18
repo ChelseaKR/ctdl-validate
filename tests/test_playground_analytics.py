@@ -14,7 +14,7 @@ runner; locally these tests skip without it, and in CI (``CI`` set) they fail
 instead, so a runner that lost Node cannot turn them green by skipping.
 
 The expected values are written out below rather than read back out of the
-page, for the reason ``tests/test_playground_catalogue.py`` gives: an
+page, for the reason ``tests/test_playground_catalog.py`` gives: an
 expectation parsed out of the thing under test moves with the mistake.
 """
 
@@ -355,7 +355,7 @@ def test_a_click_is_remembered_and_a_second_click_undoes_it(script: str, tmp_pat
     assert twice["status"]["text"] == "Analytics is back on from the next page you open."
 
 
-def test_blocked_storage_still_honours_a_click_for_this_page(script: str, tmp_path: Path) -> None:
+def test_blocked_storage_still_honors_a_click_for_this_page(script: str, tmp_path: Path) -> None:
     result = run(script, tmp_path, storageBlocked=True, clicks=1)
     assert not loaded_nothing(result), "blocked storage is not an opt-out"
     assert result["gaDisable"] is True
@@ -437,7 +437,7 @@ def test_the_privacy_page_describes_what_the_script_does() -> None:
         f"_ga_{MEASUREMENT_ID.removeprefix('G-')}",
         OPT_OUT_KEY,
         "Global Privacy Control or Do Not Track",
-        "Google signals and ad personalisation are off",
+        "Google signals and ad personalization are off",
         "European Economic Area, the UK and Switzerland",
         "cookieless ping",
         "14 months",

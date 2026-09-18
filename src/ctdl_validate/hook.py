@@ -127,7 +127,7 @@ def inspect(path: Path, resolve: Sequence[Path]) -> Outcome:
     )
 
 
-def summarise(outcomes: Sequence[Outcome]) -> list[str]:
+def summarize(outcomes: Sequence[Outcome]) -> list[str]:
     """The three counts, in words, and the sentence that says a run checked nothing.
 
     Written as a count of files rather than a count of findings on purpose. A
@@ -195,7 +195,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(outcome.report)
             print()
 
-    for line in summarise(outcomes):
+    for line in summarize(outcomes):
         print(line)
 
     if any(o.unreadable is not None for o in outcomes):

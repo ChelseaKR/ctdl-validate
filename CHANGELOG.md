@@ -17,7 +17,7 @@ and this project adheres to
   `G-QQV001MBJ7` only on `https://chelseakr.github.io/ctdl-validate/`, and
   never under Global Privacy Control, Do Not Track, or after the new footer
   "Opt out of analytics" button (localStorage key
-  `ctdl-validate:analytics-opt-out`). Google signals and ad personalisation are
+  `ctdl-validate:analytics-opt-out`). Google signals and ad personalization are
   off, the ad consent signals are denied, `analytics_storage` is denied by
   default in the EEA, the UK and Switzerland, and `page_location` is the origin
   and path only, so a share link's `#p=` payload never reaches Google. Nothing
@@ -40,12 +40,12 @@ and this project adheres to
 
   `web/index.html` now carries one schema.org `WebApplication` node,
   `#page-schema`, in the head: free, running entirely in the reader's browser,
-  with a category, a licence and an offer priced at zero.
+  with a category, a license and an offer priced at zero.
 
   **Every field traces to something already committed.** The name comes from
   the `<title>`, the description is the meta description byte for byte, the
-  language from `<html lang>`, the repository and the licence from
-  `pyproject.toml`. `tests/test_playground_catalogue.py` fails when any of them
+  language from `<html lang>`, the repository and the license from
+  `pyproject.toml`. `tests/test_playground_catalog.py` fails when any of them
   stops matching its source.
 
   **The fields left out are the point.** No rating, no review, no download
@@ -266,7 +266,7 @@ and this project adheres to
   2026-09-06, said the other way round: a count that is not there is not a
   count of none, and **a count this action does not know how to gate on is not
   a count of zero either.** `describe_unreadable` now refuses a report carrying
-  an unrecognised severity — in a finding or as a summary key — and the run
+  an unrecognized severity — in a finding or as a summary key — and the run
   exits 2 rather than gating on a subset of what was reported. The annotator's
   fallback level moved from `notice` to `error`.
 
@@ -583,7 +583,7 @@ and this project adheres to
   loads the payload that produced it, which is also the answer to three
   samples being too few to explore twenty-three rules.
 
-  `tests/test_playground_catalogue.py` is what keeps it derived. It reads the
+  `tests/test_playground_catalog.py` is what keeps it derived. It reads the
   page's two data blocks, *executes the page's own Python* rather than a
   second copy of the same logic, and fails in five directions: a code with no
   document, a document filed under a code the source no longer emits, a
@@ -678,15 +678,15 @@ and this project adheres to
   focusable, says `aria-disabled`, and queues -- pressing it during startup
   runs the validation the moment the runtime is ready.
 
-- `web/a11y/audit.mjs` audits both static states, checks the rule catalogue
+- `web/a11y/audit.mjs` audits both static states, checks the rule catalog
   renders at all four severities as well as the report, and fails when a
   control the post-run state adds is missing or invisible. That last one is
   not an accessibility rule; it is the gate refusing to grade a page missing
   the parts it was extended to grade. Measured after the change: 0 violations,
   0 incomplete, 42 rules passed in the post-run state and 39 in the startup
-  state, in both colour schemes, Lighthouse accessibility 1.00 in each.
+  state, in both color schemes, Lighthouse accessibility 1.00 in each.
 
-- `tests/test_playground_catalogue.py` also holds the page's network posture,
+- `tests/test_playground_catalog.py` also holds the page's network posture,
   which nothing checked before: the Content-Security-Policy directive by
   directive, the absence of `'unsafe-eval'`, and the absence of `sendBeacon`,
   `XMLHttpRequest`, `WebSocket`, `EventSource` and `<form` anywhere in the
@@ -732,7 +732,7 @@ and this project adheres to
   under both candidate rules -- a gate that could not fail. Three tests now
   pin it: that exactly two properties range on `rdfs:Resource` alone and
   exactly three mention it; that `isSimilarTo` has 83 range terms with the
-  `ceasn:Competency` asymmetry spelled out; and a characterisation test,
+  `ceasn:Competency` asymmetry spelled out; and a characterization test,
   explicitly not an endorsement, that fails if the disposition changes. The
   last was watched fail under the flipped rule.
 
@@ -826,8 +826,8 @@ and this project adheres to
   ([#59](https://github.com/ChelseaKR/ctdl-validate/issues/59)) The flag exists
   to make a run reproducible offline -- README's "Same *page bytes*, same
   output, byte for byte" -- but it hard-coded `read_text(encoding="utf-8")`
-  while the fetch path honoured the `Content-Type` charset, then the page's
-  own `<meta charset>`, then fell back to `errors="replace"` labelled
+  while the fetch path honored the `Content-Type` charset, then the page's
+  own `<meta charset>`, then fell back to `errors="replace"` labeled
   `(undecodable, replaced)`. The same bytes therefore produced two different
   documents depending only on which path read them.
 
@@ -842,7 +842,7 @@ and this project adheres to
 
   `--from-file` now reads bytes and decodes them through the same function the
   fetch path uses, so the markup's declared charset decides on both paths and
-  undecodable bytes are replaced-and-labelled rather than fatal. The reported
+  undecodable bytes are replaced-and-labeled rather than fatal. The reported
   `bytes` is now the bytes read rather than the decoded text re-encoded, and
   the report names the encoding used. Every remaining unreadable-file case is
   an `OSError`, so it raises `FetchError` and exits 2.
@@ -863,8 +863,8 @@ and this project adheres to
   fixed, and the false negative that the obvious over-correction produces was
   ungated. Two cases now pin it -- a nested back-reference naming a different
   entity, and one carrying no `@id` at all -- and both fail against that
-  mutation and pass against the code as written. Behaviour is unchanged; what
-  changed is that the behaviour can no longer be removed silently.
+  mutation and pass against the code as written. Behavior is unchanged; what
+  changed is that the behavior can no longer be removed silently.
 
 - `Graph.resolve`'s docstring described its identity preference as what keeps
   a reference reached through an embedded copy off a thinner duplicate node.
@@ -939,7 +939,7 @@ and this project adheres to
   asserted *not* to fire: a payload that cannot fire and one the validator
   correctly ignores look identical. The probe now uses `ceterms:Collection`
   and `ceterms:lifeCycleStatusType`, and a new test reads the snapshot to
-  confirm both are still declared unstable, so a re-vendoring that stabilises
+  confirm both are still declared unstable, so a re-vendoring that stabilizes
   either fails loudly instead of quietly returning the probe to decoration.
 
 
@@ -1105,7 +1105,7 @@ and this project adheres to
   source no longer emits, so a stale entry cannot outlive a deleted rule; a
   code whose document does not actually produce it at the documented severity;
   and any disagreement between the source and the README's rule table. The
-  third is the one that matters, because it is behavioural: every entry is a
+  third is the one that matters, because it is behavioral: every entry is a
   payload the validator is run over, not a string compared against another
   string.
 
@@ -1127,7 +1127,7 @@ and this project adheres to
   classes against it rejected *every* entity instead of accepting every one.
   This affected `ceterms:hasMember`, `ceterms:isSimilarTo` and `owl:sameAs`;
   in the 1,200-document survey it produced 47 spurious range errors against a
-  single published collection that listed 47 licences.
+  single published collection that listed 47 licenses.
 
   *Correction, 2026-09-06 ([#60](https://github.com/ChelseaKR/ctdl-validate/issues/60)):
   "a declared range naming only `rdfs:Resource`" describes `ceterms:hasMember`
@@ -1143,7 +1143,7 @@ and this project adheres to
   after 1,091 pages and its record claimed 1,770 requests for work that cannot
   have cost fewer than 2,861 — and the evidence file now reports both
   `access.requests.recorded` and `access.requests.implied_by_the_cache`.
-  Neighbour tallies are counted off the cache and the sample's own references
+  Neighbor tallies are counted off the cache and the sample's own references
   instead of a per-run counter, and a referenced document that was neither
   fetched nor recorded as failed is counted as `unresolved` rather than
   vanishing from the denominator.
@@ -1152,7 +1152,7 @@ and this project adheres to
   rules alongside the three WCAG tags. That is where heading order
   (`heading-order`), the one-`<main>`/one-`<h1>` landmark rules, and
   duplicate-id checks live, none of which a WCAG tag selects. Measured
-  2026-08-21 in both colour schemes: 0 violations, 0 incomplete, 39 rules
+  2026-08-21 in both color schemes: 0 violations, 0 incomplete, 39 rules
   passed (was 25). Nothing in the page changed; the bar did (#20).
 - `docs/ROADMAP.md` § Delivery health carries measured values for all four
   DORA signals across three releases, including a change-fail rate of 1 of 3
@@ -1284,7 +1284,7 @@ moved here so the CHANGELOG is the record it claims to be.
 - `.github/workflows/accessibility.yml` and `web/a11y/audit.mjs`: a
   merge-blocking accessibility gate for the browser playground, which is a
   published human-facing page that nothing had ever checked. axe-core 4.13 at
-  `wcag2a,wcag2aa,wcag22aa` in both colour schemes, a 320 CSS px reflow check,
+  `wcag2a,wcag2aa,wcag22aa` in both color schemes, a 320 CSS px reflow check,
   and a Lighthouse accessibility score that must be 1.00. Measured 2026-08-15:
   0 violations, 25 rules passed, Lighthouse 1.00. `audit.mjs` refuses to score
   a page whose `?a11y-static` report did not render: pointed at a 404 error
@@ -1340,7 +1340,7 @@ moved here so the CHANGELOG is the record it claims to be.
 ### Changed
 
 - With no `--resolve`, a `REF_OUTSIDE_PAYLOAD` message now ends "Pass it with
-  --resolve to settle this." The code, severity and exit-code behaviour are
+  --resolve to settle this." The code, severity and exit-code behavior are
   unchanged; only the message text is longer.
 - Checks now take a `Session` (payload, schema, supplied documents) rather
   than a `(Graph, SchemaIndex)` pair, so the one input that can change a

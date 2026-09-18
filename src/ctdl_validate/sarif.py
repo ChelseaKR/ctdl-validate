@@ -32,7 +32,7 @@ display from ``level`` alone, documenting ``note``, ``warning`` and ``error``
 as the levels it renders. A ``level: none`` UNVERIFIABLE finding would
 therefore vanish from the one place this format is most often read, which is
 the absence-as-pass this tool exists to refuse. So non-``fail`` results carry
-``level: note``. The schema accepts it; a viewer that honours ``kind`` sees
+``level: note``. The schema accepts it; a viewer that honors ``kind`` sees
 the distinction; a viewer that does not still shows the finding. The tool's
 own severity is carried verbatim in every result's ``properties.severity``.
 
@@ -307,7 +307,7 @@ def merge_logs(logs: Sequence[Any]) -> str:
     per document stops working at the twenty-first -- and a publication set of
     twenty-one CTDL payloads is an ordinary set, not an edge case.
 
-    Nothing is dropped, deduplicated or re-levelled: the results are
+    Nothing is dropped, deduplicated or re-leveled: the results are
     concatenated in the order the documents were given, each result's
     ``ruleIndex`` is re-pointed at the merged rules array, and the run's
     ``summary`` is the sum of the summaries. Every driver must be identical,

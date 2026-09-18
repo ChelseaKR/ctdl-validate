@@ -60,7 +60,7 @@ name. Resolution is one hop and follows only references into
 `credentialengineregistry.org/resources/`; a reference to a credreg.net
 vocabulary term, to some other path on the Registry host, or to anybody's own
 website is not fetched and is counted by kind, never by name. There is no cap
-on the number of neighbours fetched. A neighbour the validator cannot read is
+on the number of neighbors fetched. A neighbor the validator cannot read is
 recorded by CTID and reason and left out of the supplied set rather than
 allowed to abort the pass.
 
@@ -88,7 +88,7 @@ Every number in those tables is recomputed from the evidence JSON by
 
 **Hand verification.** Every ERROR in the resolved pass is checked against the
 cached source bytes of the document and, where the finding depends on it, of
-the neighbour, before it is published. A finding that does not hold against
+the neighbor, before it is published. A finding that does not hold against
 the bytes is reported as a defect in this tool, not in the document.
 
 **Politeness.** One process, one request at a time, a 2-second minimum
@@ -124,7 +124,7 @@ supplied set; the second pass had 1,659 documents and 1,659 entities in hand.
 
 **Requests, and a counter that was wrong.** The cache the analysis reads cannot
 have been built by fewer than **2,861** requests: 1,200 envelope pages, 1,659
-neighbour documents, the one neighbour that answered 404, and one probe for
+neighbor documents, the one neighbor that answered 404, and one probe for
 `X-Total`. The harness's own counter recorded **1,770**, and that discrepancy
 is the more useful finding. The draw was interrupted partway through and
 resumed; the counter was banked only at the end of a phase, so the interrupted
@@ -146,15 +146,15 @@ a refusal.
 Both passes read the same 1,200 documents. **94** of them (8%) produced no
 finding of any kind, and **28** (2%) carry at least one ERROR. The difference
 `--resolve` makes is the whole right-hand column: supplying the 1,659
-neighbours converted **3,171 of 3,326** UNVERIFIABLE findings (95%) into real
+neighbors converted **3,171 of 3,326** UNVERIFIABLE findings (95%) into real
 verdicts, and left 155. Document by document, 1,106 of the 1,200 had at least
-one reference the tool could not see; with the neighbours in hand, 33 did.
+one reference the tool could not see; with the neighbors in hand, 33 did.
 
 It converted them into agreement. Supplying 1,659 other people's documents
 produced **no new ERROR at all** — the ERROR count is identical in both
 columns — because every ERROR in this corpus is either a domain violation,
-which needs no neighbour to judge, or a blank-node reference, which no
-neighbour can ever settle. That is the outcome ADR 0004 predicted and did not
+which needs no neighbor to judge, or a blank-node reference, which no
+neighbor can ever settle. That is the outcome ADR 0004 predicted and did not
 guarantee: resolution settled unknowns without manufacturing failures.
 
 | Measure | Alone | With `--resolve` |
@@ -181,7 +181,7 @@ By finding code:
 | `VERSION_RANGE_CONFLICT` | INFO | 19 | 61 |
 
 `RANGE_VIOLATION` is absent from both columns. Across 1,200 published
-documents and 1,659 supplied neighbours, this tool found **no reference whose
+documents and 1,659 supplied neighbors, this tool found **no reference whose
 target was of a class the property's declared range excludes** that survived
 hand-checking — see the ERROR section, where 108 of them did not.
 
@@ -236,7 +236,7 @@ documents, were this tool's fault**, in two classes:
   class of everything", so the declaration excludes nothing — but no CTDL class
   reaches `rdfs:Resource` by `rdfs:subClassOf`, so matching a target's classes
   against it rejected *every* entity instead of accepting every entity. One
-  collection listing 47 licences was reported as 47 range violations. The same
+  collection listing 47 licenses was reported as 47 range violations. The same
   inversion applied to `owl:sameAs`, which also ranges on `rdfs:Resource`
   alone.
 
@@ -281,7 +281,7 @@ is not being made.
 What changed is the argument, not the count. The declaration is incoherent on
 its own terms: the range of all three properties is a strict subset of their
 own domain, and for the six dropped classes the two halves cannot both be
-honoured in any way that means anything. A `TransferValueProfile` may have a
+honored in any way that means anything. A `TransferValueProfile` may have a
 previous version, says the domain; that version may be any of 55 classes, none
 of which is `TransferValueProfile`, says the range. Every option the range
 leaves open makes a transfer value profile's earlier version a credential.
@@ -380,14 +380,14 @@ fetched for this run, and both uses are on `ceterms:AggregateDataProfile`.
 what the schema declares, the vendored snapshot was re-fetched from
 `credreg.net` during verification and is **byte-identical to the copy this
 tool ships** (SHA-256 `a2dd28cb…`, the hash already recorded in
-`vendor/SOURCES.md`). None of these findings is an artefact of a stale
+`vendor/SOURCES.md`). None of these findings is an artifact of a stale
 snapshot.
 
 ## What stayed unsettled after `--resolve`
 
 155 references remain UNVERIFIABLE, 4.7% of the 3,326 the tool started with.
 They are not a backlog of documents nobody fetched: exactly **one** is a
-Registry resource that could have been supplied, and it is the neighbour that
+Registry resource that could have been supplied, and it is the neighbor that
 answered HTTP 404. The rest are outside the one hop this survey defined.
 
 | What the unsettled reference points at | Findings |
@@ -459,7 +459,7 @@ None: there were no exclusions. All 1,200 drawn pages produced a document row.
    and with the single-publisher base rate stated rather than buried.
 2. **The harness stopped publishing a number it could not defend.** The request
    counter lost an interrupted run's tally and reported 1,770 for work costing
-   at least 2,861. It is now banked after every request, the neighbour tallies
+   at least 2,861. It is now banked after every request, the neighbor tallies
    are counted off the cache rather than off a per-run counter, and a
    referenced document that was neither fetched nor recorded as failed is
    counted as `unresolved` instead of disappearing.
@@ -489,7 +489,7 @@ request count and every fetch failure are read back from
 That claim was measured rather than asserted. Running both ways against this
 cache produced 2,422,812 bytes and 2,422,811 bytes differing on **exactly one
 line** — `"from_cache": false` against `"from_cache": true`, the field whose
-job is to record which way the file was made. With that one field normalised,
+job is to record which way the file was made. With that one field normalized,
 both files hash to SHA-256
 `82656f17fee334a099b602d99f5a973bd056d3e18f6967620c7e8bc238233d0e`. Every
 other byte, including all 1,200 document records, is identical.

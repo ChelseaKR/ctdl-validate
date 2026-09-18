@@ -6,7 +6,7 @@ written here, over the subset of draft 2020-12 that ``report.schema.json``
 actually uses.
 
 The dangerous way to write this is the obvious way: walk the schema, handle
-the keywords you recognise, and skip the rest. That checker reports no error
+the keywords you recognize, and skip the rest. That checker reports no error
 for ``{"type": "integer", "minimum": 0}`` if it never implemented ``minimum``,
 and it reports no error at all for a keyword added to the schema later. It is
 a gate that cannot fail on the half of the contract it does not know about.
@@ -81,7 +81,7 @@ def _type_error(schema: dict[str, Any], instance: Any, where: str) -> list[str]:
     """Draft 2020-12 lets ``type`` be a list, meaning any one of them.
 
     Added for ``measured_count``, which is ``["integer", "null"]`` -- the third
-    state a count needs when the producer did not measure it. An unrecognised
+    state a count needs when the producer did not measure it. An unrecognized
     member still raises: a list is a union of the type names this checker
     knows, not an escape from having to know them.
     """

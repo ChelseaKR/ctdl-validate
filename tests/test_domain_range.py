@@ -444,7 +444,7 @@ def test_is_similar_to_declares_82_real_range_terms_beside_rdfs_resource() -> No
 
 
 def test_the_is_similar_to_disposition_is_pinned_so_it_cannot_change_quietly() -> None:
-    """Characterisation, not endorsement. See issue #60.
+    """Characterization, not endorsement. See issue #60.
 
     ``range_is_universal`` tests membership, so isSimilarTo is exempted and its
     82 real range terms are never enforced: a reference to a class the range
@@ -457,7 +457,7 @@ def test_the_is_similar_to_disposition_is_pinned_so_it_cannot_change_quietly() -
 
     What must not happen is the disposition changing without anyone noticing,
     which is what the suite allowed before: it passed identically under both
-    rules. If this test fails, the behaviour moved -- decide #60 deliberately
+    rules. If this test fails, the behavior moved -- decide #60 deliberately
     and update this test with the decision.
     """
     schema = load_schema()

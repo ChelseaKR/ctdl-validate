@@ -44,14 +44,14 @@ footer offers the same opt-out. The script loads nothing, not even a
 When it loads, it sets Consent Mode v2 defaults (the three ad signals denied
 everywhere; `analytics_storage` denied in the EEA, the UK and Switzerland,
 where GA sends cookieless pings, and granted elsewhere), turns off Google
-signals and ad personalisation, and sends `page_location` as the origin and
+signals and ad personalization, and sends `page_location` as the origin and
 path only. It does not read the payload, the loaded files or the report.
 
 The Content-Security-Policy gains the minimum GA4 needs with Google signals
 off: `www.googletagmanager.com` for the loader, and `*.google-analytics.com`
 and `*.analytics.google.com` for measurement. `www.google.com` and
 `doubleclick.net` stay out, so anything gtag.js tries to send there is refused.
-`tests/test_playground_catalogue.py` lists the validator's origins and the
+`tests/test_playground_catalog.py` lists the validator's origins and the
 analytics origins separately, so that neither set can grow unnoticed.
 
 The command-line tool, the GitHub Action and the pre-commit hook carry no

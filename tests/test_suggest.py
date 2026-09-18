@@ -212,10 +212,10 @@ def test_a_bare_ctid_resolves_against_a_document_supplied_with_resolve(
 ) -> None:
     """``--resolve`` documents are part of what the run can see, and the
     framework check already treats them that way."""
-    neighbour = tmp_path / "framework.json"
-    neighbour.write_text(json.dumps({"@graph": [_framework(FRAMEWORK_CTID)]}), encoding="utf-8")
+    neighbor = tmp_path / "framework.json"
+    neighbor.write_text(json.dumps({"@graph": [_framework(FRAMEWORK_CTID)]}), encoding="utf-8")
     payload = {"@graph": [_competency_pointing_at(FRAMEWORK_CTID)]}
-    finding = _only(_findings(payload, [neighbour], suggest=True), "REF_BARE_CTID")
+    finding = _only(_findings(payload, [neighbor], suggest=True), "REF_BARE_CTID")
     assert [s.value for s in finding.suggestions] == [RESOURCE + FRAMEWORK_CTID]
 
 
@@ -305,12 +305,12 @@ def test_a_supplied_entity_that_declares_a_different_ctid_is_not_a_candidate(
     """The `--resolve` scan has to look at every supplied entity and reject the
     ones that do not carry the CTID written, not merely find the first that
     does."""
-    neighbour = tmp_path / "framework.json"
-    neighbour.write_text(
+    neighbor = tmp_path / "framework.json"
+    neighbor.write_text(
         json.dumps({"@graph": [_framework(OTHER_FRAMEWORK_CTID)]}), encoding="utf-8"
     )
     payload = {"@graph": [_competency_pointing_at(FRAMEWORK_CTID)]}
-    finding = _only(_findings(payload, [neighbour], suggest=True), "REF_BARE_CTID")
+    finding = _only(_findings(payload, [neighbor], suggest=True), "REF_BARE_CTID")
     assert finding.suggestions == ()
 
 
