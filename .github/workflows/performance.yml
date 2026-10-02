@@ -180,12 +180,38 @@ jobs:
       # No `?a11y-static`. This is the page a visitor gets: it boots Pyodide,
       # on a worker thread, from the CDN, and that boot is what the score is
       # about.
+      #
+      # Lighthouse is retried ONLY when it wrote no report, which is what a Chrome
+      # that never started looks like ("Unable to connect to Chrome", run
+      # 35390427650 on 2026-09-18, the latest red Performance run on main, on a
+      # commit whose pull request had scored this same page green). A run that
+      # wrote a report is never retried, whatever it scored: the next step judges
+      # the first score Lighthouse produced, so this is not best-of-N and cannot
+      # make a slow page pass. Three launches that all fail end red with a message
+      # that names an infrastructure failure, the same split the CDN preflight
+      # above makes, so "Chrome did not start" is never read as "the page got
+      # slower".
       - name: Lighthouse performance against the real page
+        shell: bash
         run: |
           set -euo pipefail
-          npx --yes lighthouse@12 "http://127.0.0.1:8932/index.html" \
-            --output=json --output-path=/tmp/lh-performance.json --quiet \
-            --chrome-flags="--headless" --only-categories=performance
+          report=/tmp/lh-performance.json
+          for attempt in 1 2 3; do
+            rm -f "$report"
+            if npx --yes lighthouse@12 "http://127.0.0.1:8932/index.html" \
+              --output=json --output-path="$report" --quiet \
+              --chrome-flags="--headless" --only-categories=performance; then
+              exit 0
+            fi
+            if [ -s "$report" ]; then
+              echo "::error title=Lighthouse failed after writing a report::not retried, because a run that measured something is not an infrastructure failure"
+              exit 1
+            fi
+            echo "::warning title=Lighthouse wrote no report (attempt ${attempt} of 3)::headless Chrome did not start or the run aborted before measuring; retrying"
+            sleep 5
+          done
+          echo "::error title=Chrome never started::Lighthouse wrote no report in three attempts. This is an infrastructure failure, not a performance regression: the page was never measured."
+          exit 1
 
       - name: Require >= 0.90 on performance
         run: |
