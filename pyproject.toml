@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Chelsea Kelly-Reif" }]
-keywords = ["ctdl", "credential-engine", "json-ld", "validation", "credentials"]
+keywords = ["ctdl", "credential-engine", "credential-registry", "credential-transparency-description-language", "json-ld", "linked-data", "validation", "validator", "credentials", "workforce-development", "offline", "deterministic"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",

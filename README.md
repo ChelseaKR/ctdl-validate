@@ -1,5 +1,9 @@
 # ctdl-validate
 
+[![CI](https://github.com/ChelseaKR/ctdl-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/ChelseaKR/ctdl-validate/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/ctdl-validate.svg)](https://pypi.org/project/ctdl-validate/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Deterministic structural validation for
 [CTDL (Credential Transparency Description Language)](https://credreg.net/ctdl/handbook)
 JSON-LD payloads, meant to run before publication to the Credential Registry.
